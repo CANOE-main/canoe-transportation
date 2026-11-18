@@ -1,0 +1,150 @@
+# Opt-in comparison, notebook preparation and presentation controls.
+# Registered by rules.yaml; see AGENTS.md for ownership and edit boundaries.
+
+version: 1
+
+parameterization:
+  # Opt-in researcher comparisons; these references never parameterize production.
+  charging_cost_comparison:
+    reference_route: transportation_validation_charging_inputs
+    reference_manifest: manifest.json
+    legacy_baseline: inputs/validation/transportation_reference/sales_cohorts/canoe_on_12d_baseline.sqlite
+    report_route: charging_cost_comparison_report
+    files: {cost_invest: CostInvest.csv, cost_fixed: CostFixed.csv, cost_variable: CostVariable_ALL.csv}
+    groups:
+      ldv:
+        reference_technologies: [T_LDV_BEV_CHRG, T_LDV_PHEV_CHRG]
+        existing: T_LDV_CHRG_EX
+        new: T_LDV_CHRG_N
+      mhdv:
+        reference_technologies: [T_MDV_CHRG, T_HDV_CHRG]
+        existing: T_MHDV_CHRG_EX
+        new: T_MHDV_CHRG_N
+    reference_basis:
+      name: user_confirmed_2020_CAD_per_PJ_year
+      currency: CAD
+      dollar_year: 2020
+      denominator: PJ/year_capacity
+      evidence: >-
+        User confirmation 2026-10-29: million 2020 CAD and PJ/year of charging
+        throughput. Embedded utilization and loss conventions were not supplied.
+    conditional_bases:
+      - name: effective_output_at_backend_utilization
+        currency: CAD
+        dollar_year: 2020
+        denominator: PJ/year_at_backend_utilization
+        evidence: >-
+          Sensitivity only: normalize backend rated capacity using its configured
+          utilization target; do not infer embedded utilization in the reference.
+
+  transportation_research:
+    reference_route: transportation_validation_researcher_inputs
+    reference_manifest: manifest.json
+    report_route: transportation_research_report
+    # Select a captured report, independently of whether its scenario YAML survives.
+    notebook_scenario: config/scenarios/validation_baseline.yaml
+    comparison_significance_percent: 5.0
+    reference_sqlite: canoe_ON_16d.sqlite
+    reference_notebook: Update data_20260618_fixed lifetime (1).ipynb
+    # Original notebook Input data/canoe_ALL_cm.sqlite is unavailable. Explicit
+    # inherited-parameter substitution; disputed capacity/demand are not authority.
+    inherited_sqlite: inputs/validation/transportation_reference/sales_cohorts/canoe_ON_16d.sqlite
+    legacy_baseline: inputs/validation/transportation_reference/sales_cohorts/canoe_on_12d_baseline.sqlite
+    energy_series:
+      cars: {table_id: 20, raw_series: Car Energy Use (PJ)}
+      passenger_light_trucks: {table_id: 34, raw_series: Passenger Light Truck Energy Use (PJ)}
+      freight_light_trucks: {table_id: 35, raw_series: Freight Light Truck Energy Use (PJ)}
+      medium_trucks: {table_id: 36, raw_series: Medium Truck Energy Use (PJ)}
+      heavy_trucks: {table_id: 36, raw_series: Heavy Truck Energy Use1 (PJ)}
+
+  notebook_diagnostics:
+    prepare_scenario: config/scenarios/notebook_diagnostics.yaml
+    prepare_scenarios:
+      ceud_calibration: config/scenarios/validation_energy_calibration.yaml
+      ceud_calibration_regions: config/scenarios/validation_energy_calibration_regions.yaml
+    ceud_calibration:
+      trajectory_years: [2000, 2050]
+    ceud_calibration_regions:
+      expected_regions: [AB, BCT, MB, NB, NL, NS, "ON", PE, QC, SK]
+    latest_file: latest.json
+
+  rating_stock_benchmark:
+    files:
+      matches: rating_stock_match_audit.csv
+      allocations: stock_weighted_rating_evidence.csv
+      weighted: stock_weighted_rating_consumption.csv
+    stock_weighting:
+      method: resolved_mto_model_year_stock
+      unresolved_stock: exclude_and_report
+      uncovered_cohort: distinct_model_class_weighted
+      variant_allocation: equal_distinct_variants
+      weight_sum_tolerance: 1.0e-9
+      rating_variant_identity_columns:
+        - Model
+        - Engine size (L)
+        - Cylinders
+        - Transmission
+        - Motor (kW)
+        - Fuel type
+        - Fuel type 1
+        - Fuel type 2
+        - native_consumption
+        - native_unit
+        - range_km
+        - combined_cd_consumption_Le_100_km
+        - combined_cs_consumption_L_100_km
+
+  ldv_efficiency_diagnostic:
+    region: 'ON'
+    epa_assessment_regions: ['ON', 'BCT', 'PE']  # Opt-in review only; no production supplementation.
+    minimum_model_year: 2005
+    bridge_years: [2010, 2040]
+    native_year_start: 2000
+    distribution_year_end: 2025
+    distribution_year_step: 2
+    composition_years: [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
+    composition_top_size_classes: null  # Show every observed size/body class.
+    grid_plot_width: 1200  # Combined distribution/composition panels and gaps.
+    line_plot_width: 900  # Existing-to-future bridge trajectories.
+    heatmap_plot_width: 800  # Existing-to-future class-consumption heatmaps.
+    # Nominal size within body families; unlike body types have no common volume scale.
+    size_class_order:
+      Cars: [Minicompact, Subcompact, Compact, Mid-size, Full-size, Two-seater, "Station wagon: Small", "Station wagon: Mid-size"]
+      Light trucks: ["Sport utility vehicle", "Sport utility vehicle: Small", "Sport utility vehicle: Standard", Minivan, "Pickup truck: Small", "Pickup truck: Standard", "Van: Passenger", "Van: Cargo"]
+    # Retained capture metadata; notebook axes now follow each powertrain's data.
+    distribution_consumption_domains:
+      Cars: [4, 24]
+      Light trucks: [4, 24]
+    files:
+      raw_sources: raw_source_trajectories.csv
+      production_sources: production_source_trajectories.csv
+      rating_distribution: rating_distribution.csv
+      rating_summary: rating_aggregation_summary.csv
+      bridge: efficiency_bridge.csv
+      projection_anchors: projection_anchors.csv
+      omega_shares: omega_range_shares.csv
+      composition_observations: composition_observations.csv
+      composition_variants: composition_variants.csv
+      composition_matches: composition_matches.csv
+      composition_coverage: composition_coverage.csv
+      composition_comparison: composition_comparison.csv
+      composition_models: composition_models.csv
+      composition_families: composition_families.csv
+      composition_benchmark: composition_benchmark.csv
+      composition_benchmark_coverage: composition_benchmark_coverage.csv
+      composition_benchmark_timing: composition_benchmark_timing.csv
+      composition_benchmark_observations: composition_benchmark_observations.csv
+      catalogue_bridge: catalogue_bridge.csv
+      summary: summary.json
+
+  ldv_composition_benchmark:
+    comparison_calendar_years: [2020, 2021, 2022, 2023, 2024]
+    new_registrations_file: statcan_ldv_registrations_historical.csv
+    stock_file: statcan_23100308_ldv_stock.csv
+    mto_passenger_file: ontario_vehicle_population_mapped_cohort_snapshots.csv
+    mto_commercial_file: ontario_vehicle_population_commercial_cohort_snapshots.csv
+    mto_mapped_file: ontario_vehicle_population_current_stock_mapped.csv
+    izev_file: izev_incentive_records.csv
+    incentive_transaction_types: [Purchase, Lease]
+    fuel_map: {All fuel types: all, Gasoline: gasoline, Diesel: diesel, Battery electric: bev, Hybrid electric: hev, Plug-in hybrid electric: phev, Other fuel types: other}
+    body_map: {Passenger cars: Cars, Pickup trucks: Light trucks, Multi-purpose vehicles: Light trucks, Vans: Light trucks}

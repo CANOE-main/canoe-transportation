@@ -23,6 +23,7 @@ theme:
     - search.highlight
 nav:
   - Overview: index.md
+  - Executive Summary: executive_summary.md
   - Getting started:
       - Build and inspect a scenario: getting_started.md
       - Configure a scenario: scenario_configuration.md
@@ -38,7 +39,7 @@ nav:
   - Choosing and interpreting scenarios:
       - Why keep alternative representations?: model/choices.md
       - Adoption constraints and research: model/adoption.md
-      - Integration and current limits: model/integration.md
+      - Integration with CANOE-main: model/integration.md
   - Technical reference:
       - Publishing and checking documentation: publication.md
       - Assumptions and limitations: assumptions.md
@@ -49,7 +50,7 @@ hooks:
 plugins:
   - search
   - print-site:
-      add_to_navigation: true
+      add_to_navigation: false
       print_page_title: Complete transportation report
       add_table_of_contents: true
       toc_depth: 2

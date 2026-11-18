@@ -14,7 +14,7 @@ from validation.legacy_sales_reconstruction import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DIRECTORY = ROOT / "legacy_backend/legacy_variant_sales_cohorts"
+DIRECTORY = ROOT / "inputs/validation/transportation_reference/sales_cohorts"
 NOTEBOOK = DIRECTORY / "Update data_20260618_fixed lifetime (1).ipynb"
 INHERITED = DIRECTORY / "canoe_ON_16d.sqlite"
 

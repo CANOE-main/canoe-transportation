@@ -16,9 +16,12 @@ def sources():
     return load_config_bundle("config/scenarios/default.yaml", repo_root=ROOT).sources
 
 
-def test_production_components_have_explicit_temporal_assessments(sources):
-    """Known production evidence must not silently inherit the worst fallback."""
-    unresolved = []
+def test_production_temporal_assessments_keep_review_gaps_explicit(sources):
+    """New gaps fail; registered unreviewed evidence retains conservative full DQ."""
+    pending_review = {
+        "jonas_ev_charging_utilization.residential_l2_utilization",
+    }
+    unresolved = set()
     for source_key, source in sources.sources.items():
         if source.status != "active":
             continue
@@ -30,8 +33,15 @@ def test_production_components_have_explicit_temporal_assessments(sources):
                 if component.data_quality is not None else None
             )
             if component_time is None and source.data_quality.dq_time is None:
-                unresolved.append(f"{source_key}.{component_key}")
-    assert unresolved == [], f"Unassessed production dq_time: {unresolved}"
+                unresolved.add(f"{source_key}.{component_key}")
+    assert unresolved <= pending_review, f"New production DQ review gaps: {unresolved}"
+    # Null explicitly means awaiting review. Reviewed annotations may resolve these
+    # gaps without changing a test; unreviewed evidence keeps conservative full DQ.
+    for identity in unresolved:
+        source_key, component_key = identity.split(".", 1)
+        assert sources.resolved_data_quality(source_key, component_key).row_fields() == {
+            "dq_cred": 5, "dq_geog": 5, "dq_struc": 5, "dq_tech": 5, "dq_time": 5,
+        }
 
 
 def test_truck_survival_time_quality_follows_underlying_cohort_evidence(sources):

@@ -13,7 +13,7 @@ geography:
   regions: [AB, BCT, MB, NB, NL, NS, "ON", PE, QC, SK]
 
 periods:
-  # prospective: interval-end inputs; legacy: prior timing and vintage bins.
+  # prospective: closing conditions; legacy: opening conditions and historical closing labels.
   period_mode: prospective
   base_year: 2025  # Model reference year; selected source policy handles later-than-observed inputs.
   # Existing-capacity vintages; legacy mode must include base_year.
@@ -29,7 +29,7 @@ outputs:
 
 comparison:
   # Optional comparison; integrity checks always run.
-  mode: none  # Regional illustration has no Ontario-only legacy comparison.
+  mode: none  # none | scenario
   reference_sqlite: null
   absolute_tolerance: 1.0e-9
   relative_tolerance: 1.0e-6
@@ -41,7 +41,6 @@ sources:
   selections:
     nrcan_ceud_transport_provincial: {year: 2023}
     nrcan_ceud_transport_national: {year: 2023}
-    transport_canada_ev_dashboard: {year: 2026}
     cer_canadas_energy_future: {edition: 2026}
 
 aggregation_sources:
@@ -75,7 +74,7 @@ lifetimes:
   tail_survival_threshold: 0.005  # Surviving fraction: 0.5%, then zero the following year.
 
 existing_capacity:
-  vehicle_population_year: 2025  # MTO evidence year.
+  vehicle_population_year: null  # Follow periods.base_year; an integer explicitly selects another MTO year.
   cleanup_tolerance: 0.001  # Minimum retained capacity in each row's native unit.
 
 demand:
@@ -88,18 +87,20 @@ road_utilization:
 
 efficiencies:
   ceud_energy_calibration: true  # Optional CEUD-reported liquid-energy fit; no default promotion.
-  atb_trajectory: Mid  # Advanced | Conservative | Constant | Mid
+  atb_trajectory: Mid  # Advanced | Conservative | Mid
 
 costs:
-  atb_trajectory: Mid  # Advanced | Conservative | Constant | Mid
+  atb_trajectory: Mid  # Advanced | Conservative | Mid
 
 ev_chargers:
   # Vehicles per charger port when estimating existing capacity.
-  ld_evs_per_port: 1.0
-  mhd_evs_per_port: 1.5
+  evs_per_port: [1.0, 1.5, 1.5]  # LDV, medium trucks, heavy trucks.
+  charger_type_classes: aggregated
+  ld_home_utilization: 0.08
 
 charging_profiles:
   travel_behavior_source: nhts  # none | nhts: US travel survey | tts: Ontario GGH travel survey
+  charging_strategy: uncontrolled  # uncontrolled | night | day; Toronto local clock
   time_mapping: null  # null: hourly slices; otherwise: hour-to-slice CSV path.
 
 BEV_PHEV_range_representation:
@@ -114,4 +115,4 @@ row_note_overrides:
   technology: {}  # Replace notes by technology ID; {} keeps template notes.
 
 # Separate regional coverage for publication heatmaps; the Ontario OFF/ON pair remains unchanged.
-notebook_diagnostics: [ceud_calibration]
+notebook_diagnostics: [ceud_calibration_regions]

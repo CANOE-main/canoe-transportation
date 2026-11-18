@@ -37,7 +37,7 @@ def test_composition_view_reads_only_current_presentation_choices(bundle, tmp_pa
              "grid_plot_width": 1200, "line_plot_width": 900, "heatmap_plot_width": 760,
              "native_year_start": 2000, "bridge_years": [2010, 2040],
              "region": "IGNORE_LIVE_MODEL_CHOICE"}
-    (directory / "rules.yaml").write_text(yaml.safe_dump({"parameterization": {
+    (directory / "rules.yaml").write_text(yaml.safe_dump({"version": 2, "fetching": {}, "parameterization": {
         "ldv_efficiency_diagnostic": rules}}), encoding="utf-8")
     captured = replace(bundle, repo_root=tmp_path)
     assert diagnostic.composition_view_settings(captured) == {"years": list(range(2015, 2026)), "top_size_classes": 7,
@@ -148,7 +148,7 @@ def phev_ratings_and_weights(bundle):
 def bridge_support(bundle, mode, powertrains, *, load=1):
     periods = bundle.scenario.periods
     bins = {v: periods.historical_years(v) for v in periods.existing}
-    bins.update({v: [periods.projection_year(v, legacy_at_end=True)] for v in periods.model})
+    bins.update({v: periods.audit()["new_road_efficiency_years"][str(v)] for v in periods.model})
     return pd.DataFrame([
         {"region": "ON", "mode": mode, "powertrain": powertrain, "vintage": vintage,
          "source_year": year, "load_factor": load, "temporal_weight": 1 / len(years)}
@@ -317,6 +317,37 @@ def test_bridge_keeps_observed_phev_energy_and_projects_from_weighted_cohort(bun
     assert set(anchors.anchor_powertrain) == {"phev_35_miles"}
     assert set(anchors.atb_reference_year) == {2023}
     assert anchors.parameter_reference_consumption_mj_per_vkm.tolist() == pytest.approx([weighted, weighted])
+
+
+def test_legacy_detailed_class_marker_uses_trailing_supported_years(bundle, monkeypatch):
+    periods = bundle.scenario.periods.model_copy(update={
+        "period_mode": "legacy", "base_year": 2023, "existing": [2000, 2005, 2010, 2015, 2020, 2023],
+    })
+    bundle = replace(bundle, scenario=bundle.scenario.model_copy(update={"periods": periods}))
+    monkeypatch.setattr(diagnostic, "VIEW_MODES", {"Cars": "cars"})
+    inputs = phev_bridge_inputs(bundle)
+    bridge, _ = diagnostic._bridge_rows(bundle, inputs, bridge_years=[2015, 2030])
+    marker = bridge.loc[
+        bridge.atb_class.eq("Compact") & bridge.marker_source.eq("ATB class recalculation")
+        & bridge.vintage.eq(2025) & bridge.metric.eq("consumption")
+    ].iloc[0]
+    observed = diagnostic._rating_series(inputs["rating_weights"]).set_index("year").value
+    anchor = (3 * observed[2022] + 6 * observed[2023]) / 9
+    assert marker[["evaluation_window_start", "evaluation_window_end"]].tolist() == [2021, 2025]
+    assert marker.source_years == "2022 | 2023 | 2024 | 2025"
+    assert marker.value == pytest.approx((observed[2022] + observed[2023] + anchor * .75 + anchor * .5) / 4)
+
+
+def test_diagnostic_anchor_uses_bin_containing_reference_year(bundle):
+    periods = bundle.scenario.periods.model_copy(update={
+        "base_year": 2024, "existing": [2000, 2005, 2010, 2015, 2020, 2023],
+    })
+    bundle = replace(bundle, scenario=bundle.scenario.model_copy(update={"periods": periods}))
+    evidence = diagnostic._evidence(bundle, phev_bridge_inputs(bundle), "cars", None)
+    anchor = evidence.projection_anchor("ON", "cars", "phev_35_miles")
+    assert anchor["candidate_years"] == [2021, 2022, 2023]
+    assert anchor["included_years"] == [2022, 2023]
+    assert anchor["atb_reference_year"] == 2023
 
 
 @pytest.mark.parametrize("class_only", [True, False])
@@ -851,7 +882,7 @@ def test_notebook_production_chart_has_independent_line_and_marker_legends(base_
     layers = spec["layer"]
     assert layers[0]["mark"]["type"] == "line" and "strokeDash" not in layers[0]["mark"]
     line = layers[0]["encoding"]["strokeDash"]
-    assert line["scale"] == {"domain": ["Production trajectory", "ATB indexing", "Reference-only NRCan aggregates"],
+    assert line["scale"] == {"domain": ["Production trajectory", "NLR ATB indexing", "Reference-only NRCan Ratings aggregates"],
                               "range": [[], [6, 4], [2, 3]]}
     assert line["legend"]["symbolType"] == "stroke"
     assert layers[1]["mark"]["type"] == "point"
@@ -901,7 +932,7 @@ def test_reference_evidence_stays_separate_when_projection_reference_year_is_hid
     lines = spec["layer"][0]["data"]["values"]
     solid = [row for row in lines if row["connection_kind"] == "Production trajectory"]
     assert all(row["marker_source"] == "Final prepared period CSV" for row in solid)
-    references = [row for row in lines if row["connection_kind"] == "Reference-only NRCan aggregates"]
+    references = [row for row in lines if row["connection_kind"] == "Reference-only NRCan Ratings aggregates"]
     assert len(references) == 2
     assert all(row["year"] == 2025 for row in references)
 
@@ -1512,10 +1543,11 @@ def test_composition_plot_emits_small_html_without_losing_points_or_audit_tables
     original = {key: frame.copy(deep=True) for key, frame in frames.items()}
     notebook = Path(__file__).resolve().parents[1] / "docs/insights/ldv_efficiency_diagnosis.py"
     cell = runpy.run_path(str(notebook))["composition_plot"]
-    charts = []
+    charts, figure_calls = [], []
 
-    def chart_ui(chart):
+    def chart_ui(chart, figure_id, title):
         charts.append(chart.to_dict(validate=True))
+        figure_calls.append((figure_id, title))
         return mo.ui.altair_chart(chart, chart_selection=False, legend_selection=False)
 
     years = list(range(2015, 2026))
@@ -1530,6 +1562,7 @@ def test_composition_plot_emits_small_html_without_losing_points_or_audit_tables
         mo=mo, pd=pd, range_label=str, vehicle_group=SimpleNamespace(value=vehicle_group))
     assert len(output.text.encode("utf-8")) < 1_000_000
     assert len(charts) == 1
+    assert figure_calls == [("ldv-eff-2-gasoline", "Empirical composition changes gasoline consumption")]
     rows = pd.DataFrame(charts[0]["data"]["values"])
     assert len(rows) == 7
     assert set(rows.year) == {2022}
@@ -1597,14 +1630,23 @@ def test_composition_columns_use_latest_pooled_mto_shares_across_years_and_power
     frames = {"composition_models": models, "composition_families": families, "composition_comparison": summaries}
     notebook = Path(__file__).resolve().parents[1] / "docs/insights/ldv_efficiency_diagnosis.py"
     cell = runpy.run_path(str(notebook))["composition_plot"]
-    charts = []
-    output, _ = cell.run(alt=alt, chart_ui=lambda chart: charts.append(chart.to_dict(validate=True)) or mo.md("chart"),
+    charts, figure_calls = [], []
+
+    def chart_ui(chart, figure_id, title):
+        charts.append(chart.to_dict(validate=True))
+        figure_calls.append((figure_id, title))
+        return mo.md("chart")
+
+    output, _ = cell.run(alt=alt, chart_ui=chart_ui,
         composition_class_columns=diagnostic.composition_class_columns, supported_display_years=diagnostic.supported_display_years,
         composition_view={"years": years, "top_size_classes": 5, "grid_plot_width": 1200, "class_order": {"Cars": classes[:5]}},
         diagnostic=SimpleNamespace(frames=frames, inputs={"rating_class_weights": weights}, summary={"base_year": 2023, "atb_reference_year": 2023}),
         mo=mo, pd=pd, range_label=str, vehicle_group=SimpleNamespace(value="Cars"))
     assert len(charts) == 2
-    assert "2025 MTO stock, all vintages" in output.text
+    assert {figure_id for figure_id, _ in figure_calls} == {"ldv-eff-2-gasoline", "ldv-eff-2-phev_35_miles"}
+    assert all(title.startswith("Empirical composition changes ") for _, title in figure_calls)
+    assert "2025" in output.text and "Ontario MTO" in output.text and "stock, all vintages" in output.text
+    assert "https://data.ontario.ca/dataset/vehicle-population-data" in output.text
     assert "99.0%" in output.text
     for chart in charts:
         assert chart["facet"]["column"]["sort"] == classes[:5]
@@ -1651,10 +1693,11 @@ def test_benchmark_chart_preserves_population_denominators_missing_cells_and_unp
     original = frame.copy(deep=True)
     notebook = Path(__file__).resolve().parents[1] / "docs/insights/ldv_efficiency_diagnosis.py"
     cell = runpy.run_path(str(notebook))["composition_benchmark_plot"]
-    charts, tables = [], []
+    charts, tables, figure_calls = [], [], []
 
-    def chart_ui(chart):
+    def chart_ui(chart, figure_id, title):
         charts.append(chart.to_dict(validate=True))
+        figure_calls.append((figure_id, title))
         return mo.ui.altair_chart(chart, chart_selection=False, legend_selection=False)
 
     def table_ui(table, label):
@@ -1665,6 +1708,7 @@ def test_benchmark_chart_preserves_population_denominators_missing_cells_and_unp
         diagnostic=SimpleNamespace(frames={"composition_benchmark": frame}, summary={"region": "ON"}), mo=mo, table_ui=table_ui)
     assert "Distinct populations remain explicit" in output.text
     assert len(charts) == 1 and len(tables) == 2
+    assert figure_calls == [(f"ldv-eff-8-{scope}", f"Population comparability: {scope.replace('_', ' ')}")]
     plotted = pd.DataFrame(charts[0]["data"]["values"])
     assert plotted["count"].eq(10).all()
     assert plotted.denominator.eq(40).all()

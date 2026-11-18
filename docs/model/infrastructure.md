@@ -1,161 +1,167 @@
 # What infrastructure supports the vehicles?
 
-Charging capacity is inferred from a mixture of observed public ports and
-assumptions about private provision. A port count is neither rated power nor annual
-energy throughput. Keeping these quantities separate explains many apparent cost
-differences with legacy infrastructure estimates.
+The backend distinguishes port counts, rated electrical capacity and annual energy
+throughput. The same fetched [*Dunsky inputs*](https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada) support two scenario representations,
+selected by `ev_chargers.charger_type_classes`:
 
-## Ports become electrical capacity
+| Representation | Charging technologies | Annual utilization |
+| --- | --- | --- |
+| `aggregated` | One LDV and one MHDV class, each with existing/new technologies | LDV target 0.20, with an annual floor of 0.196 when hourly profiles are selected. MHDV equality at 0.30. |
+| `explicit` | LDV public L2, public fast and private; MHDV overnight and fast | Component-specific source assumptions and the home proxy below |
 
-[*Transport Canada EV Dashboard*](https://tc.canada.ca/en/road-transportation/innovative-technologies/electric-vehicles/canada-electric-vehicle-dashboard)
-provides public-port evidence. BEV physical stock and configured vehicles-per-port
-ratios determine required ports. Private LDV ports are the required total minus
-public ports; reviewed type shares distribute them. PHEVs do not enter this
-stock-to-port calibration. Public-port observation dates can differ from the
-vehicle-stock reference date and remain explicit in the audit.
+Both use the shared source-to-archetype calculation. [Registered Dunsky extraction](../../config/parameters/dunsky_charger_inputs.yaml)
+supplies costs, ratings, composition and operating assumptions; [production rules](../../config/parameters/charging_and_range_representation.yaml)
+own their interpretation. The [manual CSV](../../inputs/0_manual_params/charger_parameters.csv)
+retains supplemental inputs and reviewed aggregate overrides. The
+[assumptions table](../assumptions.md#charging-and-hydrogen-refueling-infrastructure)
+records the boundaries and remaining proxies.
 
-For port type $\boldsymbol{j}$, count $\boldsymbol{n_j}$ and rated power $\boldsymbol{p_j}$ in kW,
+## Prepared BEV stock determines existing ports
 
-$$K=10^{-6}\sum_j n_jp_j\quad[\mathrm{GW}].$$
+Existing provision starts from prepared **physical surviving BEV stock**, before
+its conversion to solver capacity. Scenario vehicles-per-port ratios are separate
+for LDVs, medium trucks and heavy trucks. PHEVs do not enter this stock calibration.
+Bus electricity uses the MHDV charger output, although bus stock does not enter
+the existing-port inference.
 
-!!! note "Assumption: infer private and regional port mixes"
-    National public type shares proxy provincial mixes. BCT public counts combine BC
-    and the territories. MHDV provision uses its own vehicle-to-port ratio and power
-    mix. None of these inferences establishes observed private infrastructure coverage.
+The pinned December 31, 2025 [AFDC public/open inventory](https://afdc.energy.gov/stations/)
+provides provincial L1/L2/DCFC ports. BC and the territories combine into BCT.
+For LDVs, total required ports minus observed public ports gives inferred private
+provision. These observations proxy LDV public access: missing vehicle-class
+metadata prevents treating them as a verified LDV-only inventory.
 
-## Costs use total expenditure divided by rated power
+With counts $N_j$ and ratings $p_j$ in kW, electrical capacity is
 
-The production estimator matches per-port capital cost $\boldsymbol{q_{jy}}$, converted
-to the scenario's CAD dollar year, and rated power
-$\boldsymbol{p_{jy}}$ at source year $\boldsymbol{y}$. With port-count shares $\boldsymbol{w_j}$,
+$$K=10^{-6}\sum_jN_jp_j\quad[\mathrm{GW}].$$
 
-$$P_y^{GW}=\frac{\sum_jw_jq_{jy}}{\sum_jw_jp_{jy}}.$$
+Aggregate LDV capacity retains the reviewed private L1/L2 mix. Explicit capacity
+separates AFDC public L2/fast ports from inferred private ports; negligible public
+L1 ports are omitted and audited. MHDV port totals use the separate medium/heavy
+vehicles-per-port ratios. Aggregate MHDV stock uses the reviewed 80/20 port split
+between 50 and 350 kW. Explicit MHDV stock uses the first modeled year's national
+Dunsky composition and archetype ratings. Port observation dates, stock years
+and selected power years remain distinct in the audit.
 
-!!! tip "Modeler note: rated-power cost is a weighted ratio"
-    If $\boldsymbol{q}$ is CAD/port and $\boldsymbol{p}$ kW/port, the ratio is CAD/kW, numerically equal to
-    million CAD/GW. This is not the arithmetic mean of separate per-GW rates using
-    port-count shares. Each port cost is harmonized before expenditure is summed,
-    so source currencies and dollar years are never averaged together. Fixed O&M
-    uses the reviewed 1% capital-cost ratio while
-    the infrastructure remains alive. Investment rows apply only to new chargers.
+## Costs combine expenditure and rated power
 
-Power shares are needed **only when averaging component costs already normalized
-per GW**. They are derived from the observed or reviewed port-count mix, rather
-than supplied as another independent assumption:
+Dunsky Tables 6 and 38 supply **evolving annual port composition**, using disjoint
+LDV and public/private MHDV components. Counts interpolate between source points
+and hold after 2040.
 
-$$\alpha_{jy}=\frac{w_jp_{jy}}{\sum_kw_kp_{ky}},\qquad
-P_y^{GW}=\sum_j\alpha_{jy}\frac{q_{jy}}{p_{jy}}.$$
+For a charger archetype or aggregate class $a$, convert each per-port cost $q_{jy}$
+to the scenario's CAD dollar year before aggregating at source year $y$:
 
-The production calculation uses total expenditure divided by total rated power
-directly; its audit also checks this equivalent power-share sum. Applying
-port-count shares to the individual per-GW rates would give a different, incorrect
-denominator. For example, a 2 MW port contributes forty times as much rated
-capacity as a 50 kW port, so equal port counts cannot receive equal weights in a
-per-GW average.
+$$C_{a,y}=\frac{\sum_{j\in a}N_{jy}q_{jy}}{\sum_{j\in a}N_{jy}p_{jy}}.$$
 
-The [*Dunsky* infrastructure study](https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada)
-and reviewed supplemental inputs supply port cost/power assumptions. Existing
-and future rates retain their explicit source-year selection, end holds and mixes.
-The [canonical infrastructure table](../assumptions.md#charging-and-hydrogen-refueling-infrastructure)
-owns the detailed values.
+CAD/kW is numerically equal to million CAD/GW. Equivalently, component costs per GW
+can be averaged with **rated-power shares**, $N_{jy}p_{jy}/\sum_kN_{ky}p_{ky}$.
+Using port-count shares for that average would change the denominator.
 
-### Verified production example
+LDV DCFC costs and ratings are matched to **Table 12**: 125/175/250/300 kW in
+2025/2030/2035/2040, holding 300 kW afterward. Home/public L1/L2 retain their
+registered ratings. Private L2 uses the public-L2 price proxy; public MHDV overnight
+cost scales linearly from the Table 21 50 kW cost to its Table 19 100 kW rating.
+These choices proxy unavailable prices.
 
-For the Ontario `validation_baseline` scenario, **model vintage 2025 selects the
-2030 source-year cost and power assumptions**, following its prospective
-interval-end timing. Source year, model vintage and currency year are separate
-quantities. The registered CER 2026 Current Measures series converts 2022 CAD
-using the deflator ratio $104.3/121.3$; L1's 2021 USD cost first uses 1.25 CAD/USD
-and then $104.3/112.5$. The resulting components are:
+Home Level 1 uses the reviewed midpoint of the NREL installation-cost range.
+The [assumptions reference](../assumptions.md#charging-and-hydrogen-refueling-infrastructure)
+records the per-port amount and dollar year.
 
-| Charger group / type | Port-count share | Source cost per port | Rated kW per port | CAD2020 per port | Derived power share | Million CAD2020/GW |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| LDV L1 | 12% | 550 USD2021 | 1.5 | 637.39 | 1.6933% | 424.93 |
-| LDV L2 | 87% | 10,000 CAD2022 | 10 | 8,598.52 | 81.8438% | 859.85 |
-| LDV DCFC | 1% | 240,000 CAD2022 | 175 | 206,364.39 | 16.4628% | 1,179.23 |
-| MHDV 50 kW | 82% | 74,604 CAD2022 | 50 | 64,148.37 | 29.9270% | 1,282.97 |
-| MHDV 350 kW | 16% | 225,352 CAD2022 | 350 | 193,769.28 | 40.8759% | 553.63 |
-| MHDV 2 MW | 2% | 629,631 CAD2022 | 2,000 | 541,389.23 | 29.1971% | 270.69 |
+Prospective investment vintages use interval-end source years; legacy mode uses
+vintage labels. Existing fixed costs use first-model-year costs and ratings and
+receive no investment row. Annual fixed O&M is 1% of capital cost while the
+15-year charger cohort remains alive.
 
-Count shares and power shares each sum to one **within their charger group**
-before display rounding. Although 2 MW ports are only 2% of MHDV ports, they
-supply 29.20% of the rated capacity represented by that mix. Their lower cost
-per unit power therefore has a substantial effect on the aggregate:
+![Charger archetype investment costs](../assets/figures/charger-explicit-cost.svg)
 
-| Production mix | Mean CAD2020 per port | Mean rated kW per port | Investment: million CAD2020/GW | Annual fixed cost: million CAD2020/GW/year |
-| --- | ---: | ---: | ---: | ---: |
-| LDV | 9,620.84 | 10.63 | 905.064865 | 9.050649 |
-| MHDV | 94,432.53 | 137.00 | 689.288556 | 6.892886 |
+*Figure charger-explicit-cost. LDV costs use matched expenditure and rated power;
+changing source composition also changes the aggregate rate.*
 
-MHDV is about **9.82 times more expensive per representative port**, but provides
-**12.89 times the rated power**. It is therefore about **23.84% cheaper per GW**
-under this reviewed equipment mix. This is a consequence of the cost-to-power
-ratio, not a claim that installing an individual truck charger costs less than
-installing an individual car charger. Annual utilization does not enter the
-per-GW investment calculation; it enters only when converting rated capacity to
-annual energy throughput.
+## Utilization describes a separate energy assumption
 
-!!! success "Implementation check: registered inputs reconcile with final rows"
-    The native manual values, CER exchange/deflator conversion, component
-    expenditure/power ratio and equivalent power-share sum reproduce the final
-    `cost_invest` rows for `T_LDV_CHRG_N` and `T_MHDV_CHRG_N` at vintage 2025 in the
-    recorded validation-baseline SQLite. Its fixed costs are exactly 1% of those
-    investment rates and stop at the fifteen-year lifetime boundary. These checks
-    validate implementation against the registered assumptions; they do not
-    independently validate market prices, installation coverage or the chosen mix.
+For rated GW $K$ and annual factor $u$, $E=31.536Ku$ PJ/year. Cost aggregation does
+not use $u$. Combining components into an energy-equivalent archetype requires
 
-Existing chargers use first-model-year cost/power assumptions for their fixed-cost
-proxy and receive no investment row. Later new vintages retain the selected
-source periods; the reviewed terminal assumptions are held through 2050, rather
-than presented as new observations in those later years. The
-[charger-cost comparison diagnostic](../insights/transportation_validation_diagnosis.py)
-retains native units, source-year selectors and conditional legacy comparisons.
+$$u_a=\frac{\sum_{j\in a}N_jp_ju_j}{\sum_{j\in a}N_jp_j}.$$
 
-## Utilization and energy boundaries
+| Explicit component | Annual utilization basis |
+| --- | --- |
+| Public LDV L2/DCFC and workplace L2 | Dunsky Table 31 reported port utilization; DCFC is not rescaled when using the Table 12 cost-matched rating |
+| Home L1/L2 | Scenario `ld_home_utilization: 0.08`, extended as a home-charging proxy |
+| MHDV | Table 19 charging hours/session × vehicles/operating day × configured 300 operating days/year ÷ 8,760 |
 
-!!! note "Accounting boundary: vehicle consumption includes charging losses"
-    Current reviewed utilization is 0.20 for existing/new LDV and MHDV chargers.
-    With electrical capacity $\boldsymbol{K}$ in GW, 31.536 PJ/(GW·year) converts continuous power
-    to annual energy: $E=31.536Ku$. The emitted charger transfer efficiency is 1.0.
-    This internal accounting choice avoids counting charging losses again where
-    vehicle consumption already includes them.
+The home proxy is informed by [Jonas et al., Table 2](https://doi.org/10.3390/en16041592):
+FLO residential L2 telemetry from BC/QC in 2018–2019 covers 2,657 ports and 675,560
+sessions. The product $156.61\times0.73/1440\approx0.079393$ uses mean active
+minutes/session and mean sessions/port/day. Multiplying differently weighted means
+is an approximation, not a directly measured annual rated-power energy factor.
+Extension to L1, other provinces and future vintages remains a modeling proxy.
 
-!!! warning "Coverage limit: motorcycle and intercity-bus charging losses"
-    This boundary has limits: motorcycle consumption lacks charging losses, and the
-    intercity-bus source does not establish its charging-loss boundary. A shared unity
-    transfer does not resolve those gaps. PHEV input energy is counted once, not once
-    for each component plus again for a blend.
+MHDV parameter notes retain each component's session duration, daily vehicle count
+and operating-day assumption. The annual target is weighted by rated power, not
+by port counts alone. Point-year registration-stock and 60%/75% battery-recharge
+comparisons remain [notebook research sensitivities](../insights/charger_infrastructure_diagnosis.py); they do not replace the
+production duration reference.
 
-!!! warning "Comparison basis: annual throughput and rated power"
-    Legacy charger costs may be expressed per PJ/year rather than per GW. Conversion
-    requires an explicit utilization and throughput basis. The comparison notebook
-    keeps that conditional normalization separate from source-price differences and
-    does not interpret missing variable-cost rows as zero costs.
+![MHDV utilization reference and sensitivities](../assets/figures/charger-explicit-utilization.svg)
 
-![Charger investment costs on a common basis](../assets/figures/comparison-charging.svg)
+*Figure charger-explicit-utilization. The MHDV duration reference is production;
+battery-energy alternatives expose sensitivity to a different throughput basis.*
 
-*Figure comparison-charging. Backend and supplied legacy charger-cost CSVs are
-shown in million CAD2020/GW after converting the legacy annual-throughput rate at
-the backend utilization of 0.20. Port mixtures, source jurisdictions and equipment
-boundaries still differ. The legacy variant's embedded utilization/loss assumptions
-are undocumented, so this is a conditional normalization, not proof of cost parity.*
+## Power shares constrain the charger mix
 
-!!! info "Diagnostic finding: conditional charger-cost differences"
-    For matched source years 2030–2050, the recorded backend LDV rates are 113.0–172.9%
-    above the normalized legacy rates; MHDV rates are 33.5–37.6% below them. The legacy
-    2025 rate has no matching backend cost-year bridge and is left unmatched. These
-    gaps combine source and equipment-mix differences; the comparison does not isolate
-    a causal contribution from each assumption.
+Charger costs differ, so unconstrained Temoa investment could concentrate on the
+cheapest way to supply charging energy and omit other charger types. In `explicit`
+mode, `limit_capacity_share` retains the Dunsky composition by constraining
+**period-wide shares of available GW**, including active existing equipment.
 
-## Hydrogen refueling uses a different capacity definition
+The figures compare port shares with rated-power shares,
+$N_{jy}p_{jy}/\sum_kN_{ky}p_{ky}$, within each vehicle class. These are source-year
+illustrations. The model evaluates mix targets in the closing year for prospective
+periods and the opening year for legacy periods. On a five-year grid, the model
+period labeled 2025 thus uses 2030 in prospective mode or 2025 in legacy mode.
 
-Hydrogen stations use effective annual throughput in PJ/year, with implicit C2A
-of one and no additional utilization factor. Their independent investment and
-fixed costs originate in reviewed [*OEO* inputs](https://github.com/TemoaProject/oeo/tree/master/database_documentation),
-converted from 2018 USD. Distribution/refueling efficiency is 0.995; station life
-is ten years. No historical station stock is invented. Charger life is fifteen
-years; both fixed-cost schedules stop at their lifetime boundary.
+![LDV charger composition by port count and rated GW](../assets/figures/charger-capacity-composition-ldv.svg)
 
-!!! warning "Modeling limit: capacity is not a spatial network assessment"
-    These parameters describe supporting capacity and cost. They do not by themselves
-    prove spatial accessibility, queueing performance or a feasible optimized network.
+*Figure charger-capacity-composition-ldv. In 2025, public fast chargers represent
+0.8% of LDV ports but 13.7% of rated capacity.*
+
+![MHDV charger composition by port count and rated GW](../assets/figures/charger-capacity-composition-mhdv.svg)
+
+*Figure charger-capacity-composition-mhdv. In 2025, fast and ultrafast chargers
+represent 20.2% of MHDV ports but 61.7% of rated capacity.*
+
+For LDVs, the targets fix L2 versus fast shares within public charging, then public
+versus private shares within all LDV chargers. For MHDVs, they fix overnight versus
+fast/ultrafast shares, using the same national mix in each province. These are
+equipment-capacity shares, not charging-energy shares.
+
+Applying source-year power shares to several active vintages approximates the stock
+mix; it does not enforce exact port counts across vintages. With fixed existing
+stock and annual utilization equalities, the targets can require additional
+capacity, charging throughput and EV uptake.
+The [opt-in annual screen](../publication.md#charging-profiles-and-charger-infrastructure)
+checks that coupling in a completed explicit database; full solver feasibility
+remains a separate acceptance check.
+
+## Representation and accounting limits remain explicit
+
+Explicit chargers require `charging_profiles.travel_behavior_source: none`.
+Registered hourly profiles describe pooled LDV charging. See
+[charging profiles](charging.md) for the native scaling rule and the
+representative-time check.
+
+Charger transfer is 1.0 under the wall-energy interpretation of ATB and NRCan
+ratings. This avoids applying a second charging loss. The NRCan PHEV basis
+requires confirmation. Motorcycle charging losses remain unrepresented and the
+intercity bus proxy's loss basis is unknown. Rated capacity and annual energy
+give no local coverage or queueing estimates.
+
+## Hydrogen refueling uses annual throughput
+
+Hydrogen stations retain effective capacity in PJ/year, implicit C2A of one and no
+additional utilization factor. Reviewed [OEO inputs](https://github.com/TemoaProject/oeo/tree/master/database_documentation)
+supply LDV/MHDV investment rates 41.1/36.88 and annual fixed rates 2.05/1.84 million
+2018 USD per PJ/year, converted to the scenario's CAD year. Transfer efficiency is
+0.995, [HDSAM-based](https://hdsam.es.anl.gov/index.php) life is ten years, and no
+historical station stock is invented. Fixed costs end at the lifetime boundary.

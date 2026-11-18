@@ -20,16 +20,13 @@ $$Q_{rt}=\frac{E_{rt}}{i_t}.$$
 
 | Mode | Evidence-to-parameter approach | Material limitation |
 | --- | --- | --- |
-| Passenger/freight air | [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) energy/intensity determines service; reviewed [*SFU CIMS*](https://github.com/EMRG-SFU/cims) aircraft costs and [*FAA Economic Values*](https://www.faa.gov/regulations_policies/policy_guidance/benefit_cost) capacity/load/speed/utilization normalize investment and maintenance to service; [*EPRI REGEN*](https://us-regen-docs.epri.com/v2025/assumptions/transportation.html) supplies improvement relationships. | Incumbent capacity uses turbo fuel, while demand also includes aviation gasoline. Freight capacity reported as US short tons needs conversion. |
-| Passenger/freight rail | [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) national intensities and provincial energy establish incumbents; [*SFU CIMS*](https://github.com/EMRG-SFU/cims) costs/lifetimes and reviewed alternative-powertrain ratios supply other parameters. | Electric passenger-rail energy is absent from the selected [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) evidence; diesel alone represents the incumbent service. |
+| Passenger/freight air | [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) energy/intensity determines service; reviewed [*SFU CIMS*](https://github.com/EMRG-SFU/cims-models/tree/main/csv/model) aircraft costs and [*FAA Economic Values*](https://www.faa.gov/regulations_policies/policy_guidance/benefit_cost) capacity/load/speed/utilization normalize investment and maintenance to service; [*EPRI REGEN*](https://us-regen-docs.epri.com/v2025/assumptions/transportation.html) supplies improvement relationships. | Incumbent capacity uses turbo fuel, while demand also includes aviation gasoline. Freight capacity reported as US short tons needs conversion. |
+| Passenger/freight rail | [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) national intensities and provincial energy establish incumbents; [*SFU CIMS*](https://github.com/EMRG-SFU/cims-models/tree/main/csv/model) costs/lifetimes and reviewed alternative-powertrain ratios supply other parameters. | Electric passenger-rail energy is absent from the selected [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) evidence; diesel alone represents the incumbent service. |
 | Marine freight | Shared [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) service intensity and energy establish capacity; [*ANL GREET*](https://greet.anl.gov/greet/versions.html) supplies the HFO/MDO consumption relationship; reviewed cost/lifetime evidence supplies capital and operating costs. | HFO/MDO energy shares split the incumbent capacity; the relative-consumption factor describes a predefined modeled trip. |
 | Off-road equipment | [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) off-road energy service is represented separately, with reviewed efficiency/cost/lifetime selectors where supplied. | Do not relabel its energy demand as passenger-km, tonne-km or a measured equipment count. |
 
-Primary evidence comes from [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm),
-[*FAA Economic Values*](https://www.faa.gov/regulations_policies/policy_guidance/benefit_cost),
-[*SFU CIMS*](https://github.com/EMRG-SFU/cims), [*EPRI REGEN*](https://us-regen-docs.epri.com/v2025/assumptions/transportation.html)
-and [*ANL GREET*](https://greet.anl.gov/greet/versions.html). Registered excerpts and
-source-specific qualifications are identified in the [source inventory](../source_inventory.md).
+See the [source inventory](../source_inventory.md) for registered excerpts
+and their scope.
 
 ## Turnover and alternatives
 
@@ -37,7 +34,8 @@ source-specific qualifications are identified in the [source inventory](../sourc
     Where only annual service-capacity totals exist, a reviewed fixed lifetime $\boldsymbol{L}$
     supports a linear remaining-capacity proxy $\max(0,1-a/L)$ at age $\boldsymbol{a}$. Additions
     are the current total minus surviving earlier capacity, bounded below by zero.
-    This reconstructs a service-capacity history; it is not measured vehicle survival.
+    If survivors exceed the annual estimate, retire the excess proportionally across
+    surviving cohorts. The result is a reconstructed service-capacity history.
 
 !!! note "Projection assumptions: relative multipliers and source-year holds"
     Historical energy per service is averaged before inversion. Future technology
@@ -68,14 +66,5 @@ technology, vintage, input/output commodity and units.*
     would raise inferred activity to 11.11 billion tonne-km with energy unchanged.
     Energy and inferred activity therefore cannot validate each other independently.
 
-| Assumed intensity (PJ/billion tonne-km) | Same observed energy (PJ) | Inferred activity (billion tonne-km) |
-| ---: | ---: | ---: |
-| 1.8 | 20 | 11.11 |
-| 2.0 | 20 | 10.00 |
-| 2.2 | 20 | 9.09 |
-
-!!! note "Interpret the worked example as arithmetic"
-    These illustrative values explain the arithmetic; they are not recorded Canadian
-    results. Mode-specific parameter audits retain actual sources, units and selected
-    years. [Detailed assumptions](../assumptions.md#existing_capacity) identify coverage
-    gaps that the compact example cannot resolve.
+Mode-specific audits retain the actual sources, units and selected years.
+See [existing capacity assumptions](../assumptions.md#existing_capacity).

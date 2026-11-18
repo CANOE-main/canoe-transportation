@@ -22,7 +22,7 @@ from parameterization.ceud_inputs import extend_ceud_to_base_year
 from parameterization.road_aggregation import nrcan_to_nlr_map
 from parameterization.road_efficiencies import ProjectionAnchorUnavailable, RoadEfficiencyEvidence, ceud_series, observed_value, positive, rating_class_statistics, select_atb_consumption
 from parameterization.vehicle_reference import load_vehicle_reference, reference_mto_mapping
-from utils import (ConfigBundle, file_sha256, load_conversion_factors, load_harmonization_rules, load_yaml,
+from utils import (ConfigBundle, file_sha256, load_conversion_factors, load_harmonization_rules, load_rules_for_owner, load_yaml,
                    resolve_artifact_path, resolve_input_path, resolve_repo_path, write_dataframe_atomic, write_text_atomic)
 from validation.config_models import PathsConfig
 from validation.ldv_composition_benchmark import build_composition_benchmark, collect_composition_benchmark_inputs
@@ -45,8 +45,7 @@ class LDVEfficiencyDiagnostic:
 def composition_view_settings(bundle: ConfigBundle) -> dict:
     """Read live display choices only; captured evidence and model rules stay immutable."""
     paths = PathsConfig.model_validate(load_yaml(bundle.repo_root / "config/paths.yaml"))
-    rules_path = resolve_repo_path(bundle.repo_root, paths.config.parameters) / "rules.yaml"
-    rules = load_yaml(rules_path)["parameterization"]["ldv_efficiency_diagnostic"]
+    rules = load_rules_for_owner(resolve_repo_path(bundle.repo_root, paths.config.parameters), "ldv_efficiency_diagnostic")
     return {"years": rules["composition_years"], "top_size_classes": rules["composition_top_size_classes"],
         "distribution_years": list(range(rules["minimum_model_year"], rules["distribution_year_end"] + 1, rules["distribution_year_step"])),
         "class_order": rules["size_class_order"],
@@ -171,7 +170,7 @@ def collect_efficiency_inputs(bundle: ConfigBundle) -> dict[str, Path]:
     aggregation = load_harmonization_rules(bundle, "road_aggregation")
     paths["rating_class_weights"] = resolve_artifact_path(bundle, "road_aggregation", aggregation["nrcan_weights_file"])
     stock = load_harmonization_rules(bundle, "road_stocks_and_demands")["existing_capacity"]
-    paths["annual_cohort_stock"] = resolve_artifact_path(bundle, "existing_capacity_interim", stock["fuel_shares_file"])
+    paths["annual_cohort_stock"] = resolve_artifact_path(bundle, "existing_capacity_interim", stock["annual_stock_file"])
     paths.update({
         "final_efficiency": resolve_artifact_path(bundle, "efficiencies_processed", efficiency["files"]["efficiency"]),
         "final_splits": resolve_artifact_path(bundle, "efficiencies_processed", efficiency["files"]["splits"]),
@@ -693,6 +692,8 @@ def _range_shares(inputs: dict[str, pd.DataFrame], mode: str, family: str) -> di
 
 def _evidence(bundle: ConfigBundle, inputs: dict[str, pd.DataFrame], mode: str, atb_class: str | None) -> RoadEfficiencyEvidence:
     rules = deepcopy(load_harmonization_rules(bundle, "efficiencies"))
+    periods = bundle.scenario.periods
+    observation_vintage = periods.existing_vintage(min(periods.base_year, rules["projection_reference_year"]))
     region = load_harmonization_rules(bundle, "ldv_efficiency_diagnostic")["region"]
     atb = inputs["atb"].loc[inputs["atb"].region.eq(region) & inputs["atb"]["mode"].eq(mode)].copy()
     ratings = regional_ratings(bundle, inputs["rating_weights"])
@@ -705,7 +706,7 @@ def _evidence(bundle: ConfigBundle, inputs: dict[str, pd.DataFrame], mode: str, 
     return RoadEfficiencyEvidence(ceud=inputs["ceud"], loads=inputs["loads"], rating_audit=ratings,
         conversions=load_conversion_factors(bundle),
         atb_audit=atb, gcam=pd.DataFrame(), regen=pd.DataFrame(), base_year=bundle.scenario.periods.base_year, rules=rules,
-        projection_years=tuple(bundle.scenario.periods.historical_years(bundle.scenario.periods.latest_observed_vintage)),
+        projection_years=tuple(periods.historical_years(observation_vintage)),
         projection_reference_year=rules["projection_reference_year"],
         cohort_stock=inputs["annual_cohort_stock"].merge(
             inputs["relationships"].loc[inputs["relationships"].tech.isin(inputs["annual_cohort_stock"].tech),
@@ -872,6 +873,8 @@ def _bridge_rows(bundle: ConfigBundle, inputs: dict[str, pd.DataFrame], *, recor
     base, region = bundle.scenario.periods.base_year, spec["region"]
     output, anchors = [], []
     periods = bundle.scenario.periods
+    legacy_window = (periods.period_mode == "legacy"
+                     and rules.get("legacy_new_road_aggregation") == "equal_supported_years")
     recorded_selection = recorded_statistic is None
     allow_fallback = rules["missing_annual_rating"] == "observed_years_with_explicit_period_fallback"
     first_source_year = int(inputs["ceud"].year.min())
@@ -940,7 +943,7 @@ def _bridge_rows(bundle: ConfigBundle, inputs: dict[str, pd.DataFrame], *, recor
                 first_year = max(first_year, int(history.year.min()))
             annual, period_values = {}, {}
             service_units = rules["service_units"][rules["road_classes"][mode]["service"]]
-            future_vintages = {periods.projection_year(v, legacy_at_end=True): v for v in periods.model}
+            future_vintages = {periods.period_end(v): v for v in periods.model}
             reference_year = evidence.projection_reference_year
 
             for year in range(first_year, base + 1):
@@ -1067,11 +1070,33 @@ def _bridge_rows(bundle: ConfigBundle, inputs: dict[str, pd.DataFrame], *, recor
                     # The recorded production aggregate uses final prepared CSV
                     # markers at model-supported source years. Keep the explicit
                     # first ATB reference point even when it is not a model row.
-                    if year > base and (atb_class is not None or not recorded_selection):
+                    if not legacy_window and year > base and (atb_class is not None or not recorded_selection):
                         marker(context, powertrain, result["native_intensity"], result["load_factor"], year, service_units,
                             vintage=future_vintages.get(year), existing=False, sample_kind="period", source_year_start=year, source_year_end=year,
                             source_years=str(year), marker_source="ATB class recalculation" if atb_class is not None else "Recalculated period" if not recorded_selection else "ATB source projection",
                             treatment=result["treatment"], time_basis="ATB source projection year")
+                if legacy_window and (atb_class is not None or not recorded_selection):
+                    for vintage in periods.model:
+                        if vintage > end:
+                            continue
+                        window = list(periods.evaluation_window(vintage))
+                        observations = evidence.period_observations(
+                            region, mode, powertrain, window, new_cohort=True,
+                        )
+                        if not observations:
+                            continue
+                        years = sorted(observations)
+                        result = aggregate_consumption_period(
+                            [{**observations[year], "source_year": year} for year in years], [1 / len(years)] * len(years),
+                        )
+                        marker(context, powertrain, result["native_intensity"], result["load_factor"], vintage, service_units,
+                            vintage=vintage, existing=False, sample_kind="period",
+                            source_year_start=years[0], source_year_end=years[-1], source_years=" | ".join(map(str, years)),
+                            evaluation_window_start=window[0], evaluation_window_end=window[-1],
+                            candidate_year_count=len(window), included_year_count=len(years),
+                            marker_source="ATB class recalculation" if atb_class is not None else "Recalculated period",
+                            **_observation_summary(list(observations.values())),
+                            time_basis="Trailing annual cohort evidence with equal weights over supported years")
 
             if not ldv:
                 continue
@@ -1213,7 +1238,9 @@ def _published_periods(bundle: ConfigBundle, inputs: dict[str, pd.DataFrame]) ->
     periods = inputs["periods"]
     if set(keys + fields) - set(periods):
         raise ValueError("Rebuild notebook evidence with period consumption before service conversion")
-    fields += [field for field in ("range_source_years", "range_stock_coverage") if field in periods]
+    fields += [field for field in ("range_source_years", "range_stock_coverage",
+                                  "evaluation_window_start", "evaluation_window_end",
+                                  "temporal_weight_basis") if field in periods]
     selected = selected.merge(periods[keys + fields], on=keys, how="left", validate="one_to_one")
     if "annual" in inputs:
         annual = inputs["annual"]
@@ -1226,8 +1253,17 @@ def _published_periods(bundle: ConfigBundle, inputs: dict[str, pd.DataFrame]) ->
             or not np.allclose(selected.load_factor / selected.native_intensity, selected.efficiency, rtol=1e-10, atol=1e-12)):
         raise ValueError("Prepared service efficiency disagrees with period consumption/load evidence")
     selected["year"] = selected.source_year_end
+    if "evaluation_window_end" in selected:
+        has_window = ~selected.existing & selected.evaluation_window_end.notna()
+        selected.loc[has_window, "year"] = selected.loc[has_window, "evaluation_window_end"]
+    future_basis = ("Future interval-end evaluation year; vintage retained separately"
+                    if bundle.scenario.periods.period_mode == "prospective"
+                    else "Recorded future evaluation year; vintage retained separately")
     selected["time_basis"] = np.where(selected.existing, "Cohort-stock-weighted observed consumption; service conversion after all aggregation",
-                                     "Future interval-end source year; vintage retained separately")
+                                     future_basis)
+    if bundle.scenario.periods.period_mode == "legacy" and "evaluation_window_start" in selected:
+        trailing = ~selected.existing & selected.evaluation_window_start.lt(selected.evaluation_window_end)
+        selected.loc[trailing, "time_basis"] = "Trailing annual cohort evidence ending at the model vintage"
     selected["vehicle_group"] = selected["mode"].map({mode: group for group, mode in VIEW_MODES.items()})
     representatives = selected.existing & selected["mode"].isin(["cars", "passenger_light_trucks"]) & selected.powertrain.isin(["bev", "phev"])
     selected.loc[representatives, "powertrain"] += "_existing_representative"

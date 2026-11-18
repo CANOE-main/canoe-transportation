@@ -9,10 +9,11 @@ describes a technology. They cannot be combined by matching a class name alone.
 
 [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) reports
 provide make/model/model-year counts and registration status. The backend uses
-`FIT_ACTIVE` as an in-use stock proxy. It does not interpret all registered statuses
-as vehicles providing service. Canonical identities and their valid model-year
-intervals connect [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) codes to [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) size classes and [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) archetypes. Unresolved
-identities remain visible and do not acquire invented class weights.
+`FIT_ACTIVE` as an in-use stock proxy. The
+[reviewed vehicle and source-link tables](../assumptions.md#reviewed-vehicle-mappings)
+connect MTO codes and valid model-year intervals to NRCan size classes and NLR ATB
+archetypes. Unresolved observations remain in the coverage audit without
+allocating them to a class.
 
 [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) size classes distinguish vehicles such as compact cars, small SUVs and
 standard pickups. [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) uses a smaller
@@ -36,7 +37,7 @@ $$w_s=\frac{n_s}{\sum_{j\in\mathcal M}n_j},\qquad \sum_{s\in\mathcal M}w_s=1.$$
     powertrains and vintages. Passenger and freight light trucks share that mix.
     These are consequential simplifications, not observed provincial or future mixes.
     ICBC vehicle-population evidence for British Columbia and SAAQ evidence for Quebec
-    are planned additions; they do not yet supply production composition weights.
+    are outside the current production composition basis.
     The canonical [composition assumptions](../assumptions.md#shared-road-fleet-composition)
     record their scope.
 
@@ -69,9 +70,8 @@ illustration does not assign a powertrain to a named make/model.
 
 *Figure fleet-100-1. One hundred symbols per declared population, allocated by
 largest remainders from exact counts. The adjacent [exact-share table](../assets/figures/ontario_100_shares.csv)
-retains small represented categories that receive no symbol. Here **n = # of symbols**.
-Mapping coverage remains in the vehicle-population notebook;
-unknown class membership is not redistributed into known cars or light trucks.*
+retains small represented categories that receive no symbol. The vehicle-population
+notebook records unresolved class membership separately.*
 
 !!! note "Observation years and source populations"
     The [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) snapshot is **2025**.
@@ -83,7 +83,6 @@ unknown class membership is not redistributed into known cars or light trucks.*
     proxies; total registrations combine surviving vintages. A production cohort uses
     the latest available registration year at or before its annual vintage, with an
     explicitly recorded earliest-year backfill where history is unavailable.
-    The panels therefore describe different source populations:
 
 | Marginal population | Denominator | Leading categories |
 | --- | ---: | --- |
@@ -97,12 +96,16 @@ normalizing supported fuel shares. Four other-fuel car registrations and zero
 other-fuel light-truck registrations are omitted from the illustration; these are not
 reassigned to a represented fuel. Table
 [*23-10-0308-01*](https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2310030801)
-complements new registrations for medium/heavy trucks, which the LDV new-registration
-tables do not cover. Its all-vintage fuel composition is an explicit truck proxy.
+supplies registered-fleet distributions for the 4,536–11,793 kg group. Its supported
+fuel mix proxies the full CEUD medium-truck class and annual cohorts; it does not
+replace CEUD stock totals. Class 7 is excluded from this share basis. Gasoline,
+diesel and BEV use the same cohort processing; unsupported fuels are excluded and
+audited. Heavy-truck incumbent stock remains diesel only.
 
 !!! warning "Mapped composition is conditional"
-    Of 10,040,176 vehicles counted as [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) FIT_ACTIVE in the coverage denominator, 4,784,867
-    (47.66%) have unresolved mappings. Mapped non-LDVs and out-of-scope records
+    In the 2025 observation used here, 4,784,867 of the 10,040,176 FIT_ACTIVE
+    vehicles (47.66% of the mapping coverage denominator) have unresolved mappings.
+    Mapped non-LDVs and out-of-scope records
     remain in the mapping audit. Unknown vehicle class prevents assigning those records
     to either car or light-truck denominators. In particular, the 73.95% small-SUV
     share must not be read as a share of all Ontario light trucks. Normalization
@@ -122,11 +125,10 @@ tables do not cover. Its all-vintage fuel composition is an explicit truck proxy
     do not identify vocational shares; available [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) freight vocations receive equal
     weights. School, transit and refuse vehicles are not quietly added to freight.
 
-The 2025 MTO Report 4 contains **291,230** vehicles in the selected medium-truck
-GVWR classes. Normalize those selected counts, rather than Report 4's total across
-all weight classes. The resulting weights are shared by consumption, purchase cost
-and mileage adapters. Outside Ontario, the selected 2020 Wards shares use a different
-population and have no Class 2b coverage:
+In 2025, MTO Report 4 counts **291,230** vehicles in the selected medium-truck
+GVWR classes. These counts supply the Ontario denominator for consumption,
+purchase cost and mileage weights. The selected 2020 Wards shares elsewhere
+use a different population with no Class 2b coverage.
 
 | GVWR class / ATB class | Ontario observed count (2025) | Ontario aggregation weight | Wards aggregation weight elsewhere (2020) |
 | --- | ---: | ---: | ---: |
@@ -150,9 +152,7 @@ counts remain in the vehicle-population notebook's Report 4 evidence.
     is not a direct observation of cab type or vocational sales.
 
 For Ontario, the registered 2011–2017 shipment evidence yields the following
-tonne-km-weighted shares. A provincial shipment is included if its origin or destination
-is Ontario and counted once when both are Ontario. These are shipment weights, not
-vehicle-count weights:
+tonne-km-weighted shares.
 
 | Haul proxy | Observed tonne-km | Haul aggregation weight | Resulting ATB vocation weights |
 | --- | ---: | ---: | --- |
@@ -175,7 +175,13 @@ configured haul boundary; these Ontario values are an illustration, not national
 
 School, transit and intercity buses retain separate service classes. [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) stocks
 and fuel/activity evidence combine with [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) bus ages; available fuel-specific
-lifetimes come from [*StatCan*](https://www.statcan.gc.ca/en/developers/wds), with documented proxies for missing cells. School and
+lifetimes come from [*StatCan*](https://www.statcan.gc.ca/en/developers/wds), with
+documented proxies for missing cells. To infer fuel shares, divide each fuel's
+reported energy by its estimated energy per vehicle-km and normalize the resulting
+distances within region, bus class and year. Apply those shares to class headcount.
+Urban transit's reported electricity maps to the BEV proxy in this calculation.
+This infers stock allocation from energy and consumption, with no directly
+observed powertrain counts. School and
 transit technology projections use [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data); intercity buses use [*EPRI REGEN*](https://us-regen-docs.epri.com/v2025/assumptions/transportation.html) and explicit
 [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) relative-performance proxies where needed.
 

@@ -8,13 +8,16 @@ import json
 import logging
 import os
 from dataclasses import dataclass
-from math import isfinite
+from math import ceil, isfinite
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
-from canoe_schema.v4_0 import CapacityToActivity, DataSet, ExistingCapacity, LimitAnnualCapacityFactor
+from canoe_schema.v4_0 import (
+    CapacityToActivity, DataSet, ExistingCapacity, LimitAnnualCapacityFactor,
+)
 from parameterization.ceud_inputs import read_ceud_input
+from parameterization.build_lifetime_parameters import LifetimePreparation, lifetime_endpoints
 
 from parameterization.road_fleet_weights import (
     FleetAggregationEvidence, aggregation_component, load_fleet_aggregation_evidence,
@@ -55,6 +58,7 @@ class RoadUtilizationPreparation:
     capacity_to_activity_rows: list[CapacityToActivity]
     flat_factor_rows: list[LimitAnnualCapacityFactor]
     age_factor_artifact: pd.DataFrame | None
+    period_factor_artifact: pd.DataFrame | None
     provenance_contexts: list[ResolvedProvenance]
     audit: dict[str, Any]
 
@@ -84,11 +88,11 @@ def prepare_age_profiles(
     *,
     output_regions: dict[str, str],
     fleet: FleetAggregationEvidence | None = None,
+    max_age: int | None = None,
 ) -> pd.DataFrame:
     """Build dimensionless age profiles with reviewed class and haul ownership."""
-    ceiling = _survival_age_limit(bundle)
-    if ceiling < bundle.scenario.periods.step:
-        raise ValueError("Age ceiling must cover one complete model period")
+    ceiling = _survival_age_limit(bundle) if max_age is None else max_age
+    endpoint_policy = load_harmonization_rules(bundle, "road_utilization")["age_endpoint_policy"]
     atb_rules = load_harmonization_rules(bundle, "nlr_atb_autonomie")
     mileage_file = resolve_input_path(
         bundle, "interim", atb_rules["interim_subdir"],
@@ -97,7 +101,6 @@ def prepare_age_profiles(
     mileage = pd.read_csv(mileage_file)
     if set(mileage.source_id) != {"nlr_atb_transportation"}:
         raise ValueError("ATB mileage artifact source identity differs from registry")
-    mileage = mileage.loc[mileage.year_index.le(ceiling)].copy()
     conversion = float(load_conversion_factors(bundle)["length"]["mile_to_km"])
     fleet = fleet if fleet is not None else load_fleet_aggregation_evidence(bundle)
     ldv_weights = fleet.ldv[["nrcan_ceud_class", "nlr_atb_class", "aggregation_weight"]]
@@ -114,8 +117,12 @@ def prepare_age_profiles(
                 for label, weight in values.items()
             ]),
         ], ignore_index=True)
-        profile = aggregate_normalized_mileage_profiles(mileage, weights, mile_to_km=conversion)
+        profile = aggregate_normalized_mileage_profiles(
+            mileage, weights, mile_to_km=conversion,
+            max_age=ceiling, endpoint_policy=endpoint_policy,
+        )
         profile.insert(0, "region", region)
+        profile["endpoint_policy"] = endpoint_policy
         profile["weight_source"] = profile.nrcan_ceud_class.map({
             "Car": aggregation_component(bundle, "ldv", ceud_region)[0],
             "Light Truck": aggregation_component(bundle, "ldv", ceud_region)[0],
@@ -128,7 +135,7 @@ def prepare_age_profiles(
         raise ValueError("Duplicate region/class/age utilization profile")
     expected_ages = set(range(ceiling + 1))
     if any(set(group.age) != expected_ages for _, group in result.groupby(["region", "nrcan_ceud_class"])):
-        raise ValueError(f"ATB mileage does not cover survival ages 0 through {ceiling}; a reviewed extension is required")
+        raise ValueError(f"ATB mileage does not cover required ages 0 through {ceiling}")
     return result.sort_values(["region", "nrcan_ceud_class", "age"]).reset_index(drop=True)
 
 
@@ -140,6 +147,7 @@ def validate_age_artifact(
     periods: list[int],
     max_age: int,
     age_classes: dict[str, str],
+    expected_keys: set[tuple[str, str, int, int, str]],
 ) -> dict[str, Any]:
     """Validate the two-dimensional artifact that v4 cannot insert."""
     if age_rows.empty or set(age_rows.region) != regions:
@@ -147,14 +155,20 @@ def validate_age_artifact(
     keys = ["region", "tech_or_group", "vintage", "period", "output_comm"]
     if age_rows.duplicated(keys).any() or age_rows[keys].isna().any().any():
         raise ValueError("Duplicate or null vintage-period road factor key")
+    actual_keys = set(age_rows[keys].itertuples(index=False, name=None))
+    if actual_keys != expected_keys:
+        raise ValueError("Vintage-period road factor operating lifetime coverage is incomplete or unexpected")
     if (not set(age_rows.period).issubset(periods)
             or not set(age_rows.road_class).issubset(age_classes)):
         raise ValueError("Vintage-period road factor uses an unexpected period or class")
     if ((age_rows.period < age_rows.vintage).any()
-            or (age_rows.period + age_rows.period_step - age_rows.vintage > max_age).any()):
+            or (age_rows.age_last_year > max_age).any()
+            or (age_rows.age_first_year > age_rows.age_last_year).any()):
         raise ValueError("Vintage-period road factor exceeds configured age ceiling")
     if age_rows.factor.map(lambda value: not isfinite(value) or not 0 <= value <= 1).any():
         raise ValueError("Vintage-period road factor is outside the unit interval")
+    if not age_rows.operator.eq("e").all() or not age_rows.unit.eq("dimensionless").all():
+        raise ValueError("Vintage-period road factor operator or unit differs from the production contract")
     expected_profile = {
         (region, road_class, age)
         for region in regions
@@ -177,6 +191,7 @@ def validate_age_artifact(
         "age_factor_rows": len(age_rows),
         "age_profile_rows": len(profiles),
         "age_ceiling": max_age,
+        "operating_period_vintage_pairs": len(expected_keys),
         "sqlite_insertion": "blocked_upstream_vintage_plus_period_schema_gap",
     }
 
@@ -191,15 +206,46 @@ def build_age_factor_artifact(
     rules: dict[str, Any],
     output_regions: dict[str, str],
     input_digest: str,
+    existing_capacity_rows: list[ExistingCapacity],
+    lifetimes: LifetimePreparation,
+    baseline_contexts: list[ResolvedProvenance],
 ) -> tuple[pd.DataFrame, pd.DataFrame, list[ResolvedProvenance], dict[str, Any]]:
     """Retain technology vintage and model period separately for age utilization."""
     scenario = bundle.scenario
     fleet = load_fleet_aggregation_evidence(bundle)
-    profiles = prepare_age_profiles(bundle, output_regions=output_regions, fleet=fleet)
-    max_age = int(profiles.age.max())
     age_classes = rules["age_profile_classes"]
     if set(age_classes) | set(rules["flat_only_classes"]) != set(activity):
         raise ValueError("Age and flat-only road classes do not partition road activity")
+    endpoints = lifetime_endpoints(lifetimes.fixed_rows, lifetimes.curve_rows)
+    existing_keys = {(row.region, row.tech, row.vintage) for row in existing_capacity_rows if row.capacity > 0}
+    age_owners = technology.loc[technology.category.isin(age_classes)]
+    existing_suffix = load_harmonization_rules(bundle, "efficiencies")["existing_suffix"]
+    vintages_by_owner = {
+        (region, owner.tech): sorted(
+            vintage for r, tech, vintage in existing_keys if r == region and tech == owner.tech
+        ) if owner.tech.endswith(existing_suffix) else list(scenario.periods.model)
+        for region in output_regions.values() for owner in age_owners.itertuples(index=False)
+    }
+    expected_keys = {
+        (region, owner.tech, vintage, period, activity[owner.category]["commodity"])
+        for region in output_regions.values() for owner in age_owners.itertuples(index=False)
+        for vintage in vintages_by_owner[region, owner.tech]
+        for period in endpoints.operating_periods(region, owner.tech, vintage, scenario.periods.model)
+    }
+    def age_end(region: str, tech: str, vintage: int, period: int) -> int:
+        end = period + scenario.periods.step
+        if not scenario.lifetimes.survival_curves:
+            end = min(end, ceil(endpoints.end_year(region, tech, vintage)))
+        return end - vintage
+
+    max_age = max(age_end(region, tech, vintage, period)
+                  for region, tech, vintage, period, _ in expected_keys)
+    # Curves may leave an old cohort operating until the final model interval.
+    # Cover the entire horizon; row eligibility still respects its own retirement.
+    if scenario.lifetimes.survival_curves:
+        max_age = max(max_age, max(scenario.periods.model) + scenario.periods.step
+                      - min([*scenario.periods.existing, *scenario.periods.model]))
+    profiles = prepare_age_profiles(bundle, output_regions=output_regions, fleet=fleet, max_age=max_age)
     age_inputs = [
         resolve_input_path(bundle, "interim", load_harmonization_rules(bundle, "nlr_atb_autonomie")["interim_subdir"],
                            load_harmonization_rules(bundle, "nlr_atb_autonomie")["components"]["vmt"]["output_file"]),
@@ -212,12 +258,25 @@ def build_age_factor_artifact(
         "max_age": max_age,
         "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(),
         "fleet_rules": fleet.rules,
+        "endpoint_policy": rules["age_endpoint_policy"],
+        "lifetimes": [row.model_dump(mode="json") for row in [*lifetimes.fixed_rows, *lifetimes.curve_rows]],
+        "operating_keys": sorted(expected_keys),
     }, sort_keys=True).encode()).hexdigest()
     source_ids = source_id_mapping(bundle.sources)
     contexts: list[ResolvedProvenance] = []
     records: list[dict[str, Any]] = []
     for ceud_region, region in sorted(output_regions.items()):
         for road_class, profile_class in age_classes.items():
+            class_owners = technology.loc[technology.category.eq(road_class)]
+            lifetime_ids = {row.data_id for row in [*lifetimes.fixed_rows, *lifetimes.curve_rows]
+                            if row.region == region and row.tech in set(class_owners.tech)}
+            lifetime_contexts = [item for item in lifetimes.provenance_contexts if item.data_id in lifetime_ids]
+            if {item.data_id for item in lifetime_contexts} != lifetime_ids:
+                raise ValueError(f"Incomplete VKT lifetime lineage: {(region, road_class)}")
+            calibrated_contexts = [item for item in baseline_contexts
+                                   if item.component_key == f"road_utilization.flat.{road_class}"]
+            if len(calibrated_contexts) != 1:
+                raise ValueError(f"Incomplete VKT calibrated baseline lineage: {road_class}")
             atb_component = "vmt_ldv" if road_class in {
                 "cars", "passenger_light_trucks", "freight_light_trucks"
             } else "vmt_mdhd"
@@ -236,17 +295,18 @@ def build_age_factor_artifact(
                 inputs=[resolve_provenance(
                     bundle.sources, source_key=source, component_key=component,
                     transformation="road_age_utilization_input", transformation_version="1",
-                ) for source, component in components],
+                ) for source, component in components] + calibrated_contexts + lifetime_contexts,
                 dataset_key=f"road_utilization.age.{road_class}.{region}",
-                transformation="CEUD baseline scaled by normalized ATB mileage and averaged over five annual ages",
-                transformation_version="1",
+                transformation="Calibrated CEUD baseline scaled by normalized ATB mileage; hold native class endpoints and average annual ages over each operating interval",
+                transformation_version="2",
                 governing_source_id=source_ids[CEUD],
                 data_quality=bundle.sources.resolved_data_quality(
                     CEUD, activity[road_class]["table_id"],
                 ),
                 value_variant={"age_input_digest": age_digest, "road_class": road_class,
                                "region": region, "max_age": max_age,
-                               "mean_window": "period_plus_1_through_period_plus_step"},
+                               "endpoint_policy": rules["age_endpoint_policy"],
+                               "mean_window": "period_plus_1_through_period_plus_step_clipped_at_fixed_retirement"},
             )
             contexts.append(context)
             source_profile = profiles.loc[
@@ -258,21 +318,14 @@ def build_age_factor_artifact(
             if len(source_baseline) != 1:
                 raise ValueError(f"Missing baseline for {(region, road_class)}")
             value = float(source_baseline.iloc[0].utilization)
-            owners = technology.loc[technology.category.eq(road_class)]
-            for owner in owners.itertuples(index=False):
-                if owner.tech.endswith("_EX"):
-                    vintages = scenario.periods.existing
-                elif owner.tech.endswith("_N"):
-                    vintages = scenario.periods.model
-                else:
-                    raise ValueError(f"Unknown road technology vintage ownership: {owner.tech}")
+            for owner in class_owners.itertuples(index=False):
+                vintages = vintages_by_owner[region, owner.tech]
                 for vintage in vintages:
-                    for period in scenario.periods.model:
-                        if period < vintage or period + scenario.periods.step - vintage > max_age:
-                            continue
+                    for period in endpoints.operating_periods(region, owner.tech, vintage, scenario.periods.model):
+                        last_age = age_end(region, owner.tech, vintage, period)
                         factor = mean_age_utilization_for_period(
                             source_profile, baseline_utilization=value,
-                            vintage=vintage, period=period, step=scenario.periods.step,
+                            vintage=vintage, period=period, step=last_age - (period - vintage),
                         )
                         records.append({
                             "region": region, "road_class": road_class,
@@ -282,11 +335,11 @@ def build_age_factor_artifact(
                             "operator": "e", "factor": factor,
                             "baseline_utilization": value,
                             "age_first_year": period + 1 - vintage,
-                            "age_last_year": period + scenario.periods.step - vintage,
+                            "age_last_year": last_age,
+                            "retirement_year": endpoints.end_year(region, owner.tech, vintage),
                             "unit": "dimensionless",
-                            "data_source": context.governing_source_id,
-                            "data_id": context.data_id,
-                            **context.data_quality.row_fields(),
+                            **context.parameter_fields("limit_annual_capacity_factor", category=road_class, tech=owner.tech),
+                            "notes": context.parameter_notes(),
                         })
     age_rows = pd.DataFrame(records).sort_values(
         ["region", "road_class", "tech_or_group", "vintage", "period"]
@@ -295,10 +348,111 @@ def build_age_factor_artifact(
         age_rows, profiles, regions=set(output_regions.values()),
         periods=list(scenario.periods.model), max_age=max_age,
         age_classes=age_classes,
+        expected_keys=expected_keys,
     )
     audit["age_input_digest"] = age_digest
     audit["aggregation_sources"] = bundle.scenario.aggregation_sources.model_dump()
+    audit["age_endpoint_policy"] = rules["age_endpoint_policy"]
+    audit["lifetime_mode"] = lifetimes.audit["representation"]
+    LOGGER.info("Prepared %s VKT operating pairs through age %s using %s endpoints",
+                len(age_rows), max_age, rules["age_endpoint_policy"])
     return age_rows, profiles, contexts, audit
+
+
+def build_period_factor_artifact(
+    bundle: ConfigBundle, *, age_rows: pd.DataFrame,
+    flat_rows: list[LimitAnnualCapacityFactor], technology: pd.DataFrame,
+    existing_capacity_rows: list[ExistingCapacity], regions: set[str],
+    lifetimes: LifetimePreparation, contexts: list[ResolvedProvenance],
+) -> tuple[pd.DataFrame, list[ResolvedProvenance], dict[str, Any]]:
+    """Prepare the complete dual-index handoff, including constant road classes."""
+    endpoints = lifetime_endpoints(lifetimes.fixed_rows, lifetimes.curve_rows)
+    categories = technology.set_index("tech").category.to_dict()
+    context_by_id = {context.data_id: context for context in contexts}
+    lifetime_context_by_id = {context.data_id: context for context in lifetimes.provenance_contexts}
+    groups: dict[tuple[str, str], list[LimitAnnualCapacityFactor]] = {}
+    for row in flat_rows:
+        groups.setdefault((row.region, categories[row.tech_or_group]), []).append(row)
+    records: list[dict[str, Any]] = []
+    expanded_contexts: list[ResolvedProvenance] = []
+    for (region, road_class), rows in sorted(groups.items()):
+        baseline_ids = {row.data_id for row in rows}
+        if len(baseline_ids) != 1 or not baseline_ids.issubset(context_by_id):
+            raise ValueError(f"Incomplete period-factor baseline lineage: {(region, road_class)}")
+        baseline_context = context_by_id[next(iter(baseline_ids))]
+        owners = {row.tech_or_group for row in rows}
+        processes = {(row.tech_or_group, row.vintage) for row in rows}
+        lifetime_ids = {
+            row.data_id for row in lifetimes.fixed_rows if row.region == region and row.tech in owners
+        } | {
+            row.data_id for row in lifetimes.curve_rows
+            if row.region == region and (row.tech, row.vintage) in processes
+        }
+        if not lifetime_ids.issubset(lifetime_context_by_id):
+            raise ValueError(f"Incomplete period-factor lifetime lineage: {(region, road_class)}")
+        operating_keys = [
+            (row.tech_or_group, row.vintage, period)
+            for row in rows for period in endpoints.operating_periods(
+                region, row.tech_or_group, row.vintage, bundle.scenario.periods.model,
+            )
+        ]
+        context = resolve_composite_provenance(
+            inputs=[baseline_context, *(lifetime_context_by_id[key] for key in sorted(lifetime_ids))],
+            dataset_key=f"road_utilization.period_flat.{road_class}.{region}",
+            transformation="Constant calibrated annual utilization repeated for every operating period before retirement",
+            transformation_version="1", governing_source_id=baseline_context.governing_source_id,
+            data_quality=baseline_context.data_quality,
+            value_variant={"operating_keys": sorted(operating_keys), "retirements": sorted(
+                (row.tech_or_group, row.vintage, endpoints.end_year(region, row.tech_or_group, row.vintage))
+                for row in rows)},
+        )
+        expanded_contexts.append(context)
+        for row in rows:
+            payload = row.model_dump(mode="python")
+            payload.update(context.parameter_fields(
+                "limit_annual_capacity_factor", category=road_class, tech=row.tech_or_group,
+            ))
+            payload["notes"] = context.parameter_notes()
+            records.extend({**payload, "period": period} for period in endpoints.operating_periods(
+                region, row.tech_or_group, row.vintage, bundle.scenario.periods.model,
+            ))
+    columns = [name for name in LimitAnnualCapacityFactor.model_fields if name != "period"] + ["period"]
+    result = pd.concat([age_rows[columns], pd.DataFrame(records, columns=columns)], ignore_index=True)
+    keys = ["region", "tech_or_group", "vintage", "period", "output_comm"]
+    positive_stock = {(row.region, row.tech, row.vintage)
+                      for row in existing_capacity_rows if row.capacity > 0}
+    expected = set()
+    for region in regions:
+        for owner in technology.itertuples(index=False):
+            if owner.tech.endswith("_EX"):
+                vintages = sorted(vintage for r, tech, vintage in positive_stock
+                                  if r == region and tech == owner.tech)
+            elif owner.tech.endswith("_N"):
+                vintages = bundle.scenario.periods.model
+            else:
+                raise ValueError(f"Unknown road technology vintage ownership: {owner.tech}")
+            expected.update((region, owner.tech, vintage, period)
+                            for vintage in vintages for period in endpoints.operating_periods(
+                                region, owner.tech, vintage, bundle.scenario.periods.model))
+    actual = set(result[["region", "tech_or_group", "vintage", "period"]].itertuples(index=False, name=None))
+    if (result.empty or result[keys].isna().any().any() or result.duplicated(keys).any()
+            or actual != expected or len(result) != len(expected)):
+        raise ValueError("Complete period-factor operating lifetime coverage is incomplete or duplicated")
+    required = ["data_id", "data_source", "dq_cred", "dq_geog", "dq_struc", "dq_tech", "dq_time"]
+    if result[required].isna().any().any() or not set(result.data_id).issubset({
+        item.data_id for item in [*contexts, *expanded_contexts]
+    }):
+        raise ValueError("Complete period-factor provenance or source data quality is incomplete")
+    # The pinned model validates every currently supported field; period is
+    # independently covered above until the authoritative schema adds it.
+    for record in result.to_dict("records"):
+        LimitAnnualCapacityFactor.model_validate({name: record[name] for name in LimitAnnualCapacityFactor.model_fields})
+    result = result.sort_values(keys).reset_index(drop=True)
+    audit = {"period_factor_rows": len(result), "period_factor_age_rows": len(age_rows),
+             "period_factor_flat_rows": len(records), "period_factor_expected_keys": len(expected)}
+    LOGGER.info("Prepared complete period-indexed road utilization: %s age rows and %s constant rows",
+                len(age_rows), len(records))
+    return result, expanded_contexts, audit
 
 
 def select_baseline_years(
@@ -402,11 +556,11 @@ def validate_road_utilization(
     }
 
 
-def calibrate_sales_activity(
+def calibrate_base_year_activity(
     baseline: pd.DataFrame, annual: pd.DataFrame, capacity: pd.DataFrame,
     technology: pd.DataFrame, *, selected_pairs: set[tuple[str, str]], base_year: int,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Close projected base-year demand on retained stock without changing fleet totals."""
+    """Close each selected class's base-year service on its retained physical stock."""
     result = baseline.copy()
     result["calibration_basis"] = "mean_observed_ceud_activity_per_stock"
     records = []
@@ -424,19 +578,19 @@ def calibrate_sales_activity(
             raise ValueError(f"Invalid activity calibration denominator/target: {(region, road_class)}")
         utilization = activity / denominator
         if not isfinite(utilization) or not 0 <= utilization <= 1:
-            raise ValueError(f"Infeasible sales activity calibration: {(region, road_class, utilization)}")
+            raise ValueError(f"Infeasible base-year activity calibration: {(region, road_class, utilization)}")
         mask = result.region.eq(region) & result.road_class.eq(road_class)
         if int(mask.sum()) != 1:
             raise ValueError(f"Nonunique utilization owner: {(region, road_class)}")
         previous = float(result.loc[mask, "utilization"].iloc[0])
         result.loc[mask, "utilization"] = utilization
-        result.loc[mask, "calibration_basis"] = "projected_base_year_demand_on_retained_sales_survivors"
+        result.loc[mask, "calibration_basis"] = "base_year_activity_on_retained_physical_stock"
         records.append({
             "region": region, "road_class": road_class, "base_year": base_year,
             "retained_stock_k_vehicles": float(selected.capacity.sum()),
             "reported_stock_k_vehicles": float(target.iloc[0].stock_k_vehicles),
             "target_activity_bn": activity, "modelled_activity_bn": denominator * utilization,
-            "target_basis": target.iloc[0].get("activity_projection", "projected_base_year_demand"),
+            "target_basis": target.iloc[0].get("activity_projection"),
             "ceud_observed_year": target.iloc[0].get("ceud_observed_year"),
             "observed_activity_bn": target.iloc[0].get("observed_activity_bn"),
             "base_year_gdp_index": target.iloc[0].get("base_year_gdp_index"),
@@ -455,8 +609,10 @@ def prepare_road_utilization(
     existing_capacity_contexts: list[ResolvedProvenance] | None = None,
     physical_stock: pd.DataFrame | None = None,
     technology: pd.DataFrame | None = None,
+    lifetime_preparation: LifetimePreparation | None = None,
 ) -> RoadUtilizationPreparation:
     """Prepare deterministic road rows and audit artifacts from registered local inputs."""
+    from parameterization.build_demand import road_base_year_activity
     from parameterization.build_existing_capacity import physical_stock_for_consumers
 
     physical_stock = physical_stock_for_consumers(bundle, existing_capacity_rows, physical_stock)
@@ -470,7 +626,7 @@ def prepare_road_utilization(
     road_classes = set(activity)
     stock = {
         **capacity_rules["ceud_stock_series"],
-        **factor_rules["additional_stock_series"],
+        **{name: spec["stock"] for name, spec in rules["bus_existing_capacity"]["classes"].items()},
     }
     if set(stock) != road_classes:
         raise ValueError("CEUD activity and stock selectors do not cover the same road classes")
@@ -478,6 +634,21 @@ def prepare_road_utilization(
     technology_file = resolve_input_path(bundle, "template", "technology.csv")
     manual = pd.read_csv(manual_file, usecols=["category", "sub_category", "units", "c2a", "notes"])
     technology = pd.read_csv(technology_file) if technology is None else technology.copy()
+    if scenario.road_utilization.vkt_schedules and lifetime_preparation is None:
+        raise ValueError("VKT schedules require matching prepared lifetime batches")
+    road_techs = set(technology.loc[technology.category.isin(road_classes), "tech"])
+    selected_regions = {demand_rules["region_output_map"].get(region, region)
+                        for region in scenario.geography.regions}
+    selected_stock_keys = set()
+    for row in existing_capacity_rows:
+        if row.region not in selected_regions or row.tech not in road_techs:
+            continue
+        key = (row.region, row.tech, row.vintage)
+        if key in selected_stock_keys or row.capacity is None or not isfinite(row.capacity) or row.capacity < 0:
+            raise ValueError(f"Duplicate or invalid existing road capacity for utilization: {key}")
+        selected_stock_keys.add(key)
+        if row.capacity > 0 and row.vintage not in scenario.periods.existing:
+            raise ValueError(f"Existing road utilization vintage is outside the scenario: {key}")
     expanded = reconcile_road_capacity_to_activity(
         manual, technology, road_classes=road_classes,
         activity_units={name: selector["units"] for name, selector in activity.items()},
@@ -521,41 +692,34 @@ def prepare_road_utilization(
     )
     baseline = annual.groupby(["region", "road_class"], as_index=False)["utilization"].mean()
     baseline["unit"] = "dimensionless"
-    sales_pairs = {
-        (demand_rules["region_output_map"].get(region, region), name)
-        for region in regions
-        for name in capacity_rules["ceud_sales_series"]
-    }
-    calibration = pd.DataFrame()
-    demand_metadata: dict[str, Any] = {}
-    if sales_pairs:
-        from parameterization.build_demand import road_base_year_activity
-
-        if not existing_capacity_contexts:
-            raise ValueError("Sales utilization calibration requires prepared stock provenance")
-        base_annual = derive_road_annual_utilization(
-            provincial, regions=regions, years=[scenario.periods.base_year],
-            activity_series=activity, stock_series=stock, capacity_by_class=c2a_by_class,
-            region_output_map=demand_rules["region_output_map"],
-            activity_to_billion_factor=float(demand_rules["activity_to_billion_factor"]),
-        )
-        projected_demand, demand_metadata = road_base_year_activity(bundle)
-        targets = projected_demand.rename(columns={"service": "road_class", "baseline_demand": "observed_activity_bn"})
-        base_annual = base_annual.drop(columns="activity_bn").merge(
-            targets[["region", "road_class", "ceud_observed_year", "observed_activity_bn",
-                     "projected_base_year_demand", "activity_projection"]],
-            on=["region", "road_class"], how="left", validate="one_to_one",
-        ).rename(columns={"projected_base_year_demand": "activity_bn"})
-        if base_annual.activity_bn.isna().any():
-            raise ValueError("Projected base-year demand lacks activity calibration coverage")
-        base_annual["base_year_gdp_index"] = demand_metadata["base_year_gdp_index"]
-        baseline, calibration = calibrate_sales_activity(
-            baseline, base_annual,
-            physical_stock.rename(columns={"surviving_k_vehicles": "capacity"}), expanded,
-            selected_pairs=sales_pairs, base_year=scenario.periods.base_year,
-        )
-        LOGGER.info("Calibrated %s sales-based class activity totals; maximum closure residual %.3g",
-                    len(calibration), calibration.activity_residual_bn.abs().max())
+    base_year = scenario.periods.base_year
+    if not existing_capacity_contexts:
+        raise ValueError("Road utilization calibration requires prepared stock provenance")
+    base_annual = derive_road_annual_utilization(
+        provincial, regions=regions, years=[base_year],
+        activity_series=activity, stock_series=stock, capacity_by_class=c2a_by_class,
+        region_output_map=demand_rules["region_output_map"],
+        activity_to_billion_factor=float(demand_rules["activity_to_billion_factor"]),
+    )
+    projected_demand, demand_metadata = road_base_year_activity(bundle)
+    targets = projected_demand.rename(columns={"service": "road_class", "baseline_demand": "observed_activity_bn"})
+    targets.loc[targets.ceud_observed_year.eq(base_year), "activity_projection"] = "observed_ceud_activity"
+    base_annual = base_annual.drop(columns="activity_bn").merge(
+        targets[["region", "road_class", "ceud_observed_year", "observed_activity_bn",
+                 "projected_base_year_demand", "activity_projection"]],
+        on=["region", "road_class"], how="left", validate="one_to_one",
+    ).rename(columns={"projected_base_year_demand": "activity_bn"})
+    if base_annual.activity_bn.isna().any():
+        raise ValueError("Base-year demand lacks activity calibration coverage")
+    base_annual["base_year_gdp_index"] = demand_metadata["base_year_gdp_index"]
+    baseline, calibration = calibrate_base_year_activity(
+        baseline, base_annual,
+        physical_stock.rename(columns={"surviving_k_vehicles": "capacity"}), expanded,
+        selected_pairs={(region, name) for region in output_regions for name in road_classes},
+        base_year=base_year,
+    )
+    LOGGER.info("Calibrated %s road class activity totals; maximum closure residual %.3g",
+                len(calibration), calibration.activity_residual_bn.abs().max())
     flat_classes = (
         set(factor_rules["flat_only_classes"])
         if scenario.road_utilization.vkt_schedules else road_classes
@@ -603,14 +767,14 @@ def prepare_road_utilization(
         "years": years,
         "ceud_beyond_observed": scenario.sources.nrcan_ceud_beyond_observed,
         "ceud_extrapolation": load_harmonization_rules(bundle, "ceud_inputs")["cagr"] if scenario.sources.nrcan_ceud_beyond_observed == "extrapolated" else None,
-        "sales_activity_calibration": calibration.to_dict("records"),
+        "base_year_activity_calibration": calibration.to_dict("records"),
         "demand_baseline": demand_metadata,
         "calibrated_physical_stock": physical_stock.to_dict("records"),
     }, sort_keys=True).encode()).hexdigest()
     contexts: list[ResolvedProvenance] = []
     flat_rows: list[LimitAnnualCapacityFactor] = []
     source_id = source_id_mapping(bundle.sources)[CEUD]
-    for road_class in sorted(flat_classes):
+    for road_class in sorted(road_classes):
         inputs = [
             resolve_provenance(
                 bundle.sources, source_key=CEUD, component_key=selector["table_id"],
@@ -618,30 +782,30 @@ def prepare_road_utilization(
             )
             for selector in (activity[road_class], stock[road_class])
         ]
-        if any(name == road_class for _, name in sales_pairs):
+        inputs.append(resolve_provenance(
+            bundle.sources, source_key="cer_canadas_energy_future", component_key="macro-indicators",
+            transformation="road_utilization_demand_input", transformation_version="1",
+        ))
+        if scenario.demand.future_car_demand == "extrapolated" and road_class == "passenger_light_trucks":
             inputs.append(resolve_provenance(
-                bundle.sources, source_key="cer_canadas_energy_future", component_key="macro-indicators",
-                transformation="road_utilization_demand_input", transformation_version="1",
+                bundle.sources, source_key=CEUD, component_key=activity["cars"]["table_id"],
+                transformation="road_utilization_passenger_ldv_residual_input", transformation_version="1",
             ))
-            if scenario.demand.future_car_demand == "extrapolated" and road_class == "passenger_light_trucks":
-                inputs.append(resolve_provenance(
-                    bundle.sources, source_key=CEUD, component_key=activity["cars"]["table_id"],
-                    transformation="road_utilization_passenger_ldv_residual_input", transformation_version="1",
-                ))
-            owners = technologies_by_class[road_class]
-            ids = set(physical_stock.loc[physical_stock.tech.isin(owners), "data_id"])
-            stock_inputs = [context for context in existing_capacity_contexts or []
-                            if context.data_id in ids]
-            if {context.data_id for context in stock_inputs} != ids:
-                raise ValueError(f"Incomplete stock lineage for activity calibration: {road_class}")
-            inputs.extend(stock_inputs)
+        owners = technologies_by_class[road_class]
+        ids = set(physical_stock.loc[physical_stock.tech.isin(owners) & physical_stock.region.isin(output_regions), "data_id"])
+        stock_inputs = [context for context in existing_capacity_contexts if context.data_id in ids]
+        if {context.data_id for context in stock_inputs} != ids:
+            raise ValueError(f"Incomplete stock lineage for activity calibration: {road_class}")
+        inputs.extend(stock_inputs)
         context = resolve_composite_provenance(
             inputs=inputs,
             dataset_key=f"road_utilization.flat.{road_class}",
-            transformation=("Native CEUD activity projected by the configured demand method to base_year (CER real GDP; optional historical car CAGR and residual passenger-light-truck split), divided by retained sales-survival stock and manual capacity-to-activity; "
-                            "physical stock is counted separately from capacity before survival is applied" if any(name == road_class for _, name in sales_pairs)
-                            else "Mean CEUD annual activity-to-stock ratio divided by manual capacity-to-activity"),
-            transformation_version="3", governing_source_id=source_id,
+            transformation=(
+                "Observed CEUD activity at the reference year or activity projected to the model base year "
+                "by the configured demand method, divided by the sum of retained physical stock times "
+                "manual capacity-to-activity. Survival-curve acquisition capacity is tracked separately."
+            ),
+            transformation_version="4", governing_source_id=source_id,
             data_quality=bundle.sources.resolved_data_quality(
                 CEUD, activity[road_class]["table_id"],
             ),
@@ -662,16 +826,27 @@ def prepare_road_utilization(
         flat_rows.extend(validate_parameter_rows(LimitAnnualCapacityFactor, selected, context, bundle=bundle))
     age_rows: pd.DataFrame | None = None
     age_profiles: pd.DataFrame | None = None
+    period_rows: pd.DataFrame | None = None
     age_audit: dict[str, Any] = {}
     if scenario.road_utilization.vkt_schedules:
-        age_rows, age_profiles, _age_contexts, age_audit = build_age_factor_artifact(
+        age_rows, age_profiles, age_contexts, age_audit = build_age_factor_artifact(
             bundle, baseline=baseline, technology=expanded,
             activity=activity, stock=stock, rules=factor_rules,
             output_regions={
                 region: demand_rules["region_output_map"].get(region, region)
                 for region in regions
             }, input_digest=input_digest,
+            existing_capacity_rows=existing_capacity_rows,
+            lifetimes=lifetime_preparation, baseline_contexts=contexts,
         )
+        contexts.extend(age_contexts)
+        period_rows, period_contexts, period_audit = build_period_factor_artifact(
+            bundle, age_rows=age_rows, flat_rows=flat_rows, technology=expanded,
+            existing_capacity_rows=existing_capacity_rows, regions=output_regions,
+            lifetimes=lifetime_preparation, contexts=contexts,
+        )
+        contexts.extend(period_contexts)
+        age_audit.update(period_audit)
     audit = validate_road_utilization(
         annual, baseline, c2a_rows, flat_rows,
         regions=output_regions, road_classes=road_classes, years=years,
@@ -682,15 +857,14 @@ def prepare_road_utilization(
         "vkt_schedules": scenario.road_utilization.vkt_schedules,
         "manual_assumption_data_id": assumption_dataset.data_id,
         "input_content_digest": input_digest,
-        "sales_activity_calibration": calibration.to_dict("records"),
+        "base_year_activity_calibration": calibration.to_dict("records"),
         "demand_baseline": demand_metadata,
         **age_audit,
     })
     output = resolve_artifact_path(bundle, "road_utilization_processed")
     write_dataframe_atomic(annual, output / factor_rules["annual_audit_file"])
     write_dataframe_atomic(baseline, output / factor_rules["baseline_file"])
-    if not calibration.empty:
-        write_dataframe_atomic(calibration, output / factor_rules["sales_calibration_file"])
+    write_dataframe_atomic(calibration, output / factor_rules["base_year_calibration_file"])
     write_dataframe_atomic(
         pd.DataFrame([row.model_dump(mode="python") for row in c2a_rows]),
         output / factor_rules["c2a_file"],
@@ -702,6 +876,7 @@ def prepare_road_utilization(
     if age_rows is not None and age_profiles is not None:
         write_dataframe_atomic(age_profiles, output / factor_rules["age_profile_file"])
         write_dataframe_atomic(age_rows, output / factor_rules["age_factor_file"])
+        write_dataframe_atomic(period_rows, output / factor_rules["period_factor_file"])
         gap_path = (
             resolve_artifact_path(bundle, "road_utilization_validation")
             / factor_rules["insertion_gap_file"]
@@ -710,12 +885,13 @@ def prepare_road_utilization(
         temporary = gap_path.with_suffix(gap_path.suffix + ".tmp")
         temporary.write_text(json.dumps({
             "parameter": "limit_annual_capacity_factor",
-            "artifact": str(output / factor_rules["age_factor_file"]),
+            "artifact": str(output / factor_rules["period_factor_file"]),
+            "age_artifact": str(output / factor_rules["age_factor_file"]),
             "required_key": ["region", "tech_or_group", "vintage", "period", "output_comm"],
             "canoe_schema_v4_key": ["region", "tech_or_group", "vintage", "output_comm", "operator", "data_id"],
             "status": "not_inserted",
             "reason": "The authoritative canoe_schema v4 row and DDL have one period-linked vintage column and no second period index.",
-            "rows": len(age_rows),
+            "rows": len(period_rows),
         }, indent=2) + "\n", encoding="utf-8")
         os.replace(temporary, gap_path)
     LOGGER.info("Prepared %s road C2A and %s flat annual factor rows", len(c2a_rows), len(flat_rows))
@@ -724,6 +900,7 @@ def prepare_road_utilization(
         capacity_to_activity_rows=c2a_rows,
         flat_factor_rows=flat_rows,
         age_factor_artifact=age_rows,
+        period_factor_artifact=period_rows,
         provenance_contexts=contexts,
         audit=audit,
     )
@@ -731,6 +908,7 @@ def prepare_road_utilization(
 
 def main() -> None:
     from parameterization.build_existing_capacity import prepare_existing_capacity_rows
+    from parameterization.build_lifetime_parameters import prepare_lifetime_rows
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--scenario", default="config/scenarios/default.yaml")
@@ -738,9 +916,14 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO)
     bundle = load_config_bundle(args.scenario)
     prepared = prepare_existing_capacity_rows(bundle)
+    lifetimes = prepare_lifetime_rows(
+        bundle, annual_acquisitions=prepared.annual_acquisitions,
+        cohort_provenance_contexts=prepared.provenance_contexts,
+    ) if bundle.scenario.road_utilization.vkt_schedules else None
     prepare_road_utilization(
         bundle, existing_capacity_rows=prepared.existing_capacity_rows,
         existing_capacity_contexts=prepared.provenance_contexts, physical_stock=prepared.physical_stock,
+        lifetime_preparation=lifetimes,
     )
 
 

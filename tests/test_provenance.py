@@ -33,6 +33,7 @@ def test_explicit_source_ids_preserve_retired_gaps(bundle) -> None:
         "statcan_transport_tables": "T04",
         "cer_canadas_energy_future": "T05",
         "nlr_atb_transportation": "T06",
+        "bea_us_gdp_deflator": "T42",
         "anl_autonomie_bean": "T07",
         "nrcan_fuel_consumption_ratings": "T08",
         "nhtsa_cafe_ldv_survival": "T09",
@@ -49,7 +50,8 @@ def test_explicit_source_ids_preserve_retired_gaps(bundle) -> None:
         "fueleconomy_gov_vehicle_data": "T21",
         "nhtsa_vpic_vehicle_models": "T23",
         "dunsky_ev_charging_infrastructure": "T24",
-        "transport_canada_ev_dashboard": "T25",
+        "afdc_alternative_fueling_stations": "T38",
+        "nhts_household_travel": "T37",
         "pollution_probe_ev_charging_survey": "T26",
         "nlr_alternative_fueling_infrastructure": "T27",
         "icct_ev_charge": "T28",
@@ -62,6 +64,7 @@ def test_explicit_source_ids_preserve_retired_gaps(bundle) -> None:
         "eafo_norway_growth_evidence": "T36",
         "epa_moves_heavy_truck_survival": "T39",
         "transport_canada_izev": "T40",
+        "jonas_ev_charging_utilization": "T41",
     }
 
 

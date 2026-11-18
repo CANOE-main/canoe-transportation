@@ -366,16 +366,30 @@ def test_comparison_refresh_rejects_tampered_capture_or_changed_identity(tmp_pat
 
 def test_supplied_reference_state_is_measured_not_inferred_from_filename():
     root = Path(__file__).resolve().parents[1]
-    reference = root / "legacy_backend/legacy_variant_sales_cohorts/canoe_ON_16d.sqlite"
-    baseline = root / "legacy_backend/canoe_on_12d_baseline.sqlite"
-    if not reference.is_file() or not baseline.is_file():
-        pytest.skip("Supplied researcher reference files are not available")
+    directory = root / "inputs/validation/transportation_reference/sales_cohorts"
+    manifest = research.read_reference_manifest(directory, "manifest.json")
+    reference = directory / "canoe_ON_16d.sqlite"
+    baseline = directory / "canoe_on_12d_baseline.sqlite"
     rows, metadata = compare_reference_state(reference, baseline, absolute_tolerance=1e-9, relative_tolerance=1e-9)
     indexed = rows.set_index("table")
     assert indexed.loc["ExistingCapacity", "matching_values"] == 99
     assert indexed.loc["Demand", "matching_values"] == 90
     assert indexed.loc["LifetimeTech", "matching_values"] == 122
     assert metadata["survival_rows"] == 0
+    assert manifest["files"][reference.name]["tables"]["LifetimeSurvivalCurve"]["source_rows"] == 0
+
+
+def test_manifest_rejects_changed_curated_evidence(tmp_path):
+    target = tmp_path / "historical.csv"
+    target.write_text("year,value\n2025,1\n", encoding="utf-8")
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(json.dumps({
+        "version": 1, "files": {target.name: {"sha256": file_sha256(target)}},
+    }), encoding="utf-8")
+    assert research.read_reference_manifest(tmp_path, manifest.name)["version"] == 1
+    target.write_text("year,value\n2025,2\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="differs from its manifest"):
+        research.read_reference_manifest(tmp_path, manifest.name)
 
 
 @pytest.mark.parametrize("defect", [None, "fleet_export", "charging_export", "retired_scenario", "other_charging_scenario", "old_database", "old_build_report"])
@@ -519,7 +533,10 @@ def deeper_fleet_fixture():
     return {
         "sales_cohorts": sales, "road_age_cohorts": ages,
         "fleet_cohort_accounting": detail, "stock_activity_energy": summary,
-    }, {"utilization_audit": {"sales_activity_calibration": [calibration]},
+    }, {"utilization_audit": {"base_year_activity_calibration": [
+        calibration,
+        {**calibration, "road_class": "school_buses"},
+    ]},
         "comparison_significance_percent": 5,
         "scenario": {"comparison": {"absolute_tolerance": 1e-9, "relative_tolerance": 1e-12}}}
 
@@ -585,7 +602,7 @@ def test_deeper_fleet_rejects_incomplete_or_inconsistent_evidence(defect):
     elif defect == "wrong_fixed_cutoff":
         frames["road_age_cohorts"]["fixed_lifetime_years"] = 10.
     else:
-        metadata["utilization_audit"]["sales_activity_calibration"][0]["utilization"] = .6
+        metadata["utilization_audit"]["base_year_activity_calibration"][0]["utilization"] = .6
     with pytest.raises(ValueError):
         deepen_fleet_diagnosis(frames, metadata)
 
@@ -625,7 +642,7 @@ def test_insertion_difference_is_reported_without_relaxing_allocation_conservati
     summary["inserted_stock_k_vehicles"] *= .9999
     summary["implied_activity_bn"] *= .9999
     summary["implied_vehicle_input_pj"] *= .9999
-    metadata["utilization_audit"]["sales_activity_calibration"][0]["capacity_activity_denominator_bn"] *= .9999
+    metadata["utilization_audit"]["base_year_activity_calibration"][0]["capacity_activity_denominator_bn"] *= .9999
     stock = deepen_fleet_diagnosis(frames, metadata)["fleet_reconciliation"].iloc[0]
     assert stock.allocation_conservation_residual_k_vehicles == 0
     assert stock.calibrated_to_inserted_residual_k_vehicles == pytest.approx(-.0005)

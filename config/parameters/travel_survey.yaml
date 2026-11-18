@@ -1,0 +1,207 @@
+version: 1
+scenario: config/scenarios/validation_charging_nhts_uncontrolled.yaml
+source: nhts_household_travel
+edition: 2022_v2_1
+normalization:
+  files:
+    trip: trips.csv
+    vehicle: vehicles.csv
+    person: persons.csv
+    manifest: manifest.json
+  columns:
+    trip:
+    - HOUSEID
+    - PERSONID
+    - TRIPID
+    - FRSTHM
+    - TRAVDAY
+    - LOOP_TRIP
+    - DWELTIME
+    - WHYFROM
+    - WHYTRP1S
+    - TRVLCMIN
+    - STRTTIME
+    - ENDTIME
+    - TRPHHVEH
+    - VEHID
+    - TRPTRANS
+    - WHYTO
+    - TRPMILES
+    - VMT_MILE
+    - CDIVMSAR
+    - HHFAMINC
+    - HHSIZE
+    - HHVEHCNT
+    - MSASIZE
+    - URBRUR
+    - WRKCOUNT
+    - WORKER
+    - DRIVER
+    - PROXY
+    - VEHTYPE
+    - DRVR_FLG
+    - WTTRDFIN
+    - WTTRDFIN5D
+    - WTTRDFIN2D
+    vehicle:
+    - HOUSEID
+    - VEHID
+    - VEHFUEL
+    person:
+    - HOUSEID
+    - PERSONID
+    - DRIVER
+    - HHVEHCNT
+    - TRAVDAY
+    - WTPERFIN
+    - CNTTDTR
+filters:
+  ldv_modes:
+  - 1
+  - 2
+  - 3
+  - 4
+  vehicle_types:
+  - 1
+  - 2
+  - 3
+  - 4
+  maximum_trip_miles: 1280
+  maximum_trip_minutes: 960
+  minimum_speed_mph: 0.5
+  maximum_speed_mph: 120
+  minimum_purpose_code: 1
+  maximum_purpose_code_exclusive: 97
+  occupation_purpose_codes:
+  - 10
+  - 20
+  work_location_codes:
+  - 2
+  - 3
+  - 4
+  - 5
+  school_location_codes:
+  - 6
+  plug_in_fuel_codes:
+  - 4
+  - 5
+  deduplication_columns:
+  - HOUSEID
+  - PERSONID
+  - TRIPID
+  - FRSTHM
+  - TRAVDAY
+  - LOOP_TRIP
+  - DWELTIME
+  - WHYFROM
+  - WHYTRP1S
+  - TRVLCMIN
+  - STRTTIME
+  - ENDTIME
+  - TRPHHVEH
+  - VEHID
+  - TRPTRANS
+  - WHYTO
+  - TRPMILES
+  - VMT_MILE
+  - CDIVMSAR
+  - HHFAMINC
+  - HHSIZE
+  - HHVEHCNT
+  - MSASIZE
+  - URBRUR
+  - WRKCOUNT
+  - WORKER
+  - DRIVER
+  - PROXY
+  - VEHTYPE
+presentation:
+  day_types:
+  - Weekday
+  - Saturday
+  - Sunday
+  default_day_types:
+  - Weekday
+  - Saturday
+  - Sunday
+  day_type_map:
+    1: Sunday
+    2: Weekday
+    3: Weekday
+    4: Weekday
+    5: Weekday
+    6: Weekday
+    7: Saturday
+  clock_bins_minutes: 60
+  distance_bins_km:
+  - 0
+  - 10
+  - 20
+  - 30
+  - 50
+  - 75
+  - 100
+  - 150
+  - 200
+  - 300
+  - 500
+  - 1000
+  - 5000
+  electric_ranges_km:
+  - 0
+  - 10
+  - 20
+  - 30
+  - 40
+  - 50
+  - 60
+  - 80
+  - 100
+  - 120
+  - 150
+  - 200
+  - 300
+  - 500
+  grid_width: 780
+  line_width: 780
+  heatmap_width: 780
+  chart_height: 250
+  files:
+    summary: summary.csv
+    daily: daily_by_day_type.csv
+    clock: trip_clock.csv
+    activity: activity_clock.csv
+    purpose: purpose.csv
+    distance: daily_distance.csv
+    utility: electric_distance_potential.csv
+    exclusions: exclusions.csv
+    fuel: activity_fuel.csv
+    manifest: manifest.json
+    windows: reviewed_windows.csv
+    parameters: ramp_parameter_comparison.csv
+  default_clock: midpoint
+  activity_bins_minutes: 30
+  activity_order:
+  - Worker trips
+  - Student trips
+  - Inactive trips
+  activity_height: 190
+ramp_reference:
+  survey: nhts
+  strategy: uncontrolled
+  survey_label: NHTS2022
+  country: CA
+  database_subdirectory: database/NHTS2022
+  main_activity: Main
+  proxy_labels:
+    Working: Worker trips
+    Student: Student trips
+    Inactive: Inactive trips
+  purpose_labels:
+    business: Occupation
+    personal: Personal
+  files:
+    windows: windows.csv
+    daily: d_tot.csv
+    distance: d_min.csv
+    duration: t_func.csv

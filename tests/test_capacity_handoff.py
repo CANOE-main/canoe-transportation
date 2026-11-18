@@ -16,6 +16,11 @@ from validation.provenance import resolve_provenance
 @pytest.fixture
 def prepared(tmp_path):
     bundle = load_config_bundle("config/scenarios/default.yaml")
+    # These synthetic rows represent surviving stock. Curve-specific tests below
+    # explicitly supply the distinct physical-stock handoff and enable curves.
+    bundle = replace(bundle, scenario=bundle.scenario.model_copy(update={
+        "lifetimes": bundle.scenario.lifetimes.model_copy(update={"survival_curves": False}),
+    }))
     routes = dict(bundle.paths.artifacts)
     for family in ("existing_capacity_interim", "existing_capacity_processed", "existing_capacity_validation"):
         routes[family] = routes[family].model_copy(update={"path": str(tmp_path / family)})

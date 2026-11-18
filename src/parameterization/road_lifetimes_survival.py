@@ -2299,7 +2299,7 @@ def _publish_outputs(
 
 
 def _lifetime_context(
-    scenario_path: str | Path,
+    scenario_path: str | Path | ConfigBundle,
 ) -> tuple[ConfigBundle, dict[str, Any], dict[str, Any], dict[str, Any]]:
     bundle = load_config_bundle(scenario_path)
     return (
@@ -2324,7 +2324,7 @@ def build_accepted_lifetime_artifacts(scenario_path: str | Path) -> Path:
     return output_dir
 
 
-def build_mto_survival_diagnostic_artifacts(scenario_path: str | Path) -> Path:
+def build_mto_survival_diagnostic_artifacts(scenario_path: str | Path | ConfigBundle) -> Path:
     """Publish historical MTO apparent-retention and decision evidence."""
     bundle, rules, road_rules, assorted_rules = _lifetime_context(scenario_path)
     accepted_frames = derive_accepted_lifetime_frames(

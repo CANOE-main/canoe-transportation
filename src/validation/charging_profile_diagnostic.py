@@ -7,7 +7,7 @@ import altair as alt
 import pandas as pd
 from pydantic import BaseModel, ConfigDict, Field
 
-from fetching.legacy_charging_profiles import build_request, transform_hourly
+from fetching.legacy_charging_profiles import build_request, transform_hourly, validate_run_metadata
 from parameterization.ev_chargers import prepare_charger_utilization_targets
 from parameterization.ldv_charging_profiles import scale_projected_profile
 from utils import file_sha256, find_repo_root, load_config_bundle, load_harmonization_rules, load_yaml
@@ -54,6 +54,7 @@ def load_diagnostic() -> ChargingProfileDiagnostic:
         path = request.registered_path
         if path.stat().st_size != request.expected_bytes or file_sha256(path) != request.expected_sha256:
             raise ValueError(f"Registered {profile} profile differs from its frozen source identity")
+        validate_run_metadata(request)
         raw = pd.read_csv(path, index_col=0)
         if len(raw) != request.expected_rows:
             raise ValueError(f"Registered {profile} profile has the wrong row count")
@@ -77,6 +78,7 @@ def load_diagnostic() -> ChargingProfileDiagnostic:
                        "native_peak": float(hourly.factor.max()), "rescaled_peak": float(scaled.factor.max()),
                        "native_week_mean": float(week.native.mean()), "rescaled_week_mean": float(week.rescaled.mean())})
         sources[profile] = {"path": path.relative_to(root).as_posix(), "sha256": request.expected_sha256,
+                            "charging_strategy": request.strategy, "metadata_sha256": request.metadata_sha256,
                             "calendar_year": request.calendar_year, "timezone": request.calendar_timezone,
                             "hours": len(hourly)}
     metadata = {"sources": sources, "settings_sha256": file_sha256(config),

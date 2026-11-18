@@ -26,8 +26,22 @@ from validation.provenance import resolve_provenance
 from validation.schema_contract import create_v4_schema
 
 
-def curve_bundle(profile="moves"):
+@pytest.fixture(scope="module")
+def annual_inputs(isolated_legacy_bundle):
+    from fetching.assorted_sources import fetch_and_normalize_moves5_survival
+
+    fetch_and_normalize_moves5_survival(isolated_legacy_bundle, download=False)
+    return isolated_legacy_bundle
+
+
+def curve_bundle(profile="moves", registered=None):
     bundle = load_config_bundle("config/scenarios/validation_baseline.yaml")
+    if registered is not None:
+        bundle = replace(registered, scenario=bundle.scenario.model_copy(update={
+            "existing_capacity": bundle.scenario.existing_capacity.model_copy(update={
+                "vehicle_population_year": registered.scenario.existing_capacity.vehicle_population_year,
+            }),
+        }))
     return replace(bundle, scenario=bundle.scenario.model_copy(update={
         "lifetimes": bundle.scenario.lifetimes.model_copy(update={
             "survival_curves": True, "road_lifetime_survival_source": profile,
@@ -58,8 +72,8 @@ def test_tail_threshold_comes_from_scenario_without_a_rules_lookup(monkeypatch):
 
 
 @pytest.mark.parametrize("profile,common_support", [("moves", 41), ("nhtsa_nems", 34)])
-def test_full_source_support_and_annual_endpoint_rows(profile, common_support):
-    bundle = curve_bundle(profile)
+def test_full_source_support_and_annual_endpoint_rows(profile, common_support, annual_inputs):
+    bundle = curve_bundle(profile, annual_inputs)
     frames = survival.derive_accepted_lifetime_frames(
         bundle, rules=load_harmonization_rules(bundle, "road_lifetimes_survival"),
         road_rules=load_harmonization_rules(bundle, "road_aggregation"),
@@ -107,8 +121,8 @@ def test_full_source_support_and_annual_endpoint_rows(profile, common_support):
     assert len(audit["terminal_schedules"]) == 5
 
 
-def test_hard_zero_cap_may_exceed_native_support_and_resolves_without_source_io():
-    bundle = curve_bundle("nhtsa_nems")
+def test_hard_zero_cap_may_exceed_native_support_and_resolves_without_source_io(annual_inputs):
+    bundle = curve_bundle("nhtsa_nems", annual_inputs)
     frames = survival.derive_accepted_lifetime_frames(
         bundle, rules=load_harmonization_rules(bundle, "road_lifetimes_survival"),
         road_rules=load_harmonization_rules(bundle, "road_aggregation"),
@@ -125,8 +139,8 @@ def test_hard_zero_cap_may_exceed_native_support_and_resolves_without_source_io(
 
 
 @pytest.mark.parametrize("profile", ["moves", "nhtsa_nems"])
-def test_explicit_cap_sets_the_same_selected_fixed_medians_as_harmonized_survival(profile):
-    bundle = curve_bundle(profile)
+def test_explicit_cap_sets_the_same_selected_fixed_medians_as_harmonized_survival(profile, annual_inputs):
+    bundle = curve_bundle(profile, annual_inputs)
     frames = survival.derive_accepted_lifetime_frames(
         bundle, rules=load_harmonization_rules(bundle, "road_lifetimes_survival"),
         road_rules=load_harmonization_rules(bundle, "road_aggregation"),

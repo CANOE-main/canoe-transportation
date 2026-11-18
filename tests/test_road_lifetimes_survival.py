@@ -27,13 +27,13 @@ from utils import load_config_bundle, load_harmonization_rules
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SCENARIO = "config/scenarios/legacy_comparison.yaml"
+SCENARIO = "config/scenarios/validation_opening_periods.yaml"
 
 
 def test_accepted_preparation_uses_report_a_weights_without_mto_history_or_wards(
-    monkeypatch: pytest.MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch, isolated_legacy_bundle,
 ) -> None:
-    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    bundle = isolated_legacy_bundle
     rules = load_harmonization_rules(bundle, "road_lifetimes_survival")
     real_read_csv = pd.read_csv
     paths = []
@@ -729,7 +729,7 @@ def test_accepted_publisher_does_not_invoke_mto_diagnostics(
     monkeypatch.setattr(lifetime_module, "resolve_artifact_path", resolve_route)
 
     output_dir = build_accepted_lifetime_artifacts(
-        "config/scenarios/legacy_comparison.yaml"
+        "config/scenarios/validation_opening_periods.yaml"
     )
 
     assert output_dir == tmp_path
@@ -775,7 +775,7 @@ def test_mto_diagnostic_publisher_writes_only_diagnostic_routes(
     monkeypatch.setattr(lifetime_module, "resolve_artifact_path", resolve_route)
 
     output_dir = build_mto_survival_diagnostic_artifacts(
-        "config/scenarios/legacy_comparison.yaml"
+        "config/scenarios/validation_opening_periods.yaml"
     )
 
     assert output_dir == validation_dir

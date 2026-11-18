@@ -122,22 +122,28 @@ def _rules_digest(rules: dict[str, Any]) -> str:
     return hashlib.sha256(json.dumps(rules, sort_keys=True).encode()).hexdigest()[:16]
 
 
+def _handoff_digest(value: Any) -> str:
+    return hashlib.sha256(json.dumps(
+        value, sort_keys=True, separators=(",", ":"), allow_nan=False,
+    ).encode("utf-8")).hexdigest()
+
+
+def _capacity_scenario_digest(bundle: ConfigBundle) -> str:
+    return _handoff_digest(bundle.scenario.model_dump(mode="json", exclude={"outputs"}))
+
+
 def _capacity_handoff_identity(
     bundle: ConfigBundle, rows: list[ExistingCapacity], contexts: list[ResolvedProvenance],
     physical_stock: pd.DataFrame | None = None,
 ) -> dict[str, Any]:
     """Identify the exact prepared batches and scenario, independent of destinations."""
-    def digest(value: Any) -> str:
-        return hashlib.sha256(json.dumps(
-            value, sort_keys=True, separators=(",", ":"), allow_nan=False,
-        ).encode("utf-8")).hexdigest()
 
     return {
         "version": 2,
-        "scenario_sha256": digest(bundle.scenario.model_dump(mode="json", exclude={"outputs"})),
-        "rows_sha256": digest([row.model_dump(mode="json") for row in rows]),
-        "contexts_sha256": digest([context.model_dump(mode="json") for context in contexts]),
-        "physical_stock_sha256": digest(physical_stock_for_consumers(bundle, rows, physical_stock).to_dict("records")),
+        "scenario_sha256": _capacity_scenario_digest(bundle),
+        "rows_sha256": _handoff_digest([row.model_dump(mode="json") for row in rows]),
+        "contexts_sha256": _handoff_digest([context.model_dump(mode="json") for context in contexts]),
+        "physical_stock_sha256": _handoff_digest(physical_stock_for_consumers(bundle, rows, physical_stock).to_dict("records")),
     }
 
 
@@ -205,6 +211,21 @@ def validate_capacity_handoff(
         unchanged = False
     if not unchanged:
         raise ValueError("Existing-capacity completion marker changed while checking evidence")
+
+
+def read_capacity_evidence_fingerprints(bundle: ConfigBundle, paths: list[Path]) -> dict[Path, str]:
+    """Bind read-only diagnostic inputs to one completed existing-capacity preparation."""
+    marker = resolve_artifact_path(bundle, "existing_capacity_validation", "integrity.json")
+    original_hash = file_sha256(marker)
+    handoff = json.loads(marker.read_text(encoding="utf-8")).get("prepared_handoff", {})
+    if handoff.get("version") != 2 or handoff.get("scenario_sha256") != _capacity_scenario_digest(bundle):
+        raise ValueError(f"Existing-capacity evidence has a different preparation scenario. Replay {bundle.scenario_path}")
+    records = {(bundle.repo_root / record["path"]).resolve(): record["sha256"]
+               for record in handoff["artifacts"]}
+    fingerprints = {path: file_sha256(path) for path in paths}
+    if any(records.get(path.resolve()) != digest for path, digest in fingerprints.items()) or file_sha256(marker) != original_hash:
+        raise ValueError(f"Existing-capacity evidence differs from the completed handoff. Replay {bundle.scenario_path}")
+    return fingerprints | {marker: original_hash}
 
 
 def _component(
@@ -315,6 +336,34 @@ def validate_capacity_outputs(
         > 1e-6
     ):
         raise ValueError("Road solver parameters do not reconcile to annual parameter contributions")
+    first_period = bundle.scenario.periods.model[0]
+    cohort_keys = ["region", "vintage_year", "vintage"]
+    motorcycle_lifetimes = road_cohorts.loc[
+        road_cohorts["road_class"].eq("motorcycles") & road_cohorts["within_historical_coverage"],
+        [*cohort_keys, "fixed_lifetime_years"],
+    ]
+    motorcycle_stock = road_shares.loc[
+        road_shares["road_class"].eq("motorcycles") & road_shares["solver_capacity_k_vehicles"].gt(0),
+        [*cohort_keys, "tech"],
+    ].merge(motorcycle_lifetimes, on=cohort_keys, how="left", validate="many_to_one")
+    fixed_columns = [*cohort_keys, "tech", "lifetime_years"]
+    fixed_stock = pd.concat([
+        motorcycle_stock.rename(columns={"fixed_lifetime_years": "lifetime_years"})[fixed_columns],
+        bus_cohorts.loc[bus_cohorts["capacity"].gt(0), fixed_columns],
+    ], ignore_index=True)
+    lifetime = fixed_stock["lifetime_years"]
+    eligible = (
+        lifetime.gt(0)
+        & lifetime.map(isfinite)
+        & (fixed_stock["vintage_year"] + lifetime).gt(first_period)
+        & (fixed_stock["vintage"] + lifetime).gt(first_period)
+    )
+    if not eligible.all():
+        invalid = fixed_stock.loc[~eligible]
+        raise ValueError(
+            f"Positive bus or motorcycle stock outside fixed lifetime at {first_period}: "
+            f"{invalid.head().to_dict('records')}"
+        )
     bus_stock = bus_cohorts.groupby(["ceud_region", "road_class"])[
         "capacity"
     ].sum()
@@ -323,9 +372,10 @@ def validate_capacity_outputs(
     ].first()
     if not (bus_stock - bus_source).abs().le(1e-7).all():
         raise ValueError("Bus cohorts do not conserve CEUD base-year stock")
-    if (
-        abs(float(bus_capacity["capacity"].sum()) - float(bus_stock.sum())) > 1e-7
-    ):
+    bus_keys = ["region", "road_class", "tech", "vintage"]
+    bus_by_vintage = bus_cohorts.groupby(bus_keys)["capacity"].sum()
+    bus_parameters = bus_capacity.set_index(bus_keys, verify_integrity=True)["capacity"]
+    if not (bus_by_vintage - bus_parameters).abs().le(1e-7).all():
         raise ValueError("Bus vintage aggregation does not conserve cohort capacity")
     if len(offroad_annual) != len(output_regions) * 6 * (
         bundle.scenario.periods.base_year - min(bundle.scenario.periods.existing) + 1
@@ -366,6 +416,25 @@ def validate_capacity_outputs(
         "pending_classes": [],
         "excluded_family": "EV charger capacity",
     }
+
+
+def annual_road_stock_evidence(
+    road_shares: pd.DataFrame, bus_cohorts: pd.DataFrame,
+) -> pd.DataFrame:
+    """Expose annual physical cohorts without changing their capacity allocation.
+
+    Bus cohort years remain their actual acquisition years, including the oldest
+    tail outside configured history. Consumers reconcile all capacity first, then
+    select the years supported by the scenario for consumption weighting. The
+    separate fuel-share and detailed age audits retain their original contracts.
+    """
+    columns = [
+        "region", "road_class", "tech", "vintage", "vintage_year",
+        "raw_capacity", "capacity", "solver_capacity_k_vehicles",
+    ]
+    bus = bus_cohorts.rename(columns={"raw_cohort_k_vehicles": "raw_capacity"}).copy()
+    bus["solver_capacity_k_vehicles"] = bus["capacity"]
+    return pd.concat([road_shares[columns], bus[columns]], ignore_index=True)
 
 
 def build_existing_capacity_artifacts(
@@ -414,7 +483,6 @@ def build_existing_capacity_artifacts(
     ceud_rules = load_harmonization_rules(bundle, "nrcan_ceud")
     statcan_rules = load_harmonization_rules(bundle, "statcan_tables")
     assorted_rules = load_harmonization_rules(bundle, "assorted_sources")
-    dashboard_rules = assorted_rules["tc_ev_dashboard"]
     mto_rules = load_harmonization_rules(bundle, "ontario_vehicle_population")
     ceud_dir = resolve_input_path(bundle, "interim", ceud_rules["interim_subdir"])
     ceud_files = [
@@ -445,10 +513,6 @@ def build_existing_capacity_artifacts(
     )
     ldv_file = statcan_dir / statcan_rules["ldv_history"]["output_file"]
     truck_file = statcan_dir / statcan_rules["tables"]["23-10-0308-01"]["output_file"]
-    dashboard_file = (
-        resolve_artifact_path(bundle, "tc_ev_dashboard_interim")
-        / dashboard_rules["output_file"]
-    )
     lifetime_file = resolve_input_path(bundle, "manual", "lifetime_process.csv")
     vehicle_reference = load_vehicle_reference(bundle)
     bus_efficiency, bus_evidence_files = prepare_bus_annual_efficiency_evidence(
@@ -472,7 +536,6 @@ def build_existing_capacity_artifacts(
             report5_file,
             ldv_file,
             truck_file,
-            dashboard_file,
             lifetime_file,
             *vehicle_reference.paths,
             bus_lifetime_file,
@@ -511,7 +574,6 @@ def build_existing_capacity_artifacts(
             report5_age=pd.read_csv(report5_file),
             ldv_registrations=pd.read_csv(ldv_file),
             truck_registrations=pd.read_csv(truck_file),
-            dashboard=pd.read_csv(dashboard_file),
             regions=regions,
             period_config=scenario.periods,
             vehicle_population_year=scenario.existing_capacity.vehicle_population_year,
@@ -670,20 +732,35 @@ def build_existing_capacity_artifacts(
         components.extend(
             ("statcan_transport_tables", table_id) for table_id in table_ids
         )
-        if road_class == "medium_trucks" and shares["dashboard_override"].any():
-            components.append(
-                ("transport_canada_ev_dashboard", "medium_heavy_ev_market_share")
+        fuel_variant = {}
+        fuel_method = ""
+        if road_class in road_rules["statcan_ldv_source_types"]:
+            fuel_variant = {
+                "registration_population": "new_registrations",
+                "registration_source_vehicle_types": road_rules["statcan_ldv_source_types"][road_class],
+            }
+            fuel_method = "; LDV new-registration distributions allocate CEUD class cohorts"
+        elif road_class == "medium_trucks":
+            fuel_variant = {
+                "registration_population": "registered_fleet_proxy_for_full_ceud_medium_trucks",
+                "registration_source_vehicle_types": road_rules["statcan_medium_source_types"],
+            }
+            fuel_method = (
+                "; registered-fleet fuel shares from "
+                + ", ".join(road_rules["statcan_medium_source_types"])
+                + " proxy the full CEUD medium-truck class; CEUD stock totals are preserved"
             )
         context = _context(
             bundle,
             name=f"road.{road_class}.{vintage}.{region}",
             components=components,
-            variant={**variants, "sales_stock_calibration": "base_year_ceud_stock"} if sales_based else variants,
-            transformation_version=("7" if scenario.lifetimes.survival_curves else "6") if sales_based else "3",
+            variant={**variants, **fuel_variant, "sales_stock_calibration": "base_year_ceud_stock"} if sales_based else variants,
+            transformation_version=("8" if scenario.lifetimes.survival_curves else "7") if sales_based else "3",
             transformation=(
                 "Annual CEUD sales times cumulative survival calibrated to base-year CEUD class stock, registration fuel proxy and "
                 + ("sales-weighted survival curves with separate physical stock"
                    if scenario.lifetimes.survival_curves else "stock-preserving fixed-lifetime eligibility redistribution")
+                + fuel_method
                 if sales_based else
                 "CEUD stock with reviewed age, fuel, and lifetime evidence"
             ),
@@ -730,7 +807,13 @@ def build_existing_capacity_artifacts(
                 ("epri_us_regen_transportation", "intercity_bus_charts")
             )
         context = _context(
-            bundle, name=f"bus.{road_class}.{region}", components=components, variant=variants
+            bundle, name=f"bus.{road_class}.{region}", components=components, variant=variants,
+            transformation_version="3",
+            transformation=(
+                "CEUD stock age-distributed using MTO Report 5; powertrain shares from cohort-year "
+                "vehicle-km inferred by dividing CEUD fuel energy by back-indexed vehicle consumption. "
+                "Stock is allocated to cohorts and model vintages within fixed StatCan lifetimes."
+            ),
         )
         contexts.append(context)
         rows.extend(
@@ -835,6 +918,16 @@ def build_existing_capacity_artifacts(
         "region", "road_class", "tech", "vintage_year", "vintage",
         "raw_acquisitions_k_vehicles", "calibrated_acquisitions_k_vehicles",
     ]].copy()
+    if scenario.lifetimes.survival_curves:
+        # Annual source cohorts remain in the stock evidence. Only installed
+        # processes that survived publication cleanup can own solver curves.
+        process_columns = ["region", "tech", "vintage"]
+        retained_keys = {(row.region, row.tech, row.vintage) for row in rows}
+        retained = pd.MultiIndex.from_frame(annual_acquisitions[process_columns]).isin(retained_keys)
+        omitted = annual_acquisitions.loc[~retained, process_columns].drop_duplicates()
+        audit["survival_processes_without_published_capacity"] = omitted.to_dict("records")
+        LOGGER.info("Excluded %s non-published cohort keys from survival parameter preparation", len(omitted))
+        annual_acquisitions = annual_acquisitions.loc[retained].copy()
     annual_acquisitions["data_id"] = [road_data_ids[key] for key in annual_acquisitions[
         ["region", "tech", "vintage"]].itertuples(index=False, name=None)]
     audit["survival_reconciliation"] = survival.audit.to_dict("records")
@@ -1032,15 +1125,48 @@ def build_existing_capacity_artifacts(
             axis=1,
         )
     ]
+    emitted_buses = bus_parameter_ready.groupby(["region", "tech"])["capacity"].sum()
+    audit["bus_bev_stock_by_region"] = [
+        {
+            "region": region,
+            "tech": tech,
+            "raw_stock_k_vehicles": float(group["raw_cohort_k_vehicles"].sum()),
+            "eligible_raw_stock_k_vehicles": float(
+                group.loc[group["eligible_first_model_period"], "raw_cohort_k_vehicles"].sum()
+            ),
+            "allocated_stock_k_vehicles": float(group["capacity"].sum()),
+            "inserted_stock_k_vehicles": float(emitted_buses.get((region, tech), 0.0)),
+        }
+        for (region, tech), group in bus_cohorts.loc[bus_cohorts["powertrain"].eq("bev")].groupby(["region", "tech"])
+    ]
     offroad_parameter_ready = offroad_capacity.loc[
         offroad_capacity.apply(
             lambda record: (record.region, record.tech, record.vintage) in retained,
             axis=1,
         )
     ]
+    annual_stock_path = interim_output / road_rules["annual_stock_file"]
+    annual_stock = annual_road_stock_evidence(road_shares, bus_cohorts)
+    outside_history = annual_stock.loc[
+        [int(row.vintage_year) not in scenario.periods.historical_years(int(row.vintage))
+         for row in annual_stock.itertuples(index=False)]
+    ]
+    audit["annual_stock_outside_historical_coverage"] = {
+        "cohort_rows": len(outside_history),
+        "raw_stock_k_vehicles": float(outside_history.raw_capacity.sum()),
+        "allocated_stock_k_vehicles": float(outside_history.capacity.sum()),
+        "by_region_class": [
+            {"region": region, "road_class": road_class, "cohort_rows": len(group),
+             "raw_stock_k_vehicles": float(group.raw_capacity.sum()),
+             "allocated_stock_k_vehicles": float(group.capacity.sum())}
+            for (region, road_class), group in outside_history.groupby(["region", "road_class"])
+        ],
+        "weighting_treatment": "Retained for capacity reconciliation; excluded from historical consumption weights",
+    }
     artifact_frames = (
         (road_cohorts, interim_output / road_rules["age_cohorts_file"]),
         (road_shares, interim_output / road_rules["fuel_shares_file"]),
+        (annual_stock, annual_stock_path),
         (road_exclusions, validation_output / road_rules["exclusions_file"]),
         (bus_cohorts, interim_output / bus_rules["age_cohorts_file"]),
         (bus_shares, interim_output / bus_rules["activity_shares_file"]),
@@ -1059,7 +1185,6 @@ def build_existing_capacity_artifacts(
         pd.DataFrame([row.model_dump(mode="python") for row in rows]),
         processed_output / "existing_capacity.csv",
     )
-    annual_stock_path = interim_output / road_rules["fuel_shares_file"]
     audit["annual_stock_evidence"] = {
         "path": str(annual_stock_path.relative_to(bundle.repo_root)
                     if annual_stock_path.is_relative_to(bundle.repo_root) else annual_stock_path),

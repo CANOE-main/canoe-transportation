@@ -9,7 +9,9 @@ from canoe_schema.v4_0 import Region, TechnologyLabel, TimePeriod
 import pandas as pd
 import pytest
 
+from fetching import assorted_sources, statcan_tables, vehicle_population
 from parameterization.build_lifetime_parameters import prepare_lifetime_rows
+from parameterization.road_aggregation import build_road_aggregation_artifacts
 from parameterization.road_lifetimes_survival import (
     derive_accepted_lifetime_frames,
     fixed_existing_lifetimes,
@@ -20,7 +22,7 @@ from parameterization.road_lifetimes_survival import (
     validate_accepted_survival_inputs,
 )
 from parameterization.road_stocks_and_demands import accepted_curve_ages
-from utils import load_config_bundle, load_harmonization_rules, resolve_input_path
+from utils import load_config_bundle, load_harmonization_rules, resolve_artifact_path, resolve_input_path
 from validation.insertion import insert_models
 from validation.provenance import registry_rows
 from validation.schema_contract import create_v4_schema
@@ -49,10 +51,34 @@ def accepted_frames(bundle):
     )
 
 
-@pytest.fixture
-def survival_inputs(tmp_path):
-    """Use registered core schedules and a synthetic optional-source interface."""
+@pytest.fixture(scope="module")
+def registered_survival_bundle(tmp_path_factory):
+    """Replay the scenario's source schedules and class weights in a private root."""
     bundle = selected_bundle(load_config_bundle(SCENARIO, repo_root=ROOT), NEMS, False)
+    directory = tmp_path_factory.mktemp("registered_survival")
+    interim = directory / bundle.paths.inputs.interim
+    inputs = bundle.paths.inputs.model_copy(update={"interim": str(interim)})
+    artifacts = dict(bundle.paths.artifacts)
+    private_families = ("ontario_vehicle_population", "road_aggregation", "vehicle_mapping_review")
+    for family in private_families:
+        route = artifacts[family]
+        artifacts[family] = route.model_copy(update={"path": str(directory / route.path)})
+    bundle = replace(bundle, paths=bundle.paths.model_copy(update={"inputs": inputs, "artifacts": artifacts}))
+    assert resolve_input_path(bundle, "interim").is_relative_to(directory)
+    assert all(resolve_artifact_path(bundle, family).is_relative_to(directory) for family in private_families)
+    assorted_sources.fetch_and_normalize(bundle, download=False)
+    statcan_tables.fetch_and_normalize(bundle, download=False)
+    vehicle_population.fetch_and_normalize(
+        bundle, year=bundle.scenario.existing_capacity.vehicle_population_year, download=False, registered_only=True,
+    )
+    build_road_aggregation_artifacts(bundle)
+    return bundle
+
+
+@pytest.fixture
+def survival_inputs(tmp_path, registered_survival_bundle):
+    """Keep synthetic optional-source mutations local to each test."""
+    bundle = registered_survival_bundle
     rules = load_harmonization_rules(bundle, "assorted_sources")
     interim = tmp_path / "interim"
     assorted = interim / rules["interim_subdir"]

@@ -32,7 +32,7 @@ def _(load_diagnostic, mo):
     try:
         diagnostic = load_diagnostic()
         missing_evidence = None
-    except FileNotFoundError as error:
+    except (FileNotFoundError, ValueError) as error:
         diagnostic = None
         missing_evidence = str(error)
     mo.stop(missing_evidence is not None, mo.callout(missing_evidence or "", kind="warn"))
@@ -45,23 +45,23 @@ def _(diagnostic, mo):
     mo.md(f"""
     # What determines vehicle investment, maintenance and repair costs?
 
-    Compare source-class prices, emitted investment costs and age-dependent maintenance and repair (M&R).
-    These are **parameter diagnostics**, not optimized vehicle choices or independent validation of empirical assumptions.
+    Trace source vehicle prices into investment costs, then examine how age and service demand
+    affect maintenance and repair (M&R). These checks explain the compiled parameters;
+    they do not predict vehicle choices or independently validate the empirical cost models.
 
     **Recorded scenario:** {scenario['scenario']['name']} · [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) {diagnostic.metadata['trajectory']} ·
     {scenario['economics']['cost_reference_year']} CAD · range representation
     `{scenario['BEV_PHEV_range_representation']['mode']}` · build {diagnostic.metadata['build_timestamp_utc']}.
     **Evidence capture:** `{diagnostic.metadata['capture_id']}`.
 
-    Reading this notebook never runs ETL or changes a scenario. To replace the capture, first build the intended scenario,
-    then explicitly run:
+    The notebook reads recorded evidence. To update it, build the intended scenario, then run:
 
     ```sh
     uv run python -m validation.vehicle_cost_diagnostic --scenario {diagnostic.metadata['scenario_path']} --write-report
     ```
 
-    Every plotted source year is distinct from its dollar year. A model vintage can use interval-end price evidence;
-    the tables retain both. Fuel purchases are outside these M&R costs.
+    Keep three dates separate: vehicle model vintage, price observation/projection year and currency year.
+    Tables retain the price year used for each vintage. Fuel purchases are outside M&R costs.
     """)
     return (scenario,)
 
@@ -83,12 +83,14 @@ def _(currency, diagnostic, mo, price_basis, show_chart, source_class, source_pr
     ## 1. What price is being represented?
 
     [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) supplies retail-price-equivalent projections. Production estimates manufacturing cost by dividing by
-    the configured family markup, **1.5 for LDVs and 1.2 for MHDVs**. This does not change the retail MSRP used
-    in the repair equation. The Conservative case is a manufacturing-cost proxy obtained from AEO retail prices.
+    the configured family markup: **1.5 for light-duty vehicles (LDVs)** and **1.2 for medium/heavy-duty
+    vehicles (MHDVs)**. The repair equation uses retail MSRP after dollar-year conversion.
+    The Conservative case is a manufacturing-cost proxy obtained from AEO retail prices.
 
-    Differences between powertrains can reflect source architecture and component assumptions. A lower FCEV
-    price than a particular BEV range is not automatically an error, nor a ranking that holds in every year.
-    Lines join registered source projection points; they do not add unsupported endpoint extrapolation.
+    Each line follows one powertrain's registered price projections. Vehicle design and component assumptions
+    can make a fuel-cell vehicle (FCEV) cheaper than a particular battery-electric (BEV) range in some years;
+    this alone does not identify an error.
+    Lines join available source points without extending them beyond their supported years.
     """), show_chart(source_figure)])
     return (source_figure,)
 
@@ -110,14 +112,14 @@ def _(diagnostic, investment_trajectory_chart, mo, region, road_class, show_char
     investment_figure = investment_trajectory_chart(diagnostic, region=region.value, mode=road_class.value)
     investment_rows = diagnostic.frames["investment"].loc[lambda frame: frame.region.eq(region.value) & frame["mode"].eq(road_class.value)]
     mo.vstack([mo.md("""
-    ## 2. How do composition and calendar choices change investment costs?
+    ## 2. How do fleet composition and price years change investment costs?
 
-    The emitted values combine the selected source trajectory with reviewed vehicle-class weights and, when
-    selected, range representation. For road investment, million CAD per thousand vehicles equals thousand CAD
+    Compiled costs combine the selected price trajectory with reviewed vehicle-class weights and the selected
+    range representation. For road investment, million CAD per thousand vehicles equals thousand CAD
     per vehicle. It is a capacity cost; it is not a cost per passenger-km or tonne-km.
 
-    The source and final views answer different questions. Use the audit to trace a changed level to class weights,
-    source years, retail-price treatment or money conversion before treating a discontinuity as a defect.
+    Compare these values with the source-class view above. A change can come from class weights, the selected
+    price year, the manufacturing/retail basis or currency conversion; the audit separates those steps.
     """), show_chart(investment_figure), show_table(investment_rows[["tech", "vintage", "purchase_evidence_year", "cost", "units"]].rename(columns={
         "tech": "Technology", "vintage": "Model vintage", "purchase_evidence_year": "Price source year", "cost": "Investment cost", "units": "Units"}), "Emitted investment rows: one region, technology and vintage")])
     return (investment_figure,)
@@ -153,16 +155,16 @@ def _(currency, diagnostic, maintenance_age_chart, maintenance_class, maintenanc
     \[R_{a,c,p}=s_c m_p b_{\min(a,a_*)}\exp(\beta P_{c,p,y}),\qquad V_{a,c,p}=R_{a,c,p}+M_p.\]
 
     Here \(a\) is age in years, \(c\) class, \(p\) powertrain and \(y\) the MSRP source year;
-    \(s_c,m_p\) are dimensionless, \(b_a,M_p\) are USD/mile, \(P\) is retail USD/vehicle and
-    \(\beta\) is the reciprocal-price coefficient. Production holds \(b_a\) after \(a_*=14\).
-    MSRP is **2022 USD**, while the empirical coefficients/output basis are **2020 USD**: this existing mismatch
-    is exposed rather than silently rebased inside the exponential.
+    \(s_c,m_p\) are dimensionless, \(b_a,M_p\) are 2020 USD/mile, \(P\) is retail MSRP in 2020 USD/vehicle and
+    \(\beta\) has inverse-price units, making \(\beta P\) dimensionless. Production holds the age coefficient \(b_a\) constant after \(a_*=14\).
+    Production rebases ATB retail MSRP from 2022 to 2020 USD before evaluating the exponential.
+    The conversion uses the ratio of the two annual [BEA U.S. GDP implicit price deflator](https://downloads.regulations.gov/BOEM-2024-0037-0002/content.pdf) levels.
 
     [Burnham et al. (2021), §3.5.4, Eq. 3.13 and Table 3.17](https://publications.anl.gov/anlpubs/2021/05/167399.pdf#page=116)
     describes the repair model. Its Edmunds inputs estimate repairs from extended-warranty costs;
     they are not direct repair bills. The ten-year evidence combines two model years, with sparse
     alternative-powertrain coverage. Scheduled maintenance is described separately in §3.5.3/Table 3.16.
-    The backend age-14 hold is distinct from the empirical source's numbered years.
+    Extending the coefficient beyond age 14 is a backend assumption, not additional observed repair evidence.
 
     MHDV total M&R uses \(V_{a,c,p}=m_p(A_{c,p}a+B_{c,p})\), with \(A\) in USD/(mile·year),
     \(B\) in USD/mile and a dimensionless multiplier. The registered evidence does not establish a validated
@@ -184,9 +186,12 @@ def _(diagnostic, mo, region, road_class, service_maintenance_chart, show_chart,
     or payload. Passenger-km and tonne-km denominators remain separate. Bus price-ratio and motorcycle annual-cost
     treatments appear in the source audit; they are not silently replaced with an LDV age equation.
 
-    Period labels, evidence years and active lifetimes determine the ages emitted. Missing later rows mean that a
+    Model periods, evidence years and lifetimes determine which ages have compiled costs. Missing later rows mean that a
     process is outside the supported lifetime/coverage; they do not imply zero maintenance cost.
-    """), show_chart(service_figure), show_table(service_rows[["tech", "period", "age", "cost", "units", "load_factor", "treatment"]], "Emitted new-cohort M&R with captured age, service denominator and source treatment")])
+    """), show_chart(service_figure), show_table(service_rows[["tech", "period", "age", "cost", "units", "load_factor", "treatment"]].rename(columns={
+        "tech": "Technology", "period": "Model period", "age": "Age (years)", "cost": "M&R cost",
+        "units": "Units", "load_factor": "Occupancy / payload", "treatment": "Source treatment",
+    }), "New-cohort M&R: one technology and operating period, with its age and service denominator")])
     return (service_figure,)
 
 
@@ -219,11 +224,15 @@ def _(diagnostic, mo, range_cost_chart, range_family, range_mode, region, show_c
 @app.cell
 def _(diagnostic, mo, show_table, source_markdown):
     mo.vstack([mo.md("""
-    ## Evidence and remaining limitations
+    ## What explains a cost difference, and what remains uncertain?
 
-    The source-step table ranks all adjacent [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) price changes by magnitude. This is an investigation aid;
-    it applies no arbitrary defect threshold or smoothing. Source changes, architecture differences and
-    aggregation can all be consequential without being implementation errors.
+    Investment comparisons need a common currency year, price basis, vehicle mix and price year.
+    M&R comparisons also need the same age and passenger/freight denominator. A representative range cost
+    preserves weighted purchase expenditure, not necessarily energy use or total system cost.
+
+    The table ranks adjacent [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) price changes to help locate jumps;
+    it does not classify them as defects or smooth them away. The limitations below identify where the
+    source evidence or transferred assumptions still constrain interpretation.
     """), show_table(diagnostic.frames["source_steps"][["vehicle_class", "powertrain", "previous_source_year", "source_year", "previous_native_price", "retail_native", "relative_change", "source_unit"]], "Source price steps, largest absolute proportional change first"),
         mo.md(source_markdown("\n".join(f"- {item}" for item in diagnostic.metadata["limitations"]))),
         mo.accordion({"Complete cost and monetary audit": mo.vstack([

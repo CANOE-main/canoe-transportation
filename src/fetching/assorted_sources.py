@@ -25,18 +25,11 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
-from fetching.publication_tables import (
-    PublicationTableError,
-    normalize_publication_label,
-    select_publication_table,
-)
 from utils import (
     ConfigBundle,
-    active_source_keys,
     file_sha256,
     load_config_bundle,
     load_harmonization_rules,
-    resolve_artifact_path,
     resolve_input_path,
 )
 from validation.config_models import SourceSpec
@@ -48,222 +41,6 @@ class AssortedSourcesError(ValueError):
     def __init__(self, message: str, *, evidence: dict[str, Any] | None = None) -> None:
         super().__init__(message)
         self.evidence = evidence
-
-
-def normalize_tc_ev_dashboard_table(
-    html: str,
-    *,
-    table_id: str,
-    heading_id: str,
-    year: int,
-    quarter_header: str,
-    ytd_header: str,
-    heading_text: str | None = None,
-    table_id_aliases: list[str] | tuple[str, ...] = (),
-    heading_id_aliases: list[str] | tuple[str, ...] = (),
-    source_regions: list[str] | None = None,
-) -> pd.DataFrame:
-    """Normalize the identified TC medium/heavy provincial market-share table."""
-    expected_headers = ["Province/territory", quarter_header, ytd_header]
-    try:
-        table = select_publication_table(
-            html, table_id=table_id, heading_id=heading_id,
-            heading_text=heading_text, table_id_aliases=table_id_aliases,
-            heading_id_aliases=heading_id_aliases,
-            required_headers=expected_headers, source_regions=source_regions,
-        )
-    except PublicationTableError as exc:
-        raise AssortedSourcesError(str(exc)) from exc
-    headers = [normalize_publication_label(label) for label in table.headers]
-    normalized_expected = list(map(normalize_publication_label, expected_headers))
-    quarter_columns = {}
-    for index, label in enumerate(headers):
-        if label in (normalized_expected[0], normalized_expected[2]):
-            continue
-        match = re.fullmatch(r"market share q([1-4]) (\d{4})", label)
-        if match is None or int(match[2]) != year:
-            raise AssortedSourcesError(f"Dashboard table headers changed: unexpected column {table.headers[index]!r}")
-        quarter_columns[index] = int(match[1])
-    quarter_index = headers.index(normalized_expected[1])
-    if quarter_index not in quarter_columns or normalized_expected[2] != normalize_publication_label(f"{year} year-to-date"):
-        raise AssortedSourcesError(
-            "Dashboard selected quarter or year-to-date header does not match the configured year"
-        )
-    region_index, ytd_index = headers.index(normalized_expected[0]), headers.index(normalized_expected[2])
-    if region_index != 0:
-        raise AssortedSourcesError("Dashboard province column must precede its observations")
-    if len({normalize_publication_label(row[region_index]) for row in table.rows}) != len(table.rows):
-        raise AssortedSourcesError("Dashboard table has duplicate province labels")
-
-    def share(raw: str) -> float | None:
-        if raw.casefold() == "n/a":
-            return None
-        if not raw.endswith("%"):
-            raise AssortedSourcesError(f"Dashboard share is not a percentage: {raw!r}")
-        try:
-            value = float(raw[:-1].strip()) / 100.0
-        except ValueError as exc:
-            raise AssortedSourcesError(f"Dashboard share is invalid: {raw!r}") from exc
-        if not math.isfinite(value) or not 0 <= value <= 1:
-            raise AssortedSourcesError(f"Dashboard share is outside [0, 1]: {raw!r}")
-        return value
-
-    canonical_regions = {normalize_publication_label(value): value for value in source_regions or []}
-    rows = []
-    for row in table.rows:
-        quarters = {index: share(row[index]) for index in quarter_columns}
-        region = row[region_index]
-        rows.append({
-            "source_region": canonical_regions.get(normalize_publication_label(region), region),
-            "source_year": year,
-            "quarter_market_share": quarters[quarter_index],
-            "ytd_market_share": share(row[ytd_index]),
-            "units": "fraction",
-        })
-    result = pd.DataFrame(rows)
-    result.attrs["publication_selection"] = {
-        **table.selection,
-        "reporting_year": year,
-        "selected_headers": {"province": table.headers[region_index],
-                             "quarter": table.headers[quarter_index],
-                             "ytd": table.headers[ytd_index]},
-        "quarter_columns": [table.headers[index] for index in quarter_columns],
-        "additional_quarter_columns": [table.headers[index] for index in quarter_columns if index != quarter_index],
-    }
-    result.attrs["published_observations"] = {"headers": table.headers, "rows": table.rows}
-    return result
-
-
-def normalize_tc_public_chargers(
-    html: str,
-    *,
-    year: int,
-    heading_id: str,
-    chart_table_id: str,
-    province_table_id: str,
-    as_of: str,
-    regions: list[str],
-    national_total_precedence: Literal["require_equal", "provincial"] = "require_equal",
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Read public LD ports from the same pinned TC dashboard HTML."""
-    if national_total_precedence not in {"require_equal", "provincial"}:
-        raise AssortedSourcesError("Unknown dashboard national_total_precedence policy")
-    try:
-        chart = select_publication_table(
-            html, table_id=chart_table_id, heading_id=heading_id,
-            required_headers=["Year", "Level 2", "Level 3"],
-        )
-        province = select_publication_table(
-            html, table_id=province_table_id,
-            heading_id="ratio-of-light-duty-electric-vehicles-to-public-ev-chargers",
-            required_headers=["Province/territory", "Charger data"],
-        )
-    except PublicationTableError as exc:
-        raise AssortedSourcesError(str(exc)) from exc
-    if heading_id not in province.selection["section_heading_ids"]:
-        raise AssortedSourcesError("Dashboard provincial charger table is outside its configured heading section")
-    if list(map(normalize_publication_label, chart.headers)) != ["year", "level 2", "level 3"]:
-        raise AssortedSourcesError("Dashboard charger type chart is missing or changed")
-    if list(map(normalize_publication_label, province.headers)) != ["province territory", "charger data"]:
-        raise AssortedSourcesError("Dashboard provincial charger table is missing or changed")
-    if not chart.rows or any(len(row) != 3 for row in chart.rows):
-        raise AssortedSourcesError("Dashboard charger type chart has incomplete rows")
-    selected = [row for row in chart.rows if row[0] == as_of]
-    if len(selected) != 1 or not as_of.endswith(str(year)):
-        raise AssortedSourcesError("Dashboard selected charger reporting date is missing or ambiguous")
-
-    def count(raw: str) -> int:
-        if re.fullmatch(r"(?:0|[1-9]\d{0,2}(?:,\d{3})*)", raw) is None:
-            raise AssortedSourcesError(f"Dashboard charger count is invalid: {raw!r}")
-        return int(raw.replace(",", ""))
-
-    l2, dcfc = (count(value) for value in selected[0][1:])
-    national = l2 + dcfc
-    if national <= 0:
-        raise AssortedSourcesError("Dashboard national public charger count is zero")
-    section = html.split(f'id="{heading_id}"', 1)[1].split(
-        'id="private-ev-chargers-selected-for-funding-or-financing"', 1
-    )[0]
-    total_match = re.findall(
-        r"Total chargers:\s*<strong>([\d,]+)</strong>", section
-    )
-    type_counts = pd.DataFrame(
-        [
-            {"source_year": year, "as_of": as_of, "charger_type": kind,
-             "public_chargers": value, "national_share": value / national, "units": "ports"}
-            for kind, value in (("L2", l2), ("DCFC", dcfc))
-        ]
-    )
-    if len(province.rows) != len(regions) or any(len(row) != 2 for row in province.rows):
-        raise AssortedSourcesError("Dashboard provincial charger coverage is incomplete")
-    rows = []
-    canonical_regions = {normalize_publication_label(region): region for region in regions}
-    for label, details in province.rows:
-        matches = re.findall(r"Total public chargers:\s*([\d,]+)", details)
-        if len(matches) != 1:
-            raise AssortedSourcesError(f"Missing public charger count for {label}")
-        rows.append({"source_region": canonical_regions.get(normalize_publication_label(label), label),
-                     "source_year": year, "as_of": as_of,
-                     "public_chargers": count(matches[0]), "units": "ports"})
-    provincial = pd.DataFrame(rows)
-    if set(provincial.source_region) != set(regions) or provincial.source_region.duplicated().any():
-        raise AssortedSourcesError("Dashboard provincial charger labels changed")
-    provincial_total = int(provincial.public_chargers.sum())
-    if provincial_total <= 0:
-        raise AssortedSourcesError("Dashboard provincial public charger total is zero")
-    printed_totals = [count(value) for value in total_match]
-    flags = []
-    if provincial_total != national:
-        flags.append("provincial_vs_chart_total")
-    if len(printed_totals) != 1:
-        flags.append("national_summary_missing_or_ambiguous")
-    elif printed_totals[0] != provincial_total:
-        flags.append("provincial_vs_printed_national_total")
-    if any(value != national for value in printed_totals):
-        flags.append("printed_national_vs_chart_total")
-    evidence = {
-        "reporting_date": as_of,
-        "national_total": national,
-        "printed_national_totals": printed_totals,
-        "provincial_total": provincial_total,
-        "difference": provincial_total - national,
-        "national_total_precedence": national_total_precedence,
-        "authoritative_total": provincial_total if national_total_precedence == "provincial" else national,
-        "discrepancy": bool(flags),
-        "flags": flags,
-        "provincial_records": provincial.to_dict(orient="records"),
-        "charger_type_records": type_counts.to_dict(orient="records"),
-        "publication_selection": {"chart": chart.selection, "provincial": province.selection},
-    }
-    if national_total_precedence == "require_equal" and (len(printed_totals) != 1 or printed_totals[0] != national):
-        raise AssortedSourcesError(
-            "Dashboard national charger total does not match L2 and L3", evidence=evidence
-        )
-    if national_total_precedence == "require_equal" and provincial_total != national:
-        raise AssortedSourcesError(
-            "Dashboard provincial chargers do not sum to national total "
-            f"({provincial_total:,} != {national:,}; difference {provincial_total - national:+,})",
-            evidence=evidence,
-        )
-    warnings = []
-    if flags:
-        message = (
-            f"TC public chargers {as_of}: provincial total {provincial_total:,} takes precedence; "
-            f"chart total {national:,}; printed national totals {printed_totals}; "
-            f"provincial-minus-chart difference {provincial_total - national:+,}. "
-            "Published L2/DCFC counts retain their chart-normalized type mix."
-        )
-        warnings.append({
-            "source_id": "transport_canada_ev_dashboard",
-            "component_id": "public_light_duty_chargers",
-            "code": "national_total_mismatch", "message": message,
-            "reconciliation": evidence,
-        })
-        logging.getLogger(__name__).warning("%s", message)
-    for frame in (provincial, type_counts):
-        frame.attrs["reconciliation"] = evidence
-        frame.attrs["warnings"] = warnings
-    return provincial, type_counts
 
 
 class ArtifactRequest(BaseModel):
@@ -493,16 +270,16 @@ def ensure_cached(
 
 def _validate_artifact_path(request: ArtifactRequest, path: Path) -> str:
     actual_bytes = path.stat().st_size
+    actual_hash = file_sha256(path)
     if actual_bytes != request.expected_bytes:
         raise AssortedSourcesError(
             f"{request.source_id}/{request.component_id} byte count changed: "
-            f"expected {request.expected_bytes}, got {actual_bytes}"
+            f"expected {request.expected_bytes}, got {actual_bytes}."
         )
-    actual_hash = file_sha256(path)
     if actual_hash != request.expected_sha256:
         raise AssortedSourcesError(
             f"{request.source_id}/{request.component_id} SHA-256 changed: "
-            f"expected {request.expected_sha256}, got {actual_hash}"
+            f"expected {request.expected_sha256}, got {actual_hash}."
         )
     with path.open("rb") as handle:
         prefix = handle.read(16)
@@ -545,7 +322,7 @@ def _numeric(
 
 
 def _provenance(request: ArtifactRequest, checksum: str) -> dict[str, Any]:
-    return {
+    provenance = {
         "source_id": request.source_id,
         "component_id": request.component_id,
         "source_version": request.source_version,
@@ -553,6 +330,7 @@ def _provenance(request: ArtifactRequest, checksum: str) -> dict[str, Any]:
         "cached_file": str(request.cache_path),
         "cache_sha256": checksum,
     }
+    return provenance
 
 
 def normalize_nhtsa(
@@ -1705,7 +1483,7 @@ def write_outputs(
 
 
 def fetch_and_normalize_moves5_survival(
-    scenario_path: str | Path,
+    scenario_path: str | Path | ConfigBundle,
     *,
     download: bool = True,
     session: requests.Session | None = None,
@@ -1752,98 +1530,8 @@ def fetch_and_normalize_moves5_survival(
     return output_dir
 
 
-def fetch_and_normalize_tc_dashboard(
-    scenario_path: str | Path,
-    *,
-    download: bool = True,
-    session: requests.Session | None = None,
-) -> Path:
-    """Fetch the pinned dashboard and publish its provincial YTD share table."""
-    bundle = load_config_bundle(scenario_path)
-    rules = module_rules(bundle)["tc_ev_dashboard"]
-    source_id = str(rules["source_id"])
-    if source_id not in active_source_keys(bundle):
-        raise AssortedSourcesError(f"Dashboard source is inactive: {source_id}")
-    selection = bundle.scenario.sources.selections[source_id]
-    if selection.year is None:
-        raise AssortedSourcesError("Dashboard selection requires sources.selections year")
-    request = _top_level_request(
-        bundle,
-        source_id=source_id,
-        component_id=str(rules["component_id"]),
-        file_type="html",
-    )
-    cache_status = ensure_cached(request, download=download, session=session)
-    checksum = validate_cached_identity(request)
-    html = request.cache_path.read_text(encoding="utf-8")
-    shares = normalize_tc_ev_dashboard_table(
-        html,
-        table_id=str(rules["table_id"]),
-        heading_id=str(rules["heading_id"]),
-        year=selection.year,
-        quarter_header=str(rules["quarter_header"]),
-        ytd_header=str(rules["ytd_header"]),
-        heading_text=rules.get("heading_text"),
-        table_id_aliases=rules.get("table_id_aliases", []),
-        heading_id_aliases=rules.get("heading_id_aliases", []),
-        source_regions=rules.get("source_regions"),
-    )
-    charger_rules = rules["public_chargers"]
-    charger_as_of = str(bundle.sources.sources[source_id].component(
-        str(charger_rules["component_id"])
-    ).adapter.get("reporting_date", charger_rules["as_of"]))
-    provincial, types = normalize_tc_public_chargers(
-        html,
-        year=selection.year,
-        heading_id=str(charger_rules["heading_id"]),
-        chart_table_id=str(charger_rules["chart_table_id"]),
-        province_table_id=str(charger_rules["province_table_id"]),
-        as_of=charger_as_of,
-        regions=list(charger_rules["source_regions"]),
-        national_total_precedence=charger_rules.get("national_total_precedence", "require_equal"),
-    )
-    output_dir = resolve_artifact_path(bundle, "tc_ev_dashboard_interim")
-    write_outputs(
-        outputs={str(rules["output_file"]): shares,
-                 str(charger_rules["province_output_file"]): provincial,
-                 str(charger_rules["type_output_file"]): types},
-        manifest_rows=[
-            _manifest_row(
-                request,
-                checksum=checksum,
-                cache_status=cache_status,
-                stats=SelectionStats(
-                    input_records=len(shares),
-                    selected_records=int(shares["ytd_market_share"].notna().sum()),
-                    excluded_records=int(shares["ytd_market_share"].isna().sum()),
-                ),
-                selection=f"{selection.year} year-to-date medium/heavy-duty EV market share",
-                output_files=[str(rules["output_file"])],
-                warning_count=0,
-            ),
-            _manifest_row(
-                _top_level_request(
-                    bundle, source_id=source_id,
-                    component_id=str(charger_rules["component_id"]), file_type="html",
-                ),
-                checksum=checksum, cache_status=cache_status,
-                stats=SelectionStats(input_records=len(provincial),
-                                     selected_records=len(provincial), excluded_records=0),
-                selection=f"{charger_as_of} public light-duty EV chargers",
-                output_files=[str(charger_rules["province_output_file"]),
-                              str(charger_rules["type_output_file"])],
-                warning_count=len(provincial.attrs["warnings"]),
-            ),
-        ],
-        warnings=provincial.attrs["warnings"],
-        output_dir=output_dir,
-        rules=module_rules(bundle),
-    )
-    return output_dir
-
-
 def fetch_and_normalize(
-    scenario_path: str | Path,
+    scenario_path: str | Path | ConfigBundle,
     *,
     download: bool = True,
     session: requests.Session | None = None,
@@ -2042,7 +1730,6 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Require and reuse every configured cache artifact without network access.",
     )
-    parser.add_argument("--tc-dashboard-only", action="store_true")
     parser.add_argument(
         "--moves-survival", action="store_true",
         help="Prepare the registered EPA car/truck survival source for use or comparison.",
@@ -2056,10 +1743,6 @@ def main() -> None:
     try:
         if args.moves_survival:
             output_dir = fetch_and_normalize_moves5_survival(
-                args.scenario, download=not args.no_download
-            )
-        elif args.tc_dashboard_only:
-            output_dir = fetch_and_normalize_tc_dashboard(
                 args.scenario, download=not args.no_download
             )
         else:

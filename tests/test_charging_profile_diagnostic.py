@@ -24,7 +24,7 @@ def source(tmp_path, monkeypatch):
     pd.DataFrame({"power": [1]}).to_csv(registered)
     request = SimpleNamespace(registered_path=registered, expected_bytes=registered.stat().st_size,
         expected_sha256=file_sha256(registered), expected_rows=1, calendar_year=2018,
-        calendar_timezone="America/Toronto")
+        calendar_timezone="America/Toronto", strategy="uncontrolled", metadata_sha256="test-metadata-hash")
     timestamps = pd.date_range("2018-01-01", periods=8760, freq="h", tz="America/Toronto")
     factors = np.full(8760, .4)
     factors[168:336] = .8
@@ -32,6 +32,7 @@ def source(tmp_path, monkeypatch):
     monkeypatch.setattr(diagnostic, "find_repo_root", lambda: tmp_path)
     monkeypatch.setattr(diagnostic, "load_config_bundle", lambda path: None)
     monkeypatch.setattr(diagnostic, "build_request", lambda bundle, profile: request)
+    monkeypatch.setattr(diagnostic, "validate_run_metadata", lambda request: {})
     monkeypatch.setattr(diagnostic, "load_harmonization_rules", lambda bundle, owner: (
         {"value_column": "power", "precision": 8, "hourly_operation": "mean",
          "normalization": "annual_hourly_peak", "label_basis": "elapsed_hours_from_local_year_start"}

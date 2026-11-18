@@ -21,6 +21,7 @@ from fetching.nlr_atb_autonomie import configured_trajectory
 from fetching.epa_omega_baseline import SOURCE as OMEGA, COMPONENT as OMEGA_COMPONENT, build_request as omega_request
 from parameterization.ldv_ev_ranges import RangeEvidence, existing_range_weights, module_rules as range_module_rules
 from parameterization.currency import CerCurrencyConverter
+from parameterization.build_lifetime_parameters import lifetime_endpoints
 from parameterization.offroad_capex_opex import (
     aircraft_cost_per_billion_service,
     aircraft_service_evidence,
@@ -28,8 +29,10 @@ from parameterization.offroad_capex_opex import (
     offroad_opex_from_capex_ratio,
 )
 from parameterization.road_capex_opex import (
+    LDV_REPAIR_PRICE_INDEX,
     aggregate_purchase_price,
     bean_maintenance_per_mile,
+    ldv_repair_msrp_factor,
     ldv_repair_per_mile,
     select_nlr_purchase_prices,
 )
@@ -41,11 +44,13 @@ from parameterization.road_fleet_weights import aggregation_component, load_flee
 from utils import (
     ConfigBundle,
     file_sha256,
+    harmonization_rule_paths,
     load_config_bundle,
     load_conversion_factors,
     load_harmonization_rules,
     resolve_artifact_path,
     resolve_input_path,
+    resolve_parameter_path,
     write_dataframe_atomic,
 )
 from validation.insertion import validate_parameter_rows
@@ -83,6 +88,49 @@ def _read(path: Path, paths: list[Path]) -> pd.DataFrame:
         raise ValueError(f"Empty cost evidence: {path}")
     paths.append(path)
     return frame
+
+
+def _cost_trajectory_year(
+    frame: pd.DataFrame, year: int, *, year_col: str, endpoint_policy: str,
+) -> int:
+    """Hold the final cost formulation; never manufacture a historical backfill."""
+    if endpoint_policy != "hold_last":
+        raise ValueError("Cost trajectory endpoint policy must be hold_last")
+    if frame.empty:
+        raise ValueError("Missing cost trajectory")
+    years = pd.to_numeric(frame[year_col], errors="raise")
+    if years.isna().any() or not years.map(isfinite).all():
+        raise ValueError("Invalid cost trajectory years")
+    return min(year, int(years.max()))
+
+
+def _cost_input_fingerprints(bundle: ConfigBundle, data_paths: list[Path]) -> list[tuple[str, str]]:
+    """Keep data paths root-bound and external controls identified by their role."""
+    rule_paths = harmonization_rule_paths(bundle)
+    controls = {
+        "rules": rule_paths[0],
+        **{f"rules:{path.name}": path for path in rule_paths[1:]},
+        "conversion": resolve_parameter_path(bundle, "conversion.yaml"),
+        "sources": bundle.sources_path,
+        "scenario": bundle.scenario_path,
+    }
+    if all(path.is_relative_to(bundle.repo_root) for path in controls.values()):
+        # Preserve existing default-build identities, including path ordering.
+        return [(str(path.relative_to(bundle.repo_root)), file_sha256(path))
+                for path in sorted(set(data_paths) | set(controls.values()))]
+    fingerprints = {
+        str(path.relative_to(bundle.repo_root)): file_sha256(path)
+        for path in sorted(set(data_paths))
+    }
+    for role, path in controls.items():
+        label = (str(path.relative_to(bundle.repo_root)) if path.is_relative_to(bundle.repo_root)
+                 else f"configuration:{role}")
+        if label.startswith("configuration:") and label in fingerprints:
+            raise ValueError(f"Cost input conflicts with a reserved configuration role: {label}")
+        fingerprints[label] = file_sha256(path)
+    # Sorting portable identities, rather than external machine paths, makes an
+    # identical selected control bundle independent of its storage directory.
+    return sorted(fingerprints.items())
 
 
 def _metadata(bundle: ConfigBundle, source: str, component: str) -> tuple[str, int]:
@@ -130,6 +178,7 @@ def _context(
     bundle: ConfigBundle, *, key: str, components: list[tuple[str, str]],
     governing: str, digest: str, version: str,
     governing_component: str | int | None = None,
+    extra_inputs: list[ResolvedProvenance] | None = None,
 ) -> ResolvedProvenance:
     inputs = [
         resolve_provenance(
@@ -149,7 +198,7 @@ def _context(
     if len(governing_inputs) != 1:
         raise ValueError(f"Cost DQ requires one native cost component for {key}")
     return resolve_composite_provenance(
-        inputs=inputs, dataset_key="transport_cost." + key,
+        inputs=[*inputs, *(extra_inputs or [])], dataset_key="transport_cost." + key,
         transformation="Transport cost normalization and currency harmonization",
         transformation_version=version, governing_source_id=governing_id,
         data_quality=governing_inputs[0].data_quality,
@@ -204,17 +253,36 @@ def validate_cost_outputs(
 
 def prepare_cost_rows(
     bundle: ConfigBundle, *, existing_capacity_rows: list | None = None,
+    existing_capacity_contexts: list[ResolvedProvenance] | None = None,
     fixed_lifetime_rows: list | None = None,
     survival_curve_rows: list | None = None,
+    lifetime_provenance_contexts: list[ResolvedProvenance] | None = None,
     range_evidence: RangeEvidence | None = None,
 ) -> CostPreparation:
-    """Build and validate both cost parameters without opening a SQLite connection."""
+    """Build both cost parameters without opening a SQLite connection.
+
+    Caller-owned lifetime batches and motorcycle stock require their matching
+    provenance contexts.
+    Variable-cost datasets retain the lifetime sources governing their coverage;
+    the native cost component continues to govern the final row's source and DQ.
+    """
     if (bundle.scenario.lifetimes.survival_curves and existing_capacity_rows is not None
             and (fixed_lifetime_rows is None or survival_curve_rows is None)):
         raise ValueError(
             "Curve-mode costs with supplied capacity require matching prepared lifetime batches"
         )
+    supplied_lifetimes = fixed_lifetime_rows is not None or survival_curve_rows is not None
+    if supplied_lifetimes and (fixed_lifetime_rows is None or survival_curve_rows is None):
+        raise ValueError("Cost lifetime handoff requires matching prepared lifetime batches")
+    if supplied_lifetimes and lifetime_provenance_contexts is None:
+        raise ValueError("Supplied cost lifetime batches require matching lifetime provenance contexts")
     rules = load_harmonization_rules(bundle, "costs")
+    endpoint_policy = rules["trajectory_endpoint_policy"]
+    if endpoint_policy != "hold_last":
+        raise ValueError("Cost trajectory endpoint policy must be hold_last")
+    bean_age_policy = rules["bean_maintenance_age_policy"]
+    if bean_age_policy != "linear_throughout_life":
+        raise ValueError("BEAN maintenance age policy must be linear_throughout_life")
     efficiency = load_harmonization_rules(bundle, "efficiencies")
     conversions = load_conversion_factors(bundle)
     scenario = bundle.scenario
@@ -282,7 +350,8 @@ def prepare_cost_rows(
                  for region in scenario.geography.regions)
     if set(ceud.source_id) != {CEUD}:
         raise ValueError("Wrong CEUD provenance for cost load factors")
-    road_demand = load_harmonization_rules(bundle, "road_stocks_and_demands")["demand"]
+    road_rules = load_harmonization_rules(bundle, "road_stocks_and_demands")
+    road_demand = road_rules["demand"]
     loads = derive_load_factors(
         ceud, rules=efficiency, activity_rules=road_demand["activity_series"],
         conversions=conversions,
@@ -292,6 +361,12 @@ def prepare_cost_rows(
     bean_currency, bean_year = _metadata(bundle, BEAN, "mhdv_maintenance_coefficients")
     faa_currency, faa_year = _metadata(bundle, FAA, "section_4_operating_costs")
     burnham_currency, burnham_year = _metadata(bundle, ATB, "maintenance_ldv")
+    price_index_source, price_index_component = LDV_REPAIR_PRICE_INDEX
+    usd_price_index = bundle.sources.sources[price_index_source].component(price_index_component).adapter
+    repair_msrp_factor = ldv_repair_msrp_factor(
+        price_basis=(atb_currency, atb_year), repair_basis=(burnham_currency, burnham_year),
+        usd_price_index=usd_price_index["index_by_year"],
+    )
     if set(gcam.source_id) != {GCAM} or set(regen.source_id) != {REGEN}:
         raise ValueError("GCAM or REGEN normalized cost source identity changed")
     if set(bean.source_id) != {BEAN} or set(faa_maintenance.source_id) != {FAA}:
@@ -302,6 +377,7 @@ def prepare_cost_rows(
 
         capacity_preparation = prepare_existing_capacity_rows(bundle)
         existing_capacity_rows = capacity_preparation.existing_capacity_rows
+        existing_capacity_contexts = capacity_preparation.provenance_contexts
     existing_keys = {
         (r.region, r.tech, r.vintage)
         for r in existing_capacity_rows if r.capacity > 0
@@ -316,23 +392,69 @@ def prepare_cost_rows(
         )
         fixed_lifetime_rows = lifetimes.fixed_rows
         survival_curve_rows = lifetimes.curve_rows
-    fixed_lives = {
-        (row.region, row.tech): float(row.lifetime)
-        for row in fixed_lifetime_rows
-    }
-    curve_owners = {(row.region, row.tech) for row in survival_curve_rows}
-    curve_keys = {
-        (row.region, row.period, row.tech, row.vintage)
-        for row in survival_curve_rows
-        if row.period in scenario.periods.model and row.fraction is not None and row.fraction > 0
-    }
+        lifetime_provenance_contexts = lifetimes.provenance_contexts
+    endpoints = lifetime_endpoints(fixed_lifetime_rows, survival_curve_rows)
+    lifetime_contexts: dict[str, ResolvedProvenance] = {}
+    for context in lifetime_provenance_contexts or []:
+        previous = lifetime_contexts.get(context.data_id)
+        if previous is not None and previous != context:
+            raise ValueError(f"Conflicting lifetime provenance context: {context.data_id}")
+        lifetime_contexts[context.data_id] = context
+    fixed_data_ids = {(row.region, row.tech): {row.data_id} for row in fixed_lifetime_rows}
+    curve_data_ids: dict[tuple[str, str, int], set[str]] = {}
+    for row in survival_curve_rows:
+        curve_data_ids.setdefault((row.region, row.tech, row.vintage), set()).add(row.data_id)
+    missing_ids = {row.data_id for row in [*fixed_lifetime_rows, *survival_curve_rows]} - lifetime_contexts.keys()
+    if missing_ids:
+        raise ValueError(f"Cost lifetime rows lack matching provenance contexts: {sorted(map(str, missing_ids))}")
+
+    motorcycle_techs = set(technology.loc[technology.category.eq("motorcycles"), "tech"])
+    motorcycle_service: dict[str, dict[str, Any]] = {}
+    stock_contexts = {context.data_id: context for context in existing_capacity_contexts or []}
+    if motorcycle_techs:
+        from parameterization.build_demand import road_base_year_activity
+
+        motorcycle_stock_owners = set(road_rules["existing_capacity"]["fuel_technology"]["motorcycles"].values())
+        if any(row.tech in motorcycle_techs | motorcycle_stock_owners for row in survival_curve_rows):
+            raise ValueError("Motorcycle maintenance normalization requires physical stock under fixed lifetimes")
+        motorcycle_stock = [row for row in existing_capacity_rows
+                            if row.tech in motorcycle_stock_owners and row.capacity > 0]
+        if not motorcycle_stock:
+            from parameterization.build_existing_capacity import prepare_existing_capacity_rows
+
+            # A new-only contribution still needs a fleet reference for the service divisor.
+            reference = prepare_existing_capacity_rows(bundle)
+            motorcycle_stock = [row for row in reference.existing_capacity_rows
+                                if row.tech in motorcycle_stock_owners and row.capacity > 0]
+            stock_contexts.update({context.data_id: context for context in reference.provenance_contexts})
+        activity, _ = road_base_year_activity(bundle, macro=macro)
+        for target in activity.loc[activity.service.eq("motorcycles")].itertuples(index=False):
+            # Fixed-lifetime motorcycle capacity is the prepared physical reference-year count.
+            stock = [row for row in motorcycle_stock if row.region == target.region]
+            count = sum(row.capacity for row in stock)
+            service = float(target.projected_base_year_demand)
+            if not isfinite(count) or count <= 0 or not isfinite(service) or service <= 0:
+                raise ValueError(f"Motorcycle maintenance requires positive calibrated service and stock: {target.region}")
+            data_ids = sorted({row.data_id for row in stock})
+            if set(data_ids) - stock_contexts.keys():
+                raise ValueError(f"Motorcycle maintenance requires prepared stock provenance: {target.region}")
+            # Convert the bn pkm/k vehicle ratio (million pkm/vehicle) to thousand pkm/vehicle.
+            annual_service = service / count * conversions["service"]["million_service_per_thousand_vehicles"]
+            motorcycle_service[target.region] = {
+                "service_base_year": target.base_year,
+                "service_ceud_observed_year": target.ceud_observed_year,
+                "base_year_activity_bn": service,
+                "base_year_stock_k_vehicles": count,
+                "annual_service_thousand_passenger_km_per_vehicle": annual_service,
+                "stock_data_ids": data_ids,
+            }
+
+    def process_lifetime_ids(region: str, tech: str, vintage: int) -> set[str]:
+        if (region, tech) in fixed_data_ids:
+            return fixed_data_ids[region, tech]
+        return curve_data_ids[region, tech, vintage]
     def active_period(region: str, period: int, tech: str, vintage: int) -> bool:
-        owner = (region, tech)
-        if owner in curve_owners:
-            return (region, period, tech, vintage) in curve_keys
-        if owner in fixed_lives:
-            return period < vintage + fixed_lives[owner]
-        raise ValueError(f"Cost technology has no lifetime: {owner}")
+        return vintage <= period < endpoints.end_year(region, tech, vintage)
     region_map = efficiency["region_output_map"]
     values: list[dict[str, Any]] = []
     units_vehicle = f"$M {reference_year}CAD / k vehicles"
@@ -364,15 +486,36 @@ def prepare_cost_rows(
             **(details or {}),
         })
 
+    trajectory_holds: set[tuple[str, int, int]] = set()
+
+    def cost_year(frame: pd.DataFrame, year: int, label: str, *, year_col: str = "source_year") -> int:
+        selected_year = _cost_trajectory_year(
+            frame, year, year_col=year_col, endpoint_policy=endpoint_policy,
+        )
+        if selected_year < year:
+            trajectory_holds.add((label, year, selected_year))
+        return selected_year
+
     # Physical prices and repair curves repeat across regional/vintage rows.
     # These caches belong to this preparation's freshly read source evidence.
     @cache
     def nlr_purchase_price(
         powertrain: str, year: int, class_weights: tuple[tuple[str, float], ...],
     ) -> tuple[float, float]:
-        return aggregate_purchase_price(
-            prices, powertrain=powertrain, year=year, weights=dict(class_weights),
-        )
+        if (abs(sum(weight for _, weight in class_weights) - 1) > 1e-9
+                or any(weight < 0 for _, weight in class_weights)):
+            raise ValueError("Road purchase-cost class weights do not sum to one")
+        values = []
+        for vehicle_class, weight in class_weights:
+            selected = prices.loc[
+                prices.powertrain.eq(powertrain) & prices.vehicle_class.eq(vehicle_class)
+            ]
+            selected_year = cost_year(selected, year, f"ATB/{powertrain}/{vehicle_class}")
+            msrp, manufacturing = aggregate_purchase_price(
+                prices, powertrain=powertrain, year=selected_year, weights={vehicle_class: 1.0},
+            )
+            values.append((weight * msrp, weight * manufacturing))
+        return sum(value[0] for value in values), sum(value[1] for value in values)
 
     def road_price(mode: str, powertrain: str, year: int, region: str) -> tuple[float, str, int, str, list[tuple[str, str]]]:
         """Native per-vehicle price, retaining the source-specific RPE treatment."""
@@ -383,7 +526,7 @@ def prepare_cost_rows(
             ]
             if set(selected.source_unit) != {"2005$/veh"}:
                 raise ValueError("GCAM motorcycle purchase-cost unit changed")
-            amount = interpolate(selected, year, "source_value", year_col="source_year")
+            amount = interpolate(selected, cost_year(selected, year, f"GCAM/purchase/{powertrain}"), "source_value", year_col="source_year")
             return amount, gcam_currency, gcam_year, "GCAM motorcycle purchase price", [(GCAM, "canada_motorcycle_inputs")]
         if mode == "inter_city_buses":
             keys = rules["intercity_purchase_source_keys"]
@@ -394,7 +537,7 @@ def prepare_cost_rows(
             ]
             if set(selected.native_unit) != {"$"}:
                 raise ValueError("REGEN intercity purchase-price unit changed")
-            amount = interpolate(selected, year, "source_value", year_col="source_year")
+            amount = interpolate(selected, cost_year(selected, year, f"REGEN/purchase/{powertrain}"), "source_value", year_col="source_year")
             components = [(REGEN, "intercity_bus_charts")]
             if powertrain == "hev":
                 transit_weights = tuple(weights[region, "urban_transit"].items())
@@ -433,15 +576,16 @@ def prepare_cost_rows(
         return interpolate(selected, scenario.periods.base_year, "load_factor")
 
     @cache
-    def ldv_retail_msrp(bucket: str, vehicle_class: str, source_year: int) -> float:
-        """Reuse immutable source lookups across periods and regional mixtures."""
+    def ldv_repair_msrp(bucket: str, vehicle_class: str, source_year: int) -> float:
+        """Reuse the rebased retail input across periods and regional mixtures."""
         selected = prices.loc[
             prices.powertrain.eq(bucket) & prices.vehicle_class.eq(vehicle_class)
         ]
-        return interpolate(
-            selected, source_year, "vehicle_price_usd_2022_per_vehicle",
+        retail_msrp = interpolate(
+            selected, cost_year(selected, source_year, f"ATB/MSRP/{bucket}/{vehicle_class}"), "vehicle_price_usd_2022_per_vehicle",
             year_col="source_year",
         )
+        return retail_msrp * repair_msrp_factor
 
     @cache
     def ldv_maintenance_cost(age: int, msrp: float, vehicle_class: str, powertrain: str) -> float:
@@ -483,7 +627,7 @@ def prepare_cost_rows(
                     scenario.periods.historical_years(vintage)[-1]
                     if is_existing and scenario.periods.period_mode == "prospective"
                     else vintage if is_existing
-                    else scenario.periods.projection_year(vintage, legacy_at_end=False)
+                    else scenario.periods.evaluation_year(vintage)
                 )
                 source_year = max(calendar_year, int(prices.source_year.min())) if is_existing else calendar_year
                 if mode in efficiency["road_classes"]:
@@ -525,8 +669,9 @@ def prepare_cost_rows(
                         if period < vintage or not active_period(region, period, item.tech, vintage):
                             continue
                         age = (
-                            scenario.periods.projection_year(period, legacy_at_end=False) - calendar_year
-                            if scenario.periods.period_mode == "prospective" else period - vintage
+                            scenario.periods.period_end(period) - calendar_year
+                            if is_existing and scenario.periods.period_mode == "prospective"
+                            else period - vintage
                         )
                         load = load_at(source_region, mode)
                         if mode in {"cars", "passenger_light_trucks", "freight_light_trucks"}:
@@ -535,14 +680,16 @@ def prepare_cost_rows(
                             for bucket, range_weight in (range_mix or {powertrain: 1.0}).items():
                                 for vehicle_class, class_weight in weights[source_region, mode].items():
                                     weight = range_weight * class_weight
-                                    msrp = ldv_retail_msrp(bucket, vehicle_class, source_year)
+                                    msrp = ldv_repair_msrp(bucket, vehicle_class, source_year)
                                     class_costs.append(weight * ldv_maintenance_cost(
                                         age, msrp, vehicle_class, bucket,
                                     ))
                                     weighted_msrp += weight * msrp
                             cost_per_mile = sum(class_costs)
-                            components = [(ATB, "vehicles"), (ATB, "maintenance_ldv"), (CEUD, road_demand["activity_series"][mode]["table_id"]), *weight_components(mode, source_region)]
-                            treatment = "Burnham MSRP repair plus maintenance"
+                            components = [(ATB, "vehicles"), (ATB, "maintenance_ldv"), LDV_REPAIR_PRICE_INDEX,
+                                          (CEUD, road_demand["activity_series"][mode]["table_id"]),
+                                          *weight_components(mode, source_region)]
+                            treatment = f"Burnham repair at {burnham_year} {burnham_currency} MSRP plus maintenance"
                             if range_mix:
                                 components.append((OMEGA, OMEGA_COMPONENT))
                                 treatment += "; OMEGA range-weighted representative"
@@ -554,24 +701,19 @@ def prepare_cost_rows(
                             ]
                             if set(selected.source_unit) != {"2005$/veh/yr"}:
                                 raise ValueError("GCAM motorcycle maintenance-cost unit changed")
-                            amount = interpolate(
-                                selected, calendar_year,
-                                "source_value", year_col="source_year",
-                            )
-                            distance = interpolate(
-                                loads.loc[loads.region.eq(source_region) & loads["mode"].eq(mode)],
-                                scenario.periods.base_year, "distance_km",
-                            )
-                            denominator = distance * load / 1000
+                            source_cost_year = cost_year(selected, calendar_year, f"GCAM/maintenance/{powertrain}")
+                            amount = interpolate(selected, source_cost_year, "source_value", year_col="source_year")
+                            service_basis = motorcycle_service[region]
                             add(
                                 family="variable", region=region, tech=item.tech,
                                 vintage=vintage, period=period, mode=mode,
                                 source_value=amount, currency=gcam_currency,
                                 dollar_year=gcam_year, source_unit="2005$/vehicle-year",
-                                divisor=denominator,
+                                divisor=service_basis["annual_service_thousand_passenger_km_per_vehicle"],
                                 components=[(GCAM, "canada_motorcycle_inputs"), (CEUD, road_demand["activity_series"][mode]["table_id"])],
-                                governing=GCAM, treatment="GCAM annual motorcycle maintenance per service-km",
-                                details={"source_cost_year": calendar_year, "load_factor": load, "annual_distance_km": distance},
+                                governing=GCAM, treatment="GCAM annual motorcycle maintenance divided by calibrated base-year service per vehicle",
+                                details={"source_cost_year": source_cost_year, "cost_evaluation_year": calendar_year,
+                                         **service_basis},
                             )
                             continue
                         else:
@@ -622,13 +764,19 @@ def prepare_cost_rows(
                             components=components, governing=components[0][0],
                             treatment=treatment,
                             details={"age": age, "load_factor": load,
+                                     "maintenance_formula_age": min(age, rules["ldv_repair_max_age"]) if mode in {
+                                         "cars", "passenger_light_trucks", "freight_light_trucks"
+                                     } else age,
+                                     "maintenance_age_endpoint_held": age > rules["ldv_repair_max_age"] if mode in {
+                                         "cars", "passenger_light_trucks", "freight_light_trucks"
+                                     } else False,
                                      "range_weights": json.dumps(range_mix, sort_keys=True) if range_mix else None,
                                      "purchase_evidence_year": source_year,
                                      "aggregation_weights": json.dumps(
                                          weights[source_region, mode], sort_keys=True
                                      ),
                                      "historical_msrp_proxy": is_existing and calendar_year < int(prices.source_year.min()),
-                                     "weighted_atb_retail_msrp": weighted_msrp if mode in {
+                                     "weighted_repair_msrp": weighted_msrp if mode in {
                                          "cars", "passenger_light_trucks", "freight_light_trucks"
                                      } else None,
                                      **({
@@ -781,11 +929,6 @@ def prepare_cost_rows(
 
     if not values:
         raise ValueError("No transport costs were derived")
-    digest_inputs = sorted(set(paths) | {
-        bundle.repo_root / "config/parameters/rules.yaml",
-        bundle.repo_root / "config/parameters/conversion.yaml",
-        bundle.repo_root / "config/sources.yaml", bundle.scenario_path,
-    })
     lifetime_signature = sorted([
         (row.region, row.tech, "fixed", row.lifetime, row.data_id)
         for row in fixed_lifetime_rows
@@ -795,8 +938,9 @@ def prepare_cost_rows(
     ])
     digest = hashlib.sha256(json.dumps(
         {
-            "files": [(str(path.relative_to(bundle.repo_root)), file_sha256(path)) for path in digest_inputs],
+            "files": _cost_input_fingerprints(bundle, paths),
             "lifetime_signature": lifetime_signature,
+            "motorcycle_service": motorcycle_service,
             "ceud_beyond_observed": scenario.sources.nrcan_ceud_beyond_observed,
             "ceud_extrapolation": load_harmonization_rules(bundle, "ceud_inputs")["cagr"] if scenario.sources.nrcan_ceud_beyond_observed == "extrapolated" else None,
             "base_year": scenario.periods.base_year,
@@ -826,13 +970,24 @@ def prepare_cost_rows(
             governing_component = "section_4_operating_costs"
         else:
             governing_component = None
+        used_lifetime_ids = sorted({
+            data_id
+            for entry in group if family == "variable"
+            for data_id in process_lifetime_ids(entry["region"], entry["tech"], entry["vintage"])
+        })
+        used_stock_ids = sorted({data_id for entry in group for data_id in entry.get("stock_data_ids", [])})
         context = _context(
             bundle, key=f"{family}.{mode}.{hashlib.sha256(repr(components).encode()).hexdigest()[:8]}",
             components=list(components), governing=governing, digest=digest,
             version=rules["transformation_version"],
             governing_component=governing_component,
+            extra_inputs=[lifetime_contexts[data_id] for data_id in used_lifetime_ids]
+            + [stock_contexts[data_id] for data_id in used_stock_ids],
         )
         contexts.append(context)
+        for entry in group:
+            entry["data_id"] = context.data_id
+            entry["lifetime_data_ids"] = json.dumps(used_lifetime_ids)
         records = [{
             "region": entry["region"], "tech": entry["tech"],
             "vintage": entry["vintage"], "cost": entry["cost"],
@@ -893,6 +1048,22 @@ def prepare_cost_rows(
     audit.update({
         "period_mapping": scenario.periods.audit(),
         "input_digest": digest, "atb_scenario": trajectory,
+        "motorcycle_maintenance_service_basis": motorcycle_service,
+        "trajectory_endpoint_policy": endpoint_policy,
+        "maintenance_age_policies": {
+            "ldv": {"policy": "hold_last", "max_age": rules["ldv_repair_max_age"]},
+            "bean": bean_age_policy,
+        },
+        "variable_age_endpoint_held_rows": sum(
+            bool(item.get("maintenance_age_endpoint_held")) for item in values
+        ),
+        "trajectory_endpoint_holds": [
+            {"trajectory": label, "requested_year": requested, "source_endpoint_year": endpoint}
+            for label, requested, endpoint in sorted(trajectory_holds)
+        ],
+        "atb_selected_purchase_trajectories": prices.groupby(
+            ["vehicle_class", "trajectory", "source_trajectory"], as_index=False,
+        ).size().rename(columns={"size": "source_rows"}).to_dict("records"),
         "aggregation_sources": bundle.scenario.aggregation_sources.model_dump(),
         "cer_scenario": scenario.economics.cer_scenario,
         "reference_currency": "CAD", "reference_year": reference_year,
@@ -942,8 +1113,8 @@ def prepare_cost_rows(
             if "native_cost_currency" in registration.adapter
         ],
         "source_components": sorted({
-            f"{source}/{component}"
-            for item in values for source, component in item["components"]
+            f"{source.source_key}/{component.component_key}"
+            for context in contexts for source in context.contributors for component in source.components
         }),
     })
     interim = resolve_artifact_path(bundle, "costs_interim")
@@ -956,8 +1127,12 @@ def prepare_cost_rows(
             for source, component in pairs
         ) else "declared_metadata"
     )
-    evidence["source_components"] = evidence["components"].map(
-        lambda pairs: json.dumps(sorted({f"{source}/{component}" for source, component in pairs}))
+    output_contexts = {context.data_id: context for context in contexts}
+    evidence["source_components"] = evidence["data_id"].map(
+        lambda data_id: json.dumps(sorted({
+            f"{source.source_key}/{component.component_key}"
+            for source in output_contexts[data_id].contributors for component in source.components
+        }))
     )
     evidence = evidence.rename(columns={"governing": "governing_source_key"}).drop(
         columns=["components"]
@@ -980,7 +1155,7 @@ def prepare_cost_rows(
             "cad_per_usd", "source_year_deflator", "target_year_deflator",
             "cad_value", "target_cad_value", "normalization_divisor", "cost",
             "units", "treatment", "governing_source_key", "source_components",
-            "cost_metadata_status",
+            "cost_metadata_status", "data_id", "lifetime_data_ids",
         ]], interim / rules["files"]["currency_audit"],
     )
     invest_frame = pd.DataFrame([row.model_dump(mode="json") for row in invest_rows])
@@ -1006,8 +1181,12 @@ def prepare_cost_rows(
     )
     LOGGER.info("Prepared cost_invest=%s and cost_variable=%s rows; converted %s currency/year groups to %s CAD",
                 len(invest_rows), len(variable_rows), len(conversion_groups), reference_year)
+    LOGGER.info("Rebased LDV retail MSRP from %s to %s USD for repair using the U.S. GDP deflator (factor %.8f)",
+                atb_year, burnham_year, repair_msrp_factor)
     LOGGER.info("Cost data handling: excluded %s expired period/vintage pairs; historical MSRP proxy rows=%s",
                 audit["variable_period_vintage_pairs_excluded_by_lifetime"], audit["historical_msrp_proxy_rows"])
+    if trajectory_holds:
+        LOGGER.info("Held %s cost trajectory/year selections at their final source formulation", len(trajectory_holds))
     LOGGER.debug("Transport cost audit: %s", audit)
     return CostPreparation(invest_rows, variable_rows, contexts, audit)
 

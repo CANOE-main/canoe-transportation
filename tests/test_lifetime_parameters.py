@@ -9,16 +9,16 @@ import pytest
 from canoe_schema.v4_0 import Region, TechnologyLabel
 
 from parameterization.offroad_lifetimes import prepare_reviewed_manual_lifetimes, prepare_statcan_bus_lifetimes
-from parameterization.build_lifetime_parameters import prepare_lifetime_rows
+from parameterization.build_lifetime_parameters import build_lifetime_parameter_artifacts, prepare_lifetime_rows
 from parameterization.road_lifetimes_survival import derive_accepted_lifetime_frames, prepare_fixed_road_lifetimes
-from utils import load_config_bundle, load_harmonization_rules
+from utils import load_config_bundle, load_harmonization_rules, resolve_input_path
 from validation.insertion import insert_models
 from validation.provenance import registry_rows
 from validation.schema_contract import create_v4_schema
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCENARIO = "config/scenarios/legacy_comparison.yaml"
+SCENARIO = "config/scenarios/validation_opening_periods.yaml"
 
 
 def accepted_frames(bundle):
@@ -35,7 +35,7 @@ def test_reviewed_manual_lifetimes_resolve_actual_template_owners() -> None:
 
     assert len(contexts) == 4
     assert len(rows) == len(bundle.scenario.geography.regions) * resolution.tech.nunique()
-    assert len({row.tech for row in rows}) == 27
+    assert len({row.tech for row in rows}) == 32
     assert not any(row.tech.startswith("T_HDV_T_") for row in rows)
     assert {row.units for row in rows} == {"years"}
     assert {(row.region, row.tech) for row in rows} == {
@@ -52,11 +52,11 @@ def test_reviewed_manual_lifetimes_resolve_actual_template_owners() -> None:
     )
 
 
-def test_fixed_road_medians_use_existing_class_contract() -> None:
-    bundle = load_config_bundle(SCENARIO, repo_root=ROOT)
+def test_fixed_road_medians_use_existing_class_contract(isolated_legacy_bundle) -> None:
+    bundle = isolated_legacy_bundle
     medians = accepted_frames(bundle)["medians"]
-    manual = pd.read_csv(ROOT / "inputs/0_manual_params/lifetime_process.csv")
-    technology = pd.read_csv(ROOT / "inputs/0_canoe_template/technology.csv")
+    manual = pd.read_csv(resolve_input_path(bundle, "manual", "lifetime_process.csv"))
+    technology = pd.read_csv(resolve_input_path(bundle, "template", "technology.csv"))
 
     rows, contexts = prepare_fixed_road_lifetimes(
         bundle, medians=medians, manual=manual, technology=technology
@@ -90,14 +90,14 @@ def test_fixed_road_medians_use_existing_class_contract() -> None:
             )
 
 
-def test_established_fixed_rows_insert_with_full_provenance() -> None:
-    bundle = load_config_bundle(SCENARIO, repo_root=ROOT)
+def test_established_fixed_rows_insert_with_full_provenance(isolated_legacy_bundle) -> None:
+    bundle = isolated_legacy_bundle
     manual_rows, manual_contexts, _ = prepare_reviewed_manual_lifetimes(bundle)
-    technology = pd.read_csv(ROOT / "inputs/0_canoe_template/technology.csv")
+    technology = pd.read_csv(resolve_input_path(bundle, "template", "technology.csv"))
     road_rows, road_contexts = prepare_fixed_road_lifetimes(
         bundle,
         medians=accepted_frames(bundle)["medians"],
-        manual=pd.read_csv(ROOT / "inputs/0_manual_params/lifetime_process.csv"),
+        manual=pd.read_csv(resolve_input_path(bundle, "manual", "lifetime_process.csv")),
         technology=technology,
     )
     labels, datasets, sources = registry_rows([*manual_contexts, *road_contexts])
@@ -114,7 +114,7 @@ def test_established_fixed_rows_insert_with_full_provenance() -> None:
             [*manual_rows, *road_rows],
         ):
             insert_models(connection, batch)
-        assert connection.execute("SELECT COUNT(*) FROM lifetime_tech").fetchone()[0] == 920
+        assert connection.execute("SELECT COUNT(*) FROM lifetime_tech").fetchone()[0] == 970
         assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
         assert connection.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
     finally:
@@ -186,9 +186,9 @@ def test_bus_latest_province_and_canada_fallback(tmp_path: Path) -> None:
     }
 
 
-def test_fixed_lifetime_representation_preserves_reviewed_medians() -> None:
-    bundle = load_config_bundle(SCENARIO, repo_root=ROOT)
-    technology = pd.read_csv(ROOT / "inputs/0_canoe_template/technology.csv")
+def test_fixed_lifetime_representation_preserves_reviewed_medians(isolated_legacy_bundle) -> None:
+    bundle = isolated_legacy_bundle
+    technology = pd.read_csv(resolve_input_path(bundle, "template", "technology.csv"))
     transformed = accepted_frames(bundle)["transformed_curves"]
     fixed_bundle = replace(bundle, scenario=bundle.scenario.model_copy(update={
         "lifetimes": bundle.scenario.lifetimes.model_copy(update={"survival_curves": False})
@@ -217,3 +217,104 @@ def test_fixed_lifetime_representation_preserves_reviewed_medians() -> None:
         } == {source_id}
     assert fixed.audit["road_lifetime_sources"]["medium_trucks"]["curve_source_class"] == "2b/3 Trucks"
     assert fixed.audit["road_lifetime_sources"]["heavy_trucks"]["curve_source_class"] == "Cls 7-8"
+
+
+AGGREGATED_CHARGERS = {
+    "T_LDV_CHRG_EX", "T_LDV_CHRG_N", "T_MHDV_CHRG_EX", "T_MHDV_CHRG_N",
+}
+EXPLICIT_CHARGERS = {
+    "T_LDV_CHRG_PUB_L2", "T_LDV_CHRG_PUB_FC", "T_LDV_CHRG_PRIV",
+    "T_MHDV_CHRG_NIGHT", "T_MHDV_CHRG_FC",
+}
+
+
+@pytest.fixture(scope="module")
+def charger_lifetime_modes(isolated_legacy_bundle):
+    results = {}
+    for mode in ("aggregated", "explicit"):
+        scenario = isolated_legacy_bundle.scenario
+        configured = replace(isolated_legacy_bundle, scenario=scenario.model_copy(update={
+            "lifetimes": scenario.lifetimes.model_copy(update={"survival_curves": False}),
+            "ev_chargers": scenario.ev_chargers.model_copy(update={"charger_type_classes": mode}),
+        }))
+        results[mode] = configured, prepare_lifetime_rows(configured)
+    return results
+
+
+@pytest.mark.parametrize("mode,expected,inactive", [
+    ("aggregated", AGGREGATED_CHARGERS, EXPLICIT_CHARGERS),
+    ("explicit", EXPLICIT_CHARGERS, AGGREGATED_CHARGERS),
+])
+def test_charger_lifetimes_cover_only_selected_technologies_with_reviewed_provenance(
+    charger_lifetime_modes, mode, expected, inactive,
+):
+    _, prepared = charger_lifetime_modes[mode]
+    rows = [row for row in prepared.fixed_rows if row.tech in expected]
+    assert {(row.region, row.tech) for row in rows} == {
+        (region, tech) for region in prepared.audit["regions"] for tech in expected
+    }
+    assert not {row.tech for row in prepared.fixed_rows} & inactive
+    assert {row.lifetime for row in rows} == {15}
+    contexts = {context.data_id: context for context in prepared.provenance_contexts}
+    for row in rows:
+        context = contexts[row.data_id]
+        assert context.source_key == "open_energy_outlook"
+        for field, value in context.parameter_fields().items():
+            assert getattr(row, field) == value
+    assert prepared.audit["charger_representation"] == {
+        "mode": mode, "selected_technologies": sorted(expected),
+        "excluded_technologies": sorted(inactive),
+        "excluded_manual_rows": len(inactive) * len(prepared.audit["regions"]),
+    }
+
+
+def test_charger_selection_preserves_every_noncharger_lifetime(charger_lifetime_modes):
+    nonchargers = []
+    for _, prepared in charger_lifetime_modes.values():
+        nonchargers.append([
+            row.model_dump() for row in prepared.fixed_rows
+            if row.tech not in AGGREGATED_CHARGERS | EXPLICIT_CHARGERS
+        ])
+    assert nonchargers[0] == nonchargers[1]
+
+
+@pytest.mark.parametrize("problem", ["missing_selected", "extra_owner"])
+def test_charger_selection_preserves_strict_lifetime_coverage(
+    charger_lifetime_modes, monkeypatch, problem,
+):
+    from parameterization import build_lifetime_parameters as layer
+
+    bundle, _ = charger_lifetime_modes["explicit"]
+    original = layer.prepare_reviewed_manual_lifetimes
+
+    def invalid_manual(configured):
+        rows, contexts, resolution = original(configured)
+        if problem == "missing_selected":
+            rows = [row for row in rows if row.tech != "T_LDV_CHRG_PUB_L2"]
+        else:
+            rows.append(rows[0].model_copy(update={"tech": "T_UNDECLARED_OWNER"}))
+        return rows, contexts, resolution
+
+    monkeypatch.setattr(layer, "prepare_reviewed_manual_lifetimes", invalid_manual)
+    with pytest.raises(ValueError, match="exactly one lifetime representation"):
+        prepare_lifetime_rows(bundle)
+
+
+@pytest.mark.parametrize("mode,expected,inactive", [
+    ("aggregated", AGGREGATED_CHARGERS, EXPLICIT_CHARGERS),
+    ("explicit", EXPLICIT_CHARGERS, AGGREGATED_CHARGERS),
+])
+def test_standalone_lifetime_exports_respect_charger_representation(
+    charger_lifetime_modes, mode, expected, inactive,
+):
+    bundle, _ = charger_lifetime_modes[mode]
+    routes = dict(bundle.paths.artifacts)
+    routes["lifetime_parameters"] = routes["lifetime_parameters"].model_copy(update={
+        "path": f"standalone_lifetime_exports/{mode}",
+    })
+    selected = replace(bundle, paths=bundle.paths.model_copy(update={"artifacts": routes}))
+    directory = build_lifetime_parameter_artifacts(selected)
+    actual = pd.read_csv(directory / "lifetime_tech.csv")
+    assert set(actual.tech) & (AGGREGATED_CHARGERS | EXPLICIT_CHARGERS) == expected
+    assert not set(actual.tech) & inactive
+    assert actual.loc[actual.tech.isin(expected), "lifetime"].eq(15).all()

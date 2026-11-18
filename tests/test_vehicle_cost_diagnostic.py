@@ -10,7 +10,7 @@ import pytest
 from parameterization.currency import CerCurrencyConverter
 from utils import file_sha256, load_config_bundle
 from validation.vehicle_cost_diagnostic import (
-    FIGURES, VehicleCostDiagnostic, investment_trajectory_chart, load_diagnostic,
+    CAPTURE_VERSION, FIGURES, VehicleCostDiagnostic, investment_trajectory_chart, load_diagnostic,
     maintenance_age_chart, range_cost_chart, range_cost_comparison,
     reconcile_emitted_costs, service_maintenance_chart, source_cost_frames, source_price_chart,
     source_step_audit, write_diagnostic,
@@ -43,18 +43,23 @@ def source_frames():
     rules = {"ldv_powertrain_evidence": {"gasoline": "Gasoline", "bev_150_miles": "Battery Electric"},
              "ldv_repair_price_exponent_per_usd": .00002, "ldv_repair_max_age": 14}
     return source_cost_frames(prices, burnham=burnham, bean=bean, converter=converter, rules=rules,
-                              ages=[0, 14, 15], burnham_money=("USD", 2020), bean_money=("USD", 2020))
+                              ages=[0, 14, 15], burnham_money=("USD", 2020), bean_money=("USD", 2020),
+                              usd_price_index={2020: 100., 2022: 112.})
 
 
 def test_source_curve_preserves_retail_msrp_and_money_basis(source_frames):
     prices, costs = source_frames
     row = prices.loc[prices.powertrain.eq("gasoline")].iloc[0]
+    assert row.retail_native == 30000
     assert row.manufacturing_native == 20000
     assert row.manufacturing_cad == pytest.approx(20000 * 1.4 * 100 / 120)
     repair = costs.loc[costs.powertrain.eq("gasoline") & costs.age.eq(14) & costs.component.eq("repair")].iloc[0]
-    assert repair.cost_native == pytest.approx(.10 * exp(.00002 * 30000))
+    repair_msrp = 30000 * 100 / 112
+    assert repair.retail_msrp == pytest.approx(repair_msrp)
+    assert repair.cost_native == pytest.approx(.10 * exp(.00002 * repair_msrp))
     assert repair.cost_cad == pytest.approx(repair.cost_native * 1.3)
-    assert repair.msrp_dollar_year == 2022
+    assert repair.msrp_currency == "USD"
+    assert repair.msrp_dollar_year == 2020
     assert repair.source_dollar_year == 2020
     assert repair.denominator == "vehicle-mile"
 
@@ -111,7 +116,7 @@ def diagnostic(source_frames, range_inputs):
         "source_investment": prices, "source_maintenance": maintenance,
         "investment": investments, "maintenance": service,
         "range_comparison": range_cost_comparison(investments, shares, {"cars": "car"}),
-    }, {"trajectory": "Mid", "repair_terminal_age": 14, "inputs": {},
+    }, {"version": CAPTURE_VERSION, "trajectory": "Mid", "repair_terminal_age": 14, "inputs": {},
         "scenario": {"BEV_PHEV_range_representation": {"mode": "new_capacity_shares"}}})
 
 
@@ -167,7 +172,13 @@ def test_loader_rejects_escaping_frame_path(tmp_path):
     outside.write_text("value\n1\n")
     directory = tmp_path / "capture"
     directory.mkdir()
-    (directory / "manifest.json").write_text(json.dumps({"inputs": {}, "frames": {
+    (directory / "manifest.json").write_text(json.dumps({"version": CAPTURE_VERSION, "inputs": {}, "frames": {
         "invalid": {"path": "../outside.csv", "sha256": file_sha256(outside), "rows": 1}}}))
     with pytest.raises(ValueError, match="escapes"):
         load_diagnostic(directory=directory)
+
+
+def test_loader_requires_current_repair_price_basis(tmp_path):
+    (tmp_path / "manifest.json").write_text(json.dumps({"version": 1}))
+    with pytest.raises(ValueError, match="Rebuild the selected scenario"):
+        load_diagnostic(directory=tmp_path)

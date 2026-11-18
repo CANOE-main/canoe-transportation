@@ -2,6 +2,7 @@
 
 from dataclasses import replace
 from pathlib import Path
+import shutil
 from types import SimpleNamespace
 
 import pandas as pd
@@ -19,6 +20,15 @@ from validation import vehicle_stock_diagnostic as diagnostic
 @pytest.fixture
 def bundle():
     return load_config_bundle("config/scenarios/default.yaml")
+
+
+@pytest.fixture(scope="module")
+def notebook_path(tmp_path_factory):
+    """Exercise the actual versioned notebook from a private, cwd-independent copy."""
+    source = Path(__file__).resolve().parents[1] / "docs/insights/vehicle_population_diagnosis.py"
+    destination = tmp_path_factory.mktemp("vehicle_population_notebook") / source.name
+    shutil.copyfile(source, destination)
+    return destination
 
 
 @pytest.fixture
@@ -75,7 +85,8 @@ def snapshot(bundle, tmp_path, monkeypatch):
     return SimpleNamespace(bundle=bundle, paths=paths, metadata=metadata), frames
 
 
-def test_historical_mapping_respects_each_year_scope_and_preserves_counts(bundle):
+@pytest.mark.parametrize("include_candidate", [False, True], ids=["reviewed-links", "older-candidate-capture"])
+def test_historical_mapping_respects_each_year_scope_and_preserves_counts(bundle, include_candidate):
     from parameterization.vehicle_reference import load_vehicle_reference, reference_mto_mapping
 
     mapping = reference_mto_mapping(
@@ -99,7 +110,7 @@ def test_historical_mapping_respects_each_year_scope_and_preserves_counts(bundle
         "candidate_match_method": "exact_normalized",
     }])
     outcomes, detail = diagnostic._historical_mapping_evidence(
-        statuses, mapping, latest,
+        statuses, mapping, latest if include_candidate else latest.iloc[:0],
         accepted_statuses=set(load_harmonization_rules(bundle, "road_aggregation")["accepted_mapping_statuses"]),
     )
     assert outcomes.native_count.sum() == 70
@@ -109,7 +120,9 @@ def test_historical_mapping_respects_each_year_scope_and_preserves_counts(bundle
     assert reasons["CHEV", "ORL", 2024] == "no_applicable_reviewed_interval"
     assert reasons["LEXS", "RX", 2016] == "reviewed_family_class_unresolved"
     assert reasons["NOPE", "Z", 2020] == "not_present_in_latest_snapshot"
-    assert reasons["NOPE", "Y", 2020] == "unreviewed_high_confidence_candidate"
+    assert reasons["NOPE", "Y", 2020] == (
+        "unreviewed_high_confidence_candidate" if include_candidate else "no_reviewed_source_link"
+    )
     assert reasons["****", "***", 2020] == "suppressed_or_unknown_code"
 
 
@@ -219,8 +232,8 @@ def test_interpretation_uses_recorded_switches(snapshot, monkeypatch):
     ] == "moves"
 
 
-def test_notebook_exposes_reload_without_reader_scenario_selection():
-    notebook = Path("docs/insights/vehicle_stock_diagnosis.py").read_text(encoding="utf-8")
+def test_notebook_exposes_reload_without_reader_scenario_selection(notebook_path):
+    notebook = notebook_path.read_text(encoding="utf-8")
     assert "load_stock_diagnostic()" in notebook
     assert "Reload latest completed build" in notebook
     assert "scenario_selector" not in notebook
@@ -228,11 +241,11 @@ def test_notebook_exposes_reload_without_reader_scenario_selection():
     assert "default.yaml" not in notebook
 
 
-def test_reference_view_keeps_attribute_grain_without_multiplying_linked_observations():
+def test_reference_view_keeps_attribute_grain_without_multiplying_linked_observations(notebook_path):
     import runpy
 
     tables = []
-    view = runpy.run_path("docs/insights/vehicle_stock_diagnosis.py")["canonical_reference_inventory"]
+    view = runpy.run_path(str(notebook_path))["canonical_reference_inventory"]
     evidence = {
         "vehicle_reference_canonical": pd.DataFrame({
             "vehicle_id": ["rated", "rated", "unlinked"], "canonical_make": ["Make"] * 3,
@@ -264,11 +277,11 @@ def test_reference_view_keeps_attribute_grain_without_multiplying_linked_observa
 
 
 @pytest.mark.parametrize("powertrain", ["gasoline", "hev", "unknown"])
-def test_reference_view_drops_null_range_and_unused_source_columns(powertrain):
+def test_reference_view_drops_null_range_and_unused_source_columns(powertrain, notebook_path):
     import runpy
 
     tables = []
-    view = runpy.run_path("docs/insights/vehicle_stock_diagnosis.py")["canonical_reference_inventory"]
+    view = runpy.run_path(str(notebook_path))["canonical_reference_inventory"]
     evidence = {
         "vehicle_reference_canonical": pd.DataFrame({"vehicle_id": ["one"], "canonical_make": ["Make"], "canonical_model": ["Family"], "model_year_from": [2024], "model_year_to": [2024], "powertrain": [powertrain]}),
         "vehicle_reference_links": pd.DataFrame({"vehicle_id": ["one"], "model_year_from": [2024], "model_year_to": [2024], "source_vehicle_class": [None]}),
@@ -282,10 +295,10 @@ def test_reference_view_drops_null_range_and_unused_source_columns(powertrain):
     assert "source_vehicle_class" not in tables[2]
 
 
-def test_notebook_adapter_preserves_unknown_canonical_fields_without_nan_identities():
+def test_notebook_adapter_preserves_unknown_canonical_fields_without_nan_identities(notebook_path):
     import runpy
 
-    adapter = runpy.run_path("docs/insights/vehicle_stock_diagnosis.py")["captured_vehicle_evidence"]
+    adapter = runpy.run_path(str(notebook_path))["captured_vehicle_evidence"]
     frame = pd.DataFrame({"canonical_make": [None, "Honda", "Honda"], "canonical_model": [None, "", "Civic"],
                           "vehicle_scope": ["identity_unresolved", "identity_unresolved", "ldv"]})
     evidence = {key: frame.copy() for key in ("mapped_fleet", "mapping_config", "vehicle_class_evidence")}

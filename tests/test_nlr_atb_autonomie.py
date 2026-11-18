@@ -451,7 +451,7 @@ def test_required_columns_and_all_trajectories_are_retained(bundle) -> None:
         rules=module_rules(bundle),
     )
 
-    assert set(normalized["trajectory"]) == {
+    assert set(normalized["source_trajectory"]) == {
         "Advanced",
         "Conservative",
         "Constant",
@@ -736,7 +736,7 @@ def test_full_fixture_run_writes_manifest_outputs_and_manual_warning(
     assert manifest.loc[
         manifest["component_id"].eq("mhdv_maintenance_coefficients"), "status"
     ].item() == "warning"
-    assert set(vehicles["trajectory"]) == {
+    assert set(vehicles["source_trajectory"]) == {
         "Advanced",
         "Conservative",
         "Constant",

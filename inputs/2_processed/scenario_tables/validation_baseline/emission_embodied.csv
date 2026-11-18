@@ -1,0 +1,799 @@
+region,emis_comm,tech,vintage,value,units,notes,data_source,dq_cred,dq_geog,dq_struc,dq_tech,dq_time,data_id
+ON,ch4,T_HDV_T_BEV_N,2025,386.3968822065197,t/k vehicles,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_BEV_N,2030,386.3968822065197,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_BEV_N,2035,386.3968822065197,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_BEV_N,2040,386.3968822065197,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_BEV_N,2045,386.3968822065197,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_BEV_N,2025,203.0392576641656,kt/k vehicles,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_BEV_N,2030,203.0392576641656,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_BEV_N,2035,203.0392576641656,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_BEV_N,2040,203.0392576641656,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_BEV_N,2045,203.0392576641656,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_BEV_N,2025,5.150241520744895,t/k vehicles,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_BEV_N,2030,5.150241520744895,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_BEV_N,2035,5.150241520744895,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_BEV_N,2040,5.150241520744895,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_BEV_N,2045,5.150241520744895,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_DSL_HEV_N,2025,120.03316618713305,t/k vehicles,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_DSL_HEV_N,2030,120.03316618713305,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_DSL_HEV_N,2035,120.03316618713305,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_DSL_HEV_N,2040,120.03316618713305,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_DSL_HEV_N,2045,120.03316618713305,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_DSL_HEV_N,2025,65.11674036276877,kt/k vehicles,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_DSL_HEV_N,2030,65.11674036276877,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_DSL_HEV_N,2035,65.11674036276877,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_DSL_HEV_N,2040,65.11674036276877,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_DSL_HEV_N,2045,65.11674036276877,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_DSL_HEV_N,2025,1.3123210060619317,t/k vehicles,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_DSL_HEV_N,2030,1.3123210060619317,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_DSL_HEV_N,2035,1.3123210060619317,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_DSL_HEV_N,2040,1.3123210060619317,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_DSL_HEV_N,2045,1.3123210060619317,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_DSL_N,2025,117.63556770121099,t/k vehicles,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_DSL_N,2030,117.63556770121099,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_DSL_N,2035,117.63556770121099,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_DSL_N,2040,117.63556770121099,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_DSL_N,2045,117.63556770121099,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_DSL_N,2025,63.84095944455565,kt/k vehicles,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_DSL_N,2030,63.84095944455565,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_DSL_N,2035,63.84095944455565,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_DSL_N,2040,63.84095944455565,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_DSL_N,2045,63.84095944455565,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_DSL_N,2025,1.2453277250597987,t/k vehicles,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_DSL_N,2030,1.2453277250597987,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_DSL_N,2035,1.2453277250597987,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_DSL_N,2040,1.2453277250597987,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_DSL_N,2045,1.2453277250597987,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_DSL_PHEV_N,2025,120.03316618713305,t/k vehicles,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.
+  - road_vehicle_cycle_emissions.phev_hev_proxy: HEV vehicle-cycle totals proxy PHEVs where the registered MHDV case lacks a separate PHEV simulation.",T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_DSL_PHEV_N,2030,120.03316618713305,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_DSL_PHEV_N,2035,120.03316618713305,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_DSL_PHEV_N,2040,120.03316618713305,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_DSL_PHEV_N,2045,120.03316618713305,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_DSL_PHEV_N,2025,65.11674036276877,kt/k vehicles,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.
+  - road_vehicle_cycle_emissions.phev_hev_proxy: HEV vehicle-cycle totals proxy PHEVs where the registered MHDV case lacks a separate PHEV simulation.",T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_DSL_PHEV_N,2030,65.11674036276877,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_DSL_PHEV_N,2035,65.11674036276877,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_DSL_PHEV_N,2040,65.11674036276877,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_DSL_PHEV_N,2045,65.11674036276877,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_DSL_PHEV_N,2025,1.3123210060619317,t/k vehicles,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.
+  - road_vehicle_cycle_emissions.phev_hev_proxy: HEV vehicle-cycle totals proxy PHEVs where the registered MHDV case lacks a separate PHEV simulation.",T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_DSL_PHEV_N,2030,1.3123210060619317,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_DSL_PHEV_N,2035,1.3123210060619317,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_DSL_PHEV_N,2040,1.3123210060619317,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_DSL_PHEV_N,2045,1.3123210060619317,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_FCEV_N,2025,163.5352199647042,t/k vehicles,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_FCEV_N,2030,163.5352199647042,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_FCEV_N,2035,163.5352199647042,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_FCEV_N,2040,163.5352199647042,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_FCEV_N,2045,163.5352199647042,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_FCEV_N,2025,80.83071521304795,kt/k vehicles,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_FCEV_N,2030,80.83071521304795,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_FCEV_N,2035,80.83071521304795,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_FCEV_N,2040,80.83071521304795,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_FCEV_N,2045,80.83071521304795,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_FCEV_N,2025,1.7845509387754634,t/k vehicles,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_FCEV_N,2030,1.7845509387754634,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_FCEV_N,2035,1.7845509387754634,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_FCEV_N,2040,1.7845509387754634,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_FCEV_N,2045,1.7845509387754634,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_FCHEV_N,2025,163.5352199647042,t/k vehicles,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_FCHEV_N,2030,163.5352199647042,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_FCHEV_N,2035,163.5352199647042,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_FCHEV_N,2040,163.5352199647042,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_HDV_T_FCHEV_N,2045,163.5352199647042,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_FCHEV_N,2025,80.83071521304795,kt/k vehicles,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_FCHEV_N,2030,80.83071521304795,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_FCHEV_N,2035,80.83071521304795,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_FCHEV_N,2040,80.83071521304795,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,co2,T_HDV_T_FCHEV_N,2045,80.83071521304795,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_FCHEV_N,2025,1.7845509387754634,t/k vehicles,"statcan_transport_tables: Canadian vehicle registrations, freight flows and reported transit-asset useful lives; coverage and statistical concepts differ by table.
+  - 23-10-0142-01: For-hire truck freight shipments and tonne-kilometres by origin and destination; haul shares proxy the broader heavy-truck fleet.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_FCHEV_N,2030,1.7845509387754634,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_FCHEV_N,2035,1.7845509387754634,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_FCHEV_N,2040,1.7845509387754634,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,n2o,T_HDV_T_FCHEV_N,2045,1.7845509387754634,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-heavy-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_C_CNG_N,2025,12.693203809897662,t/k vehicles,"argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,ch4,T_LDV_C_CNG_N,2030,12.693203809897662,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,ch4,T_LDV_C_CNG_N,2035,12.693203809897662,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,ch4,T_LDV_C_CNG_N,2040,12.693203809897662,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,ch4,T_LDV_C_CNG_N,2045,12.693203809897662,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,co2,T_LDV_C_CNG_N,2025,5.476200155968173,kt/k vehicles,"argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,co2,T_LDV_C_CNG_N,2030,5.476200155968173,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,co2,T_LDV_C_CNG_N,2035,5.476200155968173,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,co2,T_LDV_C_CNG_N,2040,5.476200155968173,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,co2,T_LDV_C_CNG_N,2045,5.476200155968173,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,n2o,T_LDV_C_CNG_N,2025,0.16913793887355405,t/k vehicles,"argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,n2o,T_LDV_C_CNG_N,2030,0.16913793887355405,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,n2o,T_LDV_C_CNG_N,2035,0.16913793887355405,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,n2o,T_LDV_C_CNG_N,2040,0.16913793887355405,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,n2o,T_LDV_C_CNG_N,2045,0.16913793887355405,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,ch4,T_LDV_C_DSL_N,2025,12.693203809897662,t/k vehicles,"argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,ch4,T_LDV_C_DSL_N,2030,12.693203809897662,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,ch4,T_LDV_C_DSL_N,2035,12.693203809897662,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,ch4,T_LDV_C_DSL_N,2040,12.693203809897662,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,ch4,T_LDV_C_DSL_N,2045,12.693203809897662,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,co2,T_LDV_C_DSL_N,2025,5.476200155968173,kt/k vehicles,"argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,co2,T_LDV_C_DSL_N,2030,5.476200155968173,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,co2,T_LDV_C_DSL_N,2035,5.476200155968173,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,co2,T_LDV_C_DSL_N,2040,5.476200155968173,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,co2,T_LDV_C_DSL_N,2045,5.476200155968173,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,n2o,T_LDV_C_DSL_N,2025,0.16913793887355405,t/k vehicles,"argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,n2o,T_LDV_C_DSL_N,2030,0.16913793887355405,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,n2o,T_LDV_C_DSL_N,2035,0.16913793887355405,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,n2o,T_LDV_C_DSL_N,2040,0.16913793887355405,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,n2o,T_LDV_C_DSL_N,2045,0.16913793887355405,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,ch4,T_LDV_C_FCEV400_N,2025,15.837295234170055,t/k vehicles,"argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,ch4,T_LDV_C_FCEV400_N,2030,15.837295234170055,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,ch4,T_LDV_C_FCEV400_N,2035,15.837295234170055,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,ch4,T_LDV_C_FCEV400_N,2040,15.837295234170055,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,ch4,T_LDV_C_FCEV400_N,2045,15.837295234170055,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,co2,T_LDV_C_FCEV400_N,2025,6.640504807219377,kt/k vehicles,"argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,co2,T_LDV_C_FCEV400_N,2030,6.640504807219377,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,co2,T_LDV_C_FCEV400_N,2035,6.640504807219377,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,co2,T_LDV_C_FCEV400_N,2040,6.640504807219377,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,co2,T_LDV_C_FCEV400_N,2045,6.640504807219377,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,n2o,T_LDV_C_FCEV400_N,2025,0.24774077033456757,t/k vehicles,"argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,n2o,T_LDV_C_FCEV400_N,2030,0.24774077033456757,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,n2o,T_LDV_C_FCEV400_N,2035,0.24774077033456757,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,n2o,T_LDV_C_FCEV400_N,2040,0.24774077033456757,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,n2o,T_LDV_C_FCEV400_N,2045,0.24774077033456757,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,ch4,T_LDV_C_GSL_HEV_N,2025,13.263450359421906,t/k vehicles,"argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,ch4,T_LDV_C_GSL_HEV_N,2030,13.263450359421906,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,ch4,T_LDV_C_GSL_HEV_N,2035,13.263450359421906,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,ch4,T_LDV_C_GSL_HEV_N,2040,13.263450359421906,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,ch4,T_LDV_C_GSL_HEV_N,2045,13.263450359421906,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,co2,T_LDV_C_GSL_HEV_N,2025,5.8771573845561145,kt/k vehicles,"argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,co2,T_LDV_C_GSL_HEV_N,2030,5.8771573845561145,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,co2,T_LDV_C_GSL_HEV_N,2035,5.8771573845561145,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,co2,T_LDV_C_GSL_HEV_N,2040,5.8771573845561145,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,co2,T_LDV_C_GSL_HEV_N,2045,5.8771573845561145,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,n2o,T_LDV_C_GSL_HEV_N,2025,0.22236902200492414,t/k vehicles,"argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,n2o,T_LDV_C_GSL_HEV_N,2030,0.22236902200492414,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,n2o,T_LDV_C_GSL_HEV_N,2035,0.22236902200492414,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,n2o,T_LDV_C_GSL_HEV_N,2040,0.22236902200492414,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,n2o,T_LDV_C_GSL_HEV_N,2045,0.22236902200492414,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,ch4,T_LDV_C_GSL_N,2025,12.693203809897662,t/k vehicles,"argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,ch4,T_LDV_C_GSL_N,2030,12.693203809897662,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,ch4,T_LDV_C_GSL_N,2035,12.693203809897662,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,ch4,T_LDV_C_GSL_N,2040,12.693203809897662,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,ch4,T_LDV_C_GSL_N,2045,12.693203809897662,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,co2,T_LDV_C_GSL_N,2025,5.476200155968173,kt/k vehicles,"argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,co2,T_LDV_C_GSL_N,2030,5.476200155968173,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,co2,T_LDV_C_GSL_N,2035,5.476200155968173,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,co2,T_LDV_C_GSL_N,2040,5.476200155968173,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,co2,T_LDV_C_GSL_N,2045,5.476200155968173,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,n2o,T_LDV_C_GSL_N,2025,0.16913793887355405,t/k vehicles,"argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,n2o,T_LDV_C_GSL_N,2030,0.16913793887355405,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,n2o,T_LDV_C_GSL_N,2035,0.16913793887355405,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,n2o,T_LDV_C_GSL_N,2040,0.16913793887355405,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,n2o,T_LDV_C_GSL_N,2045,0.16913793887355405,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-cars-on:T17:validation_baseline
+ON,ch4,T_LDV_LTF_CNG_N,2025,14.564276171245737,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTF_CNG_N,2030,14.564276171245737,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTF_CNG_N,2035,14.564276171245737,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTF_CNG_N,2040,14.564276171245737,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTF_CNG_N,2045,14.564276171245737,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTF_CNG_N,2025,6.429285163376623,kt/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTF_CNG_N,2030,6.429285163376623,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTF_CNG_N,2035,6.429285163376623,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTF_CNG_N,2040,6.429285163376623,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTF_CNG_N,2045,6.429285163376623,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTF_CNG_N,2025,0.18782574354218343,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTF_CNG_N,2030,0.18782574354218343,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTF_CNG_N,2035,0.18782574354218343,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTF_CNG_N,2040,0.18782574354218343,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTF_CNG_N,2045,0.18782574354218343,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTF_DSL_N,2025,14.564276171245737,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTF_DSL_N,2030,14.564276171245737,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTF_DSL_N,2035,14.564276171245737,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTF_DSL_N,2040,14.564276171245737,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTF_DSL_N,2045,14.564276171245737,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTF_DSL_N,2025,6.429285163376623,kt/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTF_DSL_N,2030,6.429285163376623,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTF_DSL_N,2035,6.429285163376623,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTF_DSL_N,2040,6.429285163376623,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTF_DSL_N,2045,6.429285163376623,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTF_DSL_N,2025,0.18782574354218343,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTF_DSL_N,2030,0.18782574354218343,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTF_DSL_N,2035,0.18782574354218343,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTF_DSL_N,2040,0.18782574354218343,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTF_DSL_N,2045,0.18782574354218343,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTF_FCEV400_N,2025,18.284335889137235,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTF_FCEV400_N,2030,18.284335889137235,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTF_FCEV400_N,2035,18.284335889137235,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTF_FCEV400_N,2040,18.284335889137235,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTF_FCEV400_N,2045,18.284335889137235,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTF_FCEV400_N,2025,7.6170016700579755,kt/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTF_FCEV400_N,2030,7.6170016700579755,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTF_FCEV400_N,2035,7.6170016700579755,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTF_FCEV400_N,2040,7.6170016700579755,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTF_FCEV400_N,2045,7.6170016700579755,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTF_FCEV400_N,2025,0.26994031826406756,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTF_FCEV400_N,2030,0.26994031826406756,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTF_FCEV400_N,2035,0.26994031826406756,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTF_FCEV400_N,2040,0.26994031826406756,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTF_FCEV400_N,2045,0.26994031826406756,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTF_GSL_HEV_N,2025,15.432718010326234,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTF_GSL_HEV_N,2030,15.432718010326234,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTF_GSL_HEV_N,2035,15.432718010326234,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTF_GSL_HEV_N,2040,15.432718010326234,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTF_GSL_HEV_N,2045,15.432718010326234,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTF_GSL_HEV_N,2025,6.8483966315013545,kt/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTF_GSL_HEV_N,2030,6.8483966315013545,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTF_GSL_HEV_N,2035,6.8483966315013545,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTF_GSL_HEV_N,2040,6.8483966315013545,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTF_GSL_HEV_N,2045,6.8483966315013545,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTF_GSL_HEV_N,2025,0.2592598623919117,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTF_GSL_HEV_N,2030,0.2592598623919117,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTF_GSL_HEV_N,2035,0.2592598623919117,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTF_GSL_HEV_N,2040,0.2592598623919117,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTF_GSL_HEV_N,2045,0.2592598623919117,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTF_GSL_N,2025,14.564276171245737,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTF_GSL_N,2030,14.564276171245737,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTF_GSL_N,2035,14.564276171245737,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTF_GSL_N,2040,14.564276171245737,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTF_GSL_N,2045,14.564276171245737,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTF_GSL_N,2025,6.429285163376623,kt/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTF_GSL_N,2030,6.429285163376623,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTF_GSL_N,2035,6.429285163376623,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTF_GSL_N,2040,6.429285163376623,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTF_GSL_N,2045,6.429285163376623,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTF_GSL_N,2025,0.18782574354218343,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTF_GSL_N,2030,0.18782574354218343,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTF_GSL_N,2035,0.18782574354218343,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTF_GSL_N,2040,0.18782574354218343,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTF_GSL_N,2045,0.18782574354218343,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-freight-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTP_CNG_N,2025,14.564276171245737,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTP_CNG_N,2030,14.564276171245737,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTP_CNG_N,2035,14.564276171245737,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTP_CNG_N,2040,14.564276171245737,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTP_CNG_N,2045,14.564276171245737,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTP_CNG_N,2025,6.429285163376623,kt/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTP_CNG_N,2030,6.429285163376623,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTP_CNG_N,2035,6.429285163376623,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTP_CNG_N,2040,6.429285163376623,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTP_CNG_N,2045,6.429285163376623,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTP_CNG_N,2025,0.18782574354218343,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTP_CNG_N,2030,0.18782574354218343,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTP_CNG_N,2035,0.18782574354218343,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTP_CNG_N,2040,0.18782574354218343,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTP_CNG_N,2045,0.18782574354218343,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTP_DSL_N,2025,14.564276171245737,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTP_DSL_N,2030,14.564276171245737,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTP_DSL_N,2035,14.564276171245737,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTP_DSL_N,2040,14.564276171245737,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTP_DSL_N,2045,14.564276171245737,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTP_DSL_N,2025,6.429285163376623,kt/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTP_DSL_N,2030,6.429285163376623,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTP_DSL_N,2035,6.429285163376623,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTP_DSL_N,2040,6.429285163376623,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTP_DSL_N,2045,6.429285163376623,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTP_DSL_N,2025,0.18782574354218343,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTP_DSL_N,2030,0.18782574354218343,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTP_DSL_N,2035,0.18782574354218343,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTP_DSL_N,2040,0.18782574354218343,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTP_DSL_N,2045,0.18782574354218343,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTP_FCEV400_N,2025,18.284335889137235,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTP_FCEV400_N,2030,18.284335889137235,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTP_FCEV400_N,2035,18.284335889137235,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTP_FCEV400_N,2040,18.284335889137235,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTP_FCEV400_N,2045,18.284335889137235,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTP_FCEV400_N,2025,7.6170016700579755,kt/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTP_FCEV400_N,2030,7.6170016700579755,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTP_FCEV400_N,2035,7.6170016700579755,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTP_FCEV400_N,2040,7.6170016700579755,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTP_FCEV400_N,2045,7.6170016700579755,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTP_FCEV400_N,2025,0.26994031826406756,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTP_FCEV400_N,2030,0.26994031826406756,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTP_FCEV400_N,2035,0.26994031826406756,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTP_FCEV400_N,2040,0.26994031826406756,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTP_FCEV400_N,2045,0.26994031826406756,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTP_GSL_HEV_N,2025,15.432718010326234,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTP_GSL_HEV_N,2030,15.432718010326234,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTP_GSL_HEV_N,2035,15.432718010326234,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTP_GSL_HEV_N,2040,15.432718010326234,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTP_GSL_HEV_N,2045,15.432718010326234,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTP_GSL_HEV_N,2025,6.8483966315013545,kt/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTP_GSL_HEV_N,2030,6.8483966315013545,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTP_GSL_HEV_N,2035,6.8483966315013545,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTP_GSL_HEV_N,2040,6.8483966315013545,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTP_GSL_HEV_N,2045,6.8483966315013545,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTP_GSL_HEV_N,2025,0.2592598623919117,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTP_GSL_HEV_N,2030,0.2592598623919117,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTP_GSL_HEV_N,2035,0.2592598623919117,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTP_GSL_HEV_N,2040,0.2592598623919117,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTP_GSL_HEV_N,2045,0.2592598623919117,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTP_GSL_N,2025,14.564276171245737,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTP_GSL_N,2030,14.564276171245737,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTP_GSL_N,2035,14.564276171245737,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTP_GSL_N,2040,14.564276171245737,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_LTP_GSL_N,2045,14.564276171245737,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTP_GSL_N,2025,6.429285163376623,kt/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTP_GSL_N,2030,6.429285163376623,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTP_GSL_N,2035,6.429285163376623,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTP_GSL_N,2040,6.429285163376623,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,co2,T_LDV_LTP_GSL_N,2045,6.429285163376623,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTP_GSL_N,2025,0.18782574354218343,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTP_GSL_N,2030,0.18782574354218343,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTP_GSL_N,2035,0.18782574354218343,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTP_GSL_N,2040,0.18782574354218343,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,n2o,T_LDV_LTP_GSL_N,2045,0.18782574354218343,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-passenger-light-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_BEV_N,2025,55.95454371452834,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_BEV_N,2030,55.95454371452834,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_BEV_N,2035,55.95454371452834,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_BEV_N,2040,55.95454371452834,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_BEV_N,2045,55.95454371452834,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_BEV_N,2025,29.416143833984,kt/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_BEV_N,2030,29.416143833984,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_BEV_N,2035,29.416143833984,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_BEV_N,2040,29.416143833984,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_BEV_N,2045,29.416143833984,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_BEV_N,2025,0.7026596442728856,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_BEV_N,2030,0.7026596442728856,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_BEV_N,2035,0.7026596442728856,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_BEV_N,2040,0.7026596442728856,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_BEV_N,2045,0.7026596442728856,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_DSL_HEV_N,2025,34.98740289923422,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_DSL_HEV_N,2030,34.98740289923422,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_DSL_HEV_N,2035,34.98740289923422,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_DSL_HEV_N,2040,34.98740289923422,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_DSL_HEV_N,2045,34.98740289923422,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_DSL_HEV_N,2025,18.33310218147589,kt/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_DSL_HEV_N,2030,18.33310218147589,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_DSL_HEV_N,2035,18.33310218147589,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_DSL_HEV_N,2040,18.33310218147589,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_DSL_HEV_N,2045,18.33310218147589,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_DSL_HEV_N,2025,0.3679015082455592,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_DSL_HEV_N,2030,0.3679015082455592,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_DSL_HEV_N,2035,0.3679015082455592,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_DSL_HEV_N,2040,0.3679015082455592,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_DSL_HEV_N,2045,0.3679015082455592,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_DSL_N,2025,33.98461026012565,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_DSL_N,2030,33.98461026012565,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_DSL_N,2035,33.98461026012565,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_DSL_N,2040,33.98461026012565,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_DSL_N,2045,33.98461026012565,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_DSL_N,2025,17.814591789810308,kt/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_DSL_N,2030,17.814591789810308,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_DSL_N,2035,17.814591789810308,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_DSL_N,2040,17.814591789810308,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_DSL_N,2045,17.814591789810308,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_DSL_N,2025,0.3369746755969985,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_DSL_N,2030,0.3369746755969985,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_DSL_N,2035,0.3369746755969985,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_DSL_N,2040,0.3369746755969985,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_DSL_N,2045,0.3369746755969985,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_DSL_PHEV_N,2025,34.98740289923422,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.
+  - road_vehicle_cycle_emissions.phev_hev_proxy: HEV vehicle-cycle totals proxy PHEVs where the registered MHDV case lacks a separate PHEV simulation.",T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_DSL_PHEV_N,2030,34.98740289923422,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_DSL_PHEV_N,2035,34.98740289923422,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_DSL_PHEV_N,2040,34.98740289923422,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_DSL_PHEV_N,2045,34.98740289923422,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_DSL_PHEV_N,2025,18.33310218147589,kt/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.
+  - road_vehicle_cycle_emissions.phev_hev_proxy: HEV vehicle-cycle totals proxy PHEVs where the registered MHDV case lacks a separate PHEV simulation.",T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_DSL_PHEV_N,2030,18.33310218147589,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_DSL_PHEV_N,2035,18.33310218147589,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_DSL_PHEV_N,2040,18.33310218147589,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_DSL_PHEV_N,2045,18.33310218147589,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_DSL_PHEV_N,2025,0.3679015082455592,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.
+  - road_vehicle_cycle_emissions.phev_hev_proxy: HEV vehicle-cycle totals proxy PHEVs where the registered MHDV case lacks a separate PHEV simulation.",T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_DSL_PHEV_N,2030,0.3679015082455592,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_DSL_PHEV_N,2035,0.3679015082455592,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_DSL_PHEV_N,2040,0.3679015082455592,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_DSL_PHEV_N,2045,0.3679015082455592,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_FCEV_N,2025,46.22626883038146,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_FCEV_N,2030,46.22626883038146,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_FCEV_N,2035,46.22626883038146,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_FCEV_N,2040,46.22626883038146,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_FCEV_N,2045,46.22626883038146,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_FCEV_N,2025,22.45653343579129,kt/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_FCEV_N,2030,22.45653343579129,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_FCEV_N,2035,22.45653343579129,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_FCEV_N,2040,22.45653343579129,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_FCEV_N,2045,22.45653343579129,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_FCEV_N,2025,0.4987322965018775,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_FCEV_N,2030,0.4987322965018775,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_FCEV_N,2035,0.4987322965018775,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_FCEV_N,2040,0.4987322965018775,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_FCEV_N,2045,0.4987322965018775,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_FCHEV_N,2025,46.22626883038146,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_FCHEV_N,2030,46.22626883038146,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_FCHEV_N,2035,46.22626883038146,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_FCHEV_N,2040,46.22626883038146,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_FCHEV_N,2045,46.22626883038146,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_FCHEV_N,2025,22.45653343579129,kt/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_FCHEV_N,2030,22.45653343579129,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_FCHEV_N,2035,22.45653343579129,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_FCHEV_N,2040,22.45653343579129,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_FCHEV_N,2045,22.45653343579129,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_FCHEV_N,2025,0.4987322965018775,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_FCHEV_N,2030,0.4987322965018775,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_FCHEV_N,2035,0.4987322965018775,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_FCHEV_N,2040,0.4987322965018775,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_FCHEV_N,2045,0.4987322965018775,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_GSL_N,2025,33.98461026012565,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_GSL_N,2030,33.98461026012565,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_GSL_N,2035,33.98461026012565,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_GSL_N,2040,33.98461026012565,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_MDV_T_GSL_N,2045,33.98461026012565,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_GSL_N,2025,17.814591789810308,kt/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_GSL_N,2030,17.814591789810308,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_GSL_N,2035,17.814591789810308,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_GSL_N,2040,17.814591789810308,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,co2,T_MDV_T_GSL_N,2045,17.814591789810308,kt/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_GSL_N,2025,0.3369746755969985,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - 4: Fit-active Ontario commercial registrations by gross-weight band; weight-class shares are not vehicle sales or vocation shares.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.",T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_GSL_N,2030,0.3369746755969985,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_GSL_N,2035,0.3369746755969985,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_GSL_N,2040,0.3369746755969985,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,n2o,T_MDV_T_GSL_N,2045,0.3369746755969985,t/k vehicles,,T17,2,3,3,3,3,road-embodied-emissions-medium-trucks-on:T17:validation_baseline
+ON,ch4,T_LDV_C_BEV_REP_N,2025,21.953570733875306,t/k vehicles,"argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,ch4,T_LDV_C_BEV_REP_N,2030,21.953570733875306,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,ch4,T_LDV_C_BEV_REP_N,2035,21.953570733875306,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,ch4,T_LDV_C_BEV_REP_N,2040,21.953570733875306,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,ch4,T_LDV_C_BEV_REP_N,2045,21.953570733875306,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,co2,T_LDV_C_BEV_REP_N,2025,10.024982575176233,kt/k vehicles,"argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,co2,T_LDV_C_BEV_REP_N,2030,10.024982575176233,kt/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,co2,T_LDV_C_BEV_REP_N,2035,10.024982575176233,kt/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,co2,T_LDV_C_BEV_REP_N,2040,10.024982575176233,kt/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,co2,T_LDV_C_BEV_REP_N,2045,10.024982575176233,kt/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,n2o,T_LDV_C_BEV_REP_N,2025,0.31634693064961683,t/k vehicles,"argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,n2o,T_LDV_C_BEV_REP_N,2030,0.31634693064961683,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,n2o,T_LDV_C_BEV_REP_N,2035,0.31634693064961683,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,n2o,T_LDV_C_BEV_REP_N,2040,0.31634693064961683,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,n2o,T_LDV_C_BEV_REP_N,2045,0.31634693064961683,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,ch4,T_LDV_C_GSL_PHEV_REP_N,2025,14.304958032026672,t/k vehicles,"argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,ch4,T_LDV_C_GSL_PHEV_REP_N,2030,14.304958032026672,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,ch4,T_LDV_C_GSL_PHEV_REP_N,2035,14.304958032026672,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,ch4,T_LDV_C_GSL_PHEV_REP_N,2040,14.304958032026672,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,ch4,T_LDV_C_GSL_PHEV_REP_N,2045,14.304958032026672,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,co2,T_LDV_C_GSL_PHEV_REP_N,2025,6.456145985532111,kt/k vehicles,"argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,co2,T_LDV_C_GSL_PHEV_REP_N,2030,6.456145985532111,kt/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,co2,T_LDV_C_GSL_PHEV_REP_N,2035,6.456145985532111,kt/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,co2,T_LDV_C_GSL_PHEV_REP_N,2040,6.456145985532111,kt/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,co2,T_LDV_C_GSL_PHEV_REP_N,2045,6.456145985532111,kt/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,n2o,T_LDV_C_GSL_PHEV_REP_N,2025,0.20720739589523163,t/k vehicles,"argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,n2o,T_LDV_C_GSL_PHEV_REP_N,2030,0.20720739589523163,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,n2o,T_LDV_C_GSL_PHEV_REP_N,2035,0.20720739589523163,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,n2o,T_LDV_C_GSL_PHEV_REP_N,2040,0.20720739589523163,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,n2o,T_LDV_C_GSL_PHEV_REP_N,2045,0.20720739589523163,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline
+ON,ch4,T_LDV_LTP_BEV_REP_N,2025,23.2819439885078,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,ch4,T_LDV_LTP_BEV_REP_N,2030,23.2819439885078,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,ch4,T_LDV_LTP_BEV_REP_N,2035,23.2819439885078,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,ch4,T_LDV_LTP_BEV_REP_N,2040,23.2819439885078,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,ch4,T_LDV_LTP_BEV_REP_N,2045,23.2819439885078,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,co2,T_LDV_LTP_BEV_REP_N,2025,10.790209950859412,kt/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,co2,T_LDV_LTP_BEV_REP_N,2030,10.790209950859412,kt/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,co2,T_LDV_LTP_BEV_REP_N,2035,10.790209950859412,kt/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,co2,T_LDV_LTP_BEV_REP_N,2040,10.790209950859412,kt/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,co2,T_LDV_LTP_BEV_REP_N,2045,10.790209950859412,kt/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,n2o,T_LDV_LTP_BEV_REP_N,2025,0.33531360198467464,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,n2o,T_LDV_LTP_BEV_REP_N,2030,0.33531360198467464,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,n2o,T_LDV_LTP_BEV_REP_N,2035,0.33531360198467464,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,n2o,T_LDV_LTP_BEV_REP_N,2040,0.33531360198467464,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,n2o,T_LDV_LTP_BEV_REP_N,2045,0.33531360198467464,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,ch4,T_LDV_LTP_GSL_PHEV_REP_N,2025,16.747757208838994,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,ch4,T_LDV_LTP_GSL_PHEV_REP_N,2030,16.747757208838994,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,ch4,T_LDV_LTP_GSL_PHEV_REP_N,2035,16.747757208838994,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,ch4,T_LDV_LTP_GSL_PHEV_REP_N,2040,16.747757208838994,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,ch4,T_LDV_LTP_GSL_PHEV_REP_N,2045,16.747757208838994,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,co2,T_LDV_LTP_GSL_PHEV_REP_N,2025,7.575314972333513,kt/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,co2,T_LDV_LTP_GSL_PHEV_REP_N,2030,7.575314972333513,kt/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,co2,T_LDV_LTP_GSL_PHEV_REP_N,2035,7.575314972333513,kt/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,co2,T_LDV_LTP_GSL_PHEV_REP_N,2040,7.575314972333513,kt/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,co2,T_LDV_LTP_GSL_PHEV_REP_N,2045,7.575314972333513,kt/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,n2o,T_LDV_LTP_GSL_PHEV_REP_N,2025,0.2465644782586245,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,n2o,T_LDV_LTP_GSL_PHEV_REP_N,2030,0.2465644782586245,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,n2o,T_LDV_LTP_GSL_PHEV_REP_N,2035,0.2465644782586245,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,n2o,T_LDV_LTP_GSL_PHEV_REP_N,2040,0.2465644782586245,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,n2o,T_LDV_LTP_GSL_PHEV_REP_N,2045,0.2465644782586245,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:3
+ON,ch4,T_LDV_LTF_BEV_REP_N,2025,23.2819439885078,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,ch4,T_LDV_LTF_BEV_REP_N,2030,23.2819439885078,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,ch4,T_LDV_LTF_BEV_REP_N,2035,23.2819439885078,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,ch4,T_LDV_LTF_BEV_REP_N,2040,23.2819439885078,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,ch4,T_LDV_LTF_BEV_REP_N,2045,23.2819439885078,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,co2,T_LDV_LTF_BEV_REP_N,2025,10.790209950859412,kt/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,co2,T_LDV_LTF_BEV_REP_N,2030,10.790209950859412,kt/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,co2,T_LDV_LTF_BEV_REP_N,2035,10.790209950859412,kt/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,co2,T_LDV_LTF_BEV_REP_N,2040,10.790209950859412,kt/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,co2,T_LDV_LTF_BEV_REP_N,2045,10.790209950859412,kt/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,n2o,T_LDV_LTF_BEV_REP_N,2025,0.33531360198467464,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,n2o,T_LDV_LTF_BEV_REP_N,2030,0.33531360198467464,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,n2o,T_LDV_LTF_BEV_REP_N,2035,0.33531360198467464,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,n2o,T_LDV_LTF_BEV_REP_N,2040,0.33531360198467464,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,n2o,T_LDV_LTF_BEV_REP_N,2045,0.33531360198467464,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,ch4,T_LDV_LTF_GSL_PHEV_REP_N,2025,16.747757208838994,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,ch4,T_LDV_LTF_GSL_PHEV_REP_N,2030,16.747757208838994,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,ch4,T_LDV_LTF_GSL_PHEV_REP_N,2035,16.747757208838994,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,ch4,T_LDV_LTF_GSL_PHEV_REP_N,2040,16.747757208838994,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,ch4,T_LDV_LTF_GSL_PHEV_REP_N,2045,16.747757208838994,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,co2,T_LDV_LTF_GSL_PHEV_REP_N,2025,7.575314972333513,kt/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,co2,T_LDV_LTF_GSL_PHEV_REP_N,2030,7.575314972333513,kt/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,co2,T_LDV_LTF_GSL_PHEV_REP_N,2035,7.575314972333513,kt/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,co2,T_LDV_LTF_GSL_PHEV_REP_N,2040,7.575314972333513,kt/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,co2,T_LDV_LTF_GSL_PHEV_REP_N,2045,7.575314972333513,kt/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,n2o,T_LDV_LTF_GSL_PHEV_REP_N,2025,0.2465644782586245,t/k vehicles,"ontario_ministry_transport_vehicle_population: Ontario vehicle registrations by status, model year and vehicle class; registration-status changes are not direct observations of physical retirement.
+  - A: Fit-active Ontario make/model cohorts classified through reviewed mappings; suppressed and unresolved keys limit represented fleet coverage.
+argonne_rd_greet: Fuel-property and process-model evidence from R&D GREET; the registered components distinguish heating values, marine intensity and vehicle-cycle results.
+  - road_vehicle_cycle_emissions: Saved 2025 GREET vehicle-cycle lifetime gas totals, with LDV cohort 2020; includes materials, assembly and end of life without recycling credits. Material and range cases remain separate.
+epa_omega_baseline: U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages.",T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,n2o,T_LDV_LTF_GSL_PHEV_REP_N,2030,0.2465644782586245,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,n2o,T_LDV_LTF_GSL_PHEV_REP_N,2035,0.2465644782586245,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,n2o,T_LDV_LTF_GSL_PHEV_REP_N,2040,0.2465644782586245,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2
+ON,n2o,T_LDV_LTF_GSL_PHEV_REP_N,2045,0.2465644782586245,t/k vehicles,,T17,2,3,3,3,3,ldv-ev-representative-emission-embodied:ON:T17:validation_baseline:2

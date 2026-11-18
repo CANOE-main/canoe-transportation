@@ -1,8 +1,11 @@
 """Diagnostic quantity boundaries and independent region/class reconciliation."""
 
+from pathlib import Path
+
 import pandas as pd
 import pytest
 
+from validation import stock_cohort_diagnostic as diagnostic
 from validation.stock_cohort_diagnostic import (
     cohort_lineage,
     comparison_lineage,
@@ -11,7 +14,104 @@ from validation.stock_cohort_diagnostic import (
     reference_survival_comparison,
     retirement_projection,
     summarize_annual_ledgers,
+    _selected_ldv_evidence,
 )
+
+
+def test_missing_region_ceud_identifies_offline_preparation(tmp_path, monkeypatch):
+    monkeypatch.setattr(diagnostic, "ceud_input_path", lambda bundle, region: tmp_path / f"{region}.csv")
+    root = Path(__file__).resolve().parents[1]
+    with pytest.raises(FileNotFoundError, match=r"Missing normalized CEUD data for.*fetching\.nrcan_ceud.*--no-download"):
+        diagnostic.load_stock_cohort_diagnosis(repo_root=root)
+
+
+@pytest.fixture
+def selected_ldv_inputs():
+    from pathlib import Path
+    from utils import load_config_bundle, load_harmonization_rules
+
+    bundle = load_config_bundle(Path(__file__).resolve().parents[1] / "config/scenarios/default.yaml")
+    rules = load_harmonization_rules(bundle, "road_aggregation")
+    mapping = []
+    statuses = []
+    for code, size, target, broad, count in (
+        ("CAR1", "Compact", "Compact", "Car", 10),
+        ("CAR2", "Mid-size", "Midsize", "Car", 30),
+        ("SUV", "Sport utility vehicle: Small", "Small SUV", "Light Truck", 70),
+    ):
+        row = dict.fromkeys(rules["mapping_columns"], "")
+        row.update(entry_type="mto_crosswalk", mto_make_code="TEST", mto_model_code=code,
+                   model_year_from=2000, model_year_to=2030, canonical_make="Test", canonical_model=code,
+                   vehicle_scope="ldv", nrcan_vehicle_class=size, nlr_atb_class=target,
+                   nrcan_ceud_class=broad, mapping_status="reviewed")
+        mapping.append(row)
+        for year in (2023, 2025, 2026):
+            statuses.append({"report_year": year, "VEHICLE_CLASS": "PASSENGER", "MAKE": "TEST",
+                             "MODEL": code, "MODEL_YEAR": 2020, "stock_status": "FIT_ACTIVE",
+                             "native_count": count if year == 2025 else 999})
+    statuses.append({**statuses[-2], "stock_status": "UNFIT", "native_count": 98765})
+    statuses.append({**statuses[-2], "report_year": 2025, "stock_status": "FIT_ACTIVE",
+                     "MODEL": "UNKNOWN", "native_count": 2000})
+    return pd.DataFrame(statuses), pd.DataFrame(mapping), rules
+
+
+def test_selected_ldv_weights_use_explicit_year_not_latest_handoff(selected_ldv_inputs):
+    statuses, mapping, rules = selected_ldv_inputs
+    original = statuses.copy(deep=True)
+    mapped, weights = _selected_ldv_evidence(statuses, mapping, year=2025, road_rules=rules)
+    assert set(mapped.report_year) == {2025}
+    assert len(mapped) == 4  # The unresolved source row is retained, without receiving a class weight.
+    assert mapped.loc[mapped.MODEL.eq("UNKNOWN"), "mapping_accepted"].eq(False).all()
+    assert set(weights.report_year) == {2025}
+    assert weights.set_index("nlr_atb_class").aggregation_weight.to_dict() == {
+        "Compact": .25, "Midsize": .75, "Small SUV": 1.,
+    }
+    assert weights.groupby("nrcan_ceud_class").fit_active_stock.sum().to_dict() == {"Car": 40, "Light Truck": 70}
+    pd.testing.assert_frame_equal(statuses, original)
+
+
+@pytest.mark.parametrize("fault", ["missing_year", "duplicate", "missing_class", "negative", "nonfinite", "missing_columns"])
+def test_selected_ldv_evidence_rejects_incomplete_or_invalid_capture(selected_ldv_inputs, fault):
+    statuses, mapping, rules = selected_ldv_inputs
+    if fault == "missing_year":
+        statuses = statuses.loc[statuses.report_year.ne(2025)]
+    elif fault == "duplicate":
+        statuses = pd.concat([statuses, statuses.loc[statuses.report_year.eq(2025)].iloc[:1]])
+    elif fault == "missing_class":
+        statuses = statuses.loc[~statuses.MODEL.eq("SUV")]
+    elif fault in {"negative", "nonfinite"}:
+        statuses["native_count"] = statuses.native_count.astype(float)
+        statuses.loc[statuses.report_year.eq(2025) & statuses.MODEL.eq("CAR1"), "native_count"] = -1 if fault == "negative" else float("inf")
+    else:
+        statuses = statuses.drop(columns="stock_status")
+    with pytest.raises(ValueError, match="Captured Report A|captured Report A"):
+        _selected_ldv_evidence(statuses, mapping, year=2025, road_rules=rules)
+
+
+@pytest.mark.parametrize("member", ["rules.yaml", "fleet_stock_and_activity.yaml"])
+def test_current_controls_cannot_be_mixed_with_different_captured_rules(monkeypatch, member):
+    from pathlib import Path
+    from types import SimpleNamespace
+    from utils import file_sha256, harmonization_rule_paths, load_config_bundle, load_harmonization_rules
+    import validation.stock_cohort_diagnostic as diagnostic
+
+    bundle = load_config_bundle(Path(__file__).resolve().parents[1] / "config/scenarios/default.yaml")
+    identities = {"rules" if path.name == "rules.yaml" else f"rules:{path.name}": {
+        "sha256": "0" * 64 if path.name == member else file_sha256(path),
+    } for path in harmonization_rule_paths(bundle)}
+    monkeypatch.setattr(diagnostic, "load_notebook_evidence", lambda *_, **__: SimpleNamespace(
+        metadata={"config": identities, "prepare_command": "recorded rebuild command"},
+    ))
+
+    def forbid_data_read(*_, **__):
+        raise AssertionError("Mismatched controls must fail before reading source data")
+
+    monkeypatch.setattr(pd, "read_csv", forbid_data_read)
+    with pytest.raises(ValueError, match="rules.* differs from captured reviewed evidence.*recorded rebuild command"):
+        diagnostic._captured_stock_evidence(
+            bundle, road_rules=load_harmonization_rules(bundle, "road_aggregation"),
+            assorted_rules=load_harmonization_rules(bundle, "assorted_sources"),
+        )
 
 
 @pytest.fixture

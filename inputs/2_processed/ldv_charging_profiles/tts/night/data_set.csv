@@ -1,0 +1,2 @@
+data_id,label,version,description,status,author,date,parent_id,changelog,notes
+ldv-charging-profiles-tts-night:ON:T31:validation_charging_tts_night,ldv_charging_profiles.tts_night,composite,Registered RAMP charging shape scaled by native full-year hourly mean and projected to CANOE time slices v4,,,,,,"{""content_identity"":""ldv-charging-profiles-tts-night:composite:4:d4c0cf2b3388c977"",""kind"":""transport-data-id-v1"",""notes"":null,""scenario"":""validation_charging_tts_night""}"

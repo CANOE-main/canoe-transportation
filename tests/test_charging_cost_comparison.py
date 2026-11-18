@@ -1,6 +1,7 @@
 """Read-only charging comparisons must not manufacture units, zeros or time matches."""
 
 import json
+from pathlib import Path
 import sqlite3
 from types import SimpleNamespace
 
@@ -9,7 +10,7 @@ import pytest
 from pydantic import ValidationError
 
 from parameterization.currency import CerCurrencyConverter
-from utils import file_sha256
+from utils import file_sha256, load_rules_for_owner
 from validation import charging_cost_comparison as layer
 from validation.charging_cost_comparison import (
     ChargingComparisonRules, ChargingCostComparison, ReferenceCostBasis, _read_backend,
@@ -51,32 +52,33 @@ def converter():
 
 
 def component_manual():
-    records = []
-    for kind, share, capex, currency, dollar_year, power in (
-        ("L1", .5, 100., "USD", "2018", 1.),
-        ("L2", .4, 9000., "CAD", "2020", 9.),
-        ("DCFC", .1, 100000., "CAD", "2020", 100.),
-    ):
-        for suffix, value, unit, year, period in (
-            ("capex_aggregation", share, "", "", "through_2050"),
-            ("capex", capex, currency, dollar_year, "all"),
-            ("rated_power", power, "kW", "", "all"),
+    # Retired type capex weights are deliberately absent. The shared physical core
+    # now supplies counts, ratings and already-converted source costs.
+    return pd.DataFrame([{"category": "charger", "sub_category": "all",
+        "parameter": "fixed_to_capex_ratio", "value": .01, "unit": "fraction",
+        "currency_year": "", "period": "all", "notes": "Annual fixed/capex"}])
+
+
+def component_representation():
+    rows = []
+    conversion = converter()
+    for year in (2025, 2030, 2035):
+        for kind, ports, power, cost, currency, price_year in (
+            ("L1", 50, 1, 100., "USD", 2018), ("L2", 40, 9, 9000., "CAD", 2020),
+            ("DCFC", 10, 100, 100000., "CAD", 2020),
         ):
-            records.append({"category": "charger", "sub_category": "ldv",
-                            "parameter": f"{kind}_{suffix}", "value": value, "unit": unit,
-                            "currency_year": year, "period": period, "notes": f"{kind} {suffix}"})
-    records.extend([
-        {"category": "charger", "sub_category": "ldv", "parameter": "max_annual_utilization",
-         "value": .2, "unit": "", "currency_year": "", "period": "all", "notes": "Reviewed utilization"},
-        {"category": "charger", "sub_category": "all", "parameter": "fixed_to_capex_ratio",
-         "value": .01, "unit": "", "currency_year": "", "period": "all", "notes": "Annual fixed/capex"},
-    ])
-    return pd.DataFrame(records)
+            rows.append({"vehicle_class": "LDV", "year": year,
+                "archetype": f"physical_{kind}", "component": kind, "ports": ports,
+                "power_kw": float(power), "native_cost_per_port": cost, "native_currency": currency,
+                "native_dollar_year": price_year,
+                "cost_cad_per_port": conversion.convert(cost, currency=currency, dollar_year=price_year).target_cad_value,
+                "utilization": .2 if year < 2035 else .25})
+    return SimpleNamespace(components=pd.DataFrame(rows))
+
 
 
 def test_source_capex_and_power_conserve_fleet_expenditure_with_currency_conversion():
-    result = _source_components_for_year(component_manual(), category="ldv", source_year=2030,
-                                         converter=converter())
+    result = _source_components_for_year(component_representation(), category="ldv", source_year=2030)
     # One hundred ports cost 50*137.5 + 40*9000 + 10*100000 CAD2020 and provide
     # 50*1 + 40*9 + 10*100 kW. Currency and kW scaling cancel in M CAD/GW.
     expected = (50 * 137.5 + 40 * 9000 + 10 * 100000) / (50 * 1 + 40 * 9 + 10 * 100)
@@ -92,47 +94,44 @@ def test_source_capex_and_power_conserve_fleet_expenditure_with_currency_convers
 
 
 def test_source_cost_and_power_select_the_same_projection_year():
-    manual = component_manual()
-    power = manual.parameter.eq("L2_rated_power")
-    capex = manual.parameter.eq("L2_capex")
-    later_power, later_capex = manual.loc[power].copy(), manual.loc[capex].copy()
-    manual.loc[power, ["period", "value"]] = ["2025", 7.2]
-    manual.loc[capex, ["period", "value"]] = ["2025", 15000]
-    later_power["period"], later_power["value"] = "2030", 10
-    later_capex["period"], later_capex["value"] = "through_2050", 10000
-    manual = pd.concat([manual, later_power, later_capex], ignore_index=True)
-    result = _source_components_for_year(manual, category="ldv", source_year=2030, converter=converter())
+    representation = component_representation()
+    rows = representation.components
+    earlier = rows.component.eq("L2") & rows.year.eq(2025)
+    later = rows.component.eq("L2") & rows.year.eq(2030)
+    rows.loc[earlier, ["power_kw", "native_cost_per_port", "cost_cad_per_port"]] = [7.2, 15000, 15000]
+    rows.loc[later, ["power_kw", "native_cost_per_port", "cost_cad_per_port"]] = [10, 10000, 10000]
+    result = _source_components_for_year(representation, category="ldv", source_year=2030)
     l2 = result.loc[result.charger_type.eq("L2")].iloc[0]
     assert l2.rated_power_kw == 10
     assert l2.source_cost_per_port == 10000
-    assert l2.cost_source_period == "through_2050"
-    assert l2.power_source_period == "2030"
+    assert set(result.source_year) == {2030}
+    assert set(result.year) == {2030}
 
 
 @pytest.mark.parametrize("change,match", [
-    ("million_currency", "currency per port"),
-    ("power_unit", "rated power in kW"),
-    ("zero_power", "positive rated power"),
-    ("nonfinite_capex", "positive per-port capex"),
-    ("missing_power", "Missing charger period selector"),
-    ("share_sum", "shares do not sum"),
+    ("million_currency", "currency per port"), ("wrong_power_field", "required fields"),
+    ("zero_power", "power_kw"), ("nonfinite_capex", "cost_cad_per_port"),
+    ("duplicate_component", "duplicated"), ("negative_ports", "ports"),
 ])
 def test_source_cost_denominator_and_native_units_must_be_explicit(change, match):
-    manual = component_manual()
+    representation = component_representation()
+    rows = representation.components
+    selected = rows.component.eq("L1")
     if change == "million_currency":
-        manual.loc[manual.parameter.eq("L1_capex"), "unit"] = "M USD"
-    elif change == "power_unit":
-        manual.loc[manual.parameter.eq("L2_rated_power"), "unit"] = "MW"
+        rows.loc[selected, "native_currency"] = "M USD"
+    elif change == "wrong_power_field":
+        representation.components = rows.rename(columns={"power_kw": "power_mw"})
     elif change == "zero_power":
-        manual.loc[manual.parameter.eq("L2_rated_power"), "value"] = 0
+        rows.loc[selected, "power_kw"] = 0
     elif change == "nonfinite_capex":
-        manual.loc[manual.parameter.eq("DCFC_capex"), "value"] = float("nan")
-    elif change == "missing_power":
-        manual = manual.loc[~manual.parameter.eq("DCFC_rated_power")]
-    elif change == "share_sum":
-        manual.loc[manual.parameter.eq("L1_capex_aggregation"), "value"] = .4
+        rows.loc[selected, "cost_cad_per_port"] = float("nan")
+    elif change == "duplicate_component":
+        representation.components = pd.concat([rows, rows.iloc[:1]])
+    elif change == "negative_ports":
+        rows.loc[selected, "ports"] = -1
     with pytest.raises(ValueError, match=match):
-        _source_components_for_year(manual, category="ldv", source_year=2030, converter=converter())
+        _source_components_for_year(representation, category="ldv", source_year=2025)
+
 
 
 @pytest.mark.parametrize("stale_count_weighting", [False, True])
@@ -150,6 +149,11 @@ def test_source_reconstruction_reconciles_built_costs_and_rejects_old_weighting(
     monkeypatch.setattr(layer, "load_harmonization_rules", lambda bundle, key: source_rules if key == "ev_chargers"
                         else {"source_column": "source", "notes_column": "notes"})
     monkeypatch.setattr(layer, "validate_manual_registry", lambda *args, **kwargs: (None, {manual_path.name: manual}))
+    monkeypatch.setattr("parameterization.ev_chargers.load_charger_inputs", lambda *_: (manual, manual_path))
+    monkeypatch.setattr(layer, "production_representation", lambda *_: (None, component_representation(), converter(), manual_path))
+    monkeypatch.setattr(layer, "prepare_charger_utilization_targets", lambda *_, **__: (
+        pd.DataFrame([{"region": "ON", "tech_or_group": tech, "vintage": vintage, "target_utilization": target}
+                      for tech, vintage, target in (("LDV_EX", 2020, .2), ("LDV_N", 2025, .2), ("LDV_N", 2030, .35))]), None))
     monkeypatch.setattr(layer, "resolve_input_path", lambda *args: manual_path)
     expected = (50 * 137.5 + 40 * 9000 + 10 * 100000) / 1410
     investment = 568.75 if stale_count_weighting else expected
@@ -167,7 +171,7 @@ def test_source_reconstruction_reconciles_built_costs_and_rejects_old_weighting(
         result, utilization, identity, ratio = _source_cost_components(bundle, backend, converter(), rules())
         assert len(result) == 9
         assert result.groupby("backend_vintage").weighted_cost_per_gw.sum().to_list() == pytest.approx([expected] * 3)
-        assert utilization == {"LDV_EX": .2, "LDV_N": .2}
+        assert utilization == {("ON", "LDV_EX", 2020): .2, ("ON", "LDV_N", 2025): .2, ("ON", "LDV_N", 2030): .35}
         assert identity["sha256"] == file_sha256(manual_path)
         assert ratio == .01
 
@@ -204,8 +208,29 @@ def compare(reference=None, backend=None, **kwargs):
     default_ref, default_backend = frames()
     return compare_cost_frames(reference if reference is not None else default_ref,
                                backend if backend is not None else default_backend,
-                               converter=converter(), utilization={"LDV_EX": .15, "LDV_N": .2},
-                               **{"rules": rules(), "periods": periods(), **kwargs})
+                               converter=converter(),
+                               **{"utilization": {"LDV_EX": .15, "LDV_N": .2},
+                                  "rules": rules(), "periods": periods(), **kwargs})
+
+
+def test_throughput_comparisons_use_vintage_specific_production_utilization():
+    _, backend = frames()
+    targets = {("LDV_EX", 2023): .15, ("LDV_N", 2025): .2, ("LDV_N", 2030): .4}
+    result = backend_cost_basis(backend, rules=rules(), periods=periods(), utilization=targets,
+                                fixed_to_capex_ratio=.01, target_year=2020)
+    later = result.loc[result.tech.eq("LDV_N") & result.vintage.eq(2030)].iloc[0]
+    assert later.utilization == .4
+    assert later.cost_mcad_per_pj_year == pytest.approx(80 / (31.536 * .4))
+    comparison, _ = compare(utilization=targets, rules=rules(reference_basis=basis("PJ/year_at_backend_utilization")))
+    selected = comparison.loc[comparison.table.eq("cost_invest") & comparison.reference_vintage.eq(2030)].iloc[0]
+    assert selected.backend_utilization_target == .4
+    assert selected.backend_million_target_cad == pytest.approx(80 / (31.536 * .4))
+
+
+def test_explicit_cost_report_boundary_is_actionable_before_artifact_io():
+    bundle = SimpleNamespace(scenario=SimpleNamespace(ev_chargers=SimpleNamespace(charger_type_classes="explicit")))
+    with pytest.raises(ValueError, match="infrastructure notebook for explicit per-archetype costs"):
+        layer.prepare_charging_cost_comparison(bundle)
 
 
 def test_unknown_units_and_absent_variable_entries_stay_unresolved():
@@ -291,6 +316,23 @@ def test_reference_reader_preserves_raw_values_and_hashes_without_writing_inputs
     reference["cost_invest"].to_csv(tmp_path / config.files["cost_invest"], index=False)
     with pytest.raises(ValueError, match="duplicate"):
         read_reference_costs(tmp_path, config)
+
+
+def test_curated_charger_coverage_preserves_original_no_match_result():
+    root = Path(__file__).resolve().parents[1]
+    directory = root / "inputs/validation/transportation_reference/charger_costs"
+    config = layer.ChargingComparisonRules.model_validate(
+        load_rules_for_owner(root / "config/parameters", "charging_cost_comparison"),
+    )
+    selected, evidence = read_reference_costs(directory, config)
+    assert {table: len(frame) for table, frame in selected.items()} == {
+        "cost_invest": 24, "cost_fixed": 69, "cost_variable": 0,
+    }
+    assert selected["cost_invest"].reference_csv_row.tolist() == list(range(2, 26))
+    variable = evidence["cost_variable"]
+    assert variable["total_rows"] == variable["excluded_rows"] == 11_937
+    assert variable["curated_rows"] == 0
+    assert variable["sha256"] != variable["source"]["sha256"]
 
 
 def test_invalid_scope_and_unresolved_sensitivity_fail_at_config_boundary():

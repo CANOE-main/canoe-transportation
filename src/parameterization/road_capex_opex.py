@@ -10,6 +10,9 @@ import pandas as pd
 from parameterization.road_efficiencies import interpolate
 
 
+LDV_REPAIR_PRICE_INDEX = ("bea_us_gdp_deflator", "annual")
+
+
 def select_nlr_purchase_prices(
     vehicles: pd.DataFrame,
     *,
@@ -83,6 +86,7 @@ def select_nlr_purchase_prices(
                         "vehicle_detail": item.vehicle_detail,
                         "source_year": int(item.year),
                         "trajectory": trajectory,
+                        "source_trajectory": getattr(item, "source_trajectory", item.trajectory),
                         "source_id": item.source_id,
                         "source_currency": source_currency,
                         "source_dollar_year": source_dollar_year,
@@ -123,13 +127,32 @@ def aggregate_purchase_price(
     return sum(v[0] for v in values), sum(v[1] for v in values)
 
 
+def ldv_repair_msrp_factor(
+    *, price_basis: tuple[str, int], repair_basis: tuple[str, int],
+    usd_price_index: Mapping[int, float],
+) -> float:
+    """Rebase ATB retail USD to the dollar year of the Burnham coefficients."""
+    price_currency, price_year = price_basis
+    repair_currency, repair_year = repair_basis
+    if price_currency != "USD" or repair_currency != "USD":
+        raise ValueError("The LDV repair equation requires USD prices and coefficients")
+    try:
+        price_index = float(usd_price_index[price_year])
+        repair_index = float(usd_price_index[repair_year])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError(f"Invalid U.S. GDP deflator levels for {price_year} to {repair_year}") from exc
+    if any(not isfinite(index) or index <= 0 for index in (price_index, repair_index)):
+        raise ValueError("U.S. GDP deflator levels must be finite and positive")
+    return repair_index / price_index
+
+
 def ldv_repair_per_mile(
     *, age: int, msrp: float, vehicle_class: str, powertrain: str,
     baseline: pd.DataFrame, class_multipliers: pd.DataFrame,
     powertrain_multipliers: pd.DataFrame, maintenance: pd.DataFrame,
     powertrain_labels: dict[str, str], price_exponent: float, max_age: int,
 ) -> dict[str, float]:
-    """Burnham calibrated repair equation uses retail MSRP, never de-marked CAPEX."""
+    """Evaluate Burnham repair with retail MSRP in the coefficient dollar year."""
     if age < 0 or msrp <= 0 or price_exponent <= 0:
         raise ValueError("Invalid LDV repair age, MSRP, or price exponent")
     if powertrain not in powertrain_labels:

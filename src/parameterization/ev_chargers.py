@@ -7,17 +7,23 @@ import hashlib
 import json
 import logging
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
-from canoe_schema.v4_0 import CapacityToActivity, CostFixed, CostInvest, DataSet, Efficiency, ExistingCapacity, LifetimeTech, LimitAnnualCapacityFactor
+from canoe_schema.v4_0 import CapacityToActivity, CostFixed, CostInvest, DataSet, Efficiency, ExistingCapacity, LifetimeTech, LimitAnnualCapacityFactor, LimitCapacityShare, TechGroup, TechGroupMember
 
+from fetching.dunsky_charger_inputs import production_inputs, infrastructure_frames, load_evidence
+from parameterization.charger_representation import (
+    ChargerRepresentationSettings, aggregate_components, build_representation,
+    select_charger_technologies, technology_mappings, capacity_share_targets,
+)
 from parameterization.currency import CerCurrencyConverter
 from parameterization.manual_parameters import validate_manual_registry
 from utils import (
     ConfigBundle, file_sha256, load_config_bundle, load_harmonization_rules,
-    resolve_artifact_path, resolve_input_path, write_dataframe_atomic,
+    resolve_artifact_path, resolve_input_path, resolve_parameter_path, write_dataframe_atomic,
 )
 from validation.insertion import validate_parameter_rows
 from validation.provenance import (
@@ -29,38 +35,54 @@ from validation.provenance import (
 LOGGER = logging.getLogger(__name__)
 
 
-def _public_charger_totals(
-    provincial: pd.DataFrame, types: pd.DataFrame, *, precedence: str,
-) -> tuple[int, int]:
-    """Validate native observations while keeping geographic totals and type mix distinct."""
-    if precedence not in {"require_equal", "provincial"}:
-        raise ValueError(f"Unknown TC public charger national_total_precedence: {precedence!r}")
-    validated_counts = []
-    for frame in (provincial, types):
-        counts = pd.to_numeric(frame.public_chargers, errors="coerce")
-        if counts.isna().any() or any(not math.isfinite(value) or value != int(value) for value in counts):
-            raise ValueError("TC public charger counts must be finite integers")
-        if any(counts < 0):
-            raise ValueError("Negative TC public charger count")
-        validated_counts.append(counts)
-    provincial_total = int(validated_counts[0].sum())
-    chart_total = int(validated_counts[1].sum())
-    if chart_total <= 0:
-        raise ValueError("TC public charger type total must be positive")
+def load_charger_inputs(bundle: ConfigBundle, manual: pd.DataFrame) -> tuple[pd.DataFrame, Path]:
+    """Join fetched equivalents with reviewed overrides without duplicate authority."""
+    fetched, path = production_inputs(bundle)
+    fetched["registered_source_id"] = "dunsky_ev_charging_infrastructure"
+    fetched["registered_component_id"] = "published_report"
+    keys = ["category", "sub_category", "parameter", "period"]
+    overlap = manual.merge(fetched, on=keys, how="inner")
+    if not overlap.empty:
+        raise ValueError("Manual charger inputs duplicate fetched Dunsky production keys")
+    inputs = pd.concat([manual, fetched[list(manual.columns)]], ignore_index=True)
+    LOGGER.info("Loaded charger inputs: %d fetched Dunsky equivalents and %d reviewed manual rows",
+                len(fetched), len(manual))
+    return inputs, path
+
+
+def _charger_input_identity(
+    bundle: ConfigBundle, manual: pd.DataFrame, paths: list[Path],
+) -> dict[str, Any]:
+    """Bind source selectors as lineage even when different cells have equal values."""
+    extraction = resolve_parameter_path(bundle, "dunsky_charger_inputs.yaml")
+    return {
+        "files": [(path.name, file_sha256(path)) for path in [*paths, extraction]],
+        "resolved_charger_inputs": manual.to_dict("records"),
+    }
+
+
+def _public_charger_totals(provincial: pd.DataFrame, types: pd.DataFrame) -> int:
+    """Require one reconciled AFDC inventory of public ports by region and level."""
+    fields = {"L1": "level_1_ports", "L2": "level_2_ports", "DCFC": "dc_fast_ports"}
+    for frame, columns in ((provincial, ["public_chargers", *fields.values()]),
+                           (types, ["public_chargers"])):
+        for column in columns:
+            counts = pd.to_numeric(frame[column], errors="coerce")
+            if counts.isna().any() or any(not math.isfinite(v) or v != int(v) or v < 0 for v in counts):
+                raise ValueError("AFDC public charger counts must be nonnegative finite integers")
+    if not (provincial.public_chargers == provincial[list(fields.values())].sum(axis=1)).all():
+        raise ValueError("AFDC provincial port totals differ from level counts")
+    total = int(provincial.public_chargers.sum())
+    if total <= 0 or total != int(types.public_chargers.sum()):
+        raise ValueError("AFDC provincial and type totals must agree and be positive")
+    for kind, column in fields.items():
+        selected = types.loc[types.charger_type.eq(kind)]
+        if len(selected) != 1 or int(selected.public_chargers.iloc[0]) != int(provincial[column].sum()):
+            raise ValueError("AFDC type totals differ from provincial level counts")
     shares = pd.to_numeric(types.national_share, errors="coerce")
-    if (shares.isna().any() or any(not math.isfinite(value) or value < 0 for value in shares)
-            or not math.isclose(float(shares.sum()), 1, abs_tol=1e-9)
-            or any(abs(shares - validated_counts[1] / chart_total) > 1e-12)):
-        raise ValueError("TC public charger type shares differ from the published type counts")
-    if precedence == "require_equal" and provincial_total != chart_total:
-        raise ValueError("TC public charger national totals or type shares differ")
-    if provincial_total != chart_total:
-        LOGGER.warning(
-            "TC public charger discrepancy: provincial=%d, type chart=%d, difference=%+d; "
-            "using provincial counts and the published type mix",
-            provincial_total, chart_total, provincial_total - chart_total,
-        )
-    return provincial_total, chart_total
+    if shares.isna().any() or any(abs(shares - types.public_chargers / total) > 1e-12):
+        raise ValueError("AFDC type shares differ from observed port counts")
+    return total
 
 
 @dataclass(frozen=True)
@@ -75,6 +97,9 @@ class ChargerPreparation:
     audit: dict[str, Any]
     assumption_dataset: DataSet
     capacity_to_activity_rows: list[CapacityToActivity]
+    tech_group_rows: list[TechGroup] = field(default_factory=list)
+    tech_group_member_rows: list[TechGroupMember] = field(default_factory=list)
+    capacity_share_rows: list[LimitCapacityShare] = field(default_factory=list)
 
 
 def _prepared_stock_identity(
@@ -140,10 +165,8 @@ def prepare_charger_capacity_to_activity(
         raise ValueError("Charger capacity-to-activity units differ from configured units")
     if not str(record.notes).strip():
         raise ValueError("Charger capacity-to-activity lacks reviewed notes")
-    owners = {
-        mapping[kind] for mapping in rules["technology"].values()
-        for kind in ("existing", "new")
-    }
+    technology = select_charger_technologies(bundle, technology)
+    owners = set(technology.loc[technology.category.eq("charger"), "tech"])
     template_owners = technology.loc[technology.category.eq("charger"), "tech"]
     if template_owners.duplicated().any() or set(template_owners) != owners:
         raise ValueError("Charger capacity-to-activity does not cover template technologies")
@@ -152,14 +175,20 @@ def prepare_charger_capacity_to_activity(
         digest.update(path.name.encode("utf-8") + b"\0" + path.read_bytes() + b"\0")
     digest.update(json.dumps({
         "electricity_accounting": accounting,
-        "technology": rules["technology"],
+        "technology": technology_mappings(bundle),
         "input_commodity": rules["input_commodity"],
     }, sort_keys=True, allow_nan=False).encode("utf-8"))
+    if bundle.scenario.ev_chargers.charger_type_classes == "explicit":
+        digest.update(json.dumps({
+            "charger_capacity_groups": rules["production_representation"]["groups"],
+        }, sort_keys=True, allow_nan=False).encode("utf-8"))
     version = digest.hexdigest()[:16]
     dataset = DataSet(
         data_id=f"canoe-charger-internal-assumptions:{version}", version=version,
         label="CANOE internal charger accounting and capacity conversion",
-        description="Version-controlled capacity_to_activity.csv physical energy/power conversion and configured unity electricity transfer: vehicle electricity consumption includes charging losses. Backend accounting assumptions, not external source measurements.",
+        description=("Version-controlled capacity_to_activity.csv physical energy/power conversion and configured unity electricity transfer: vehicle electricity consumption includes charging losses. Backend accounting assumptions, not external source measurements."
+                     + (" Configured explicit charger parent groups and their technology memberships share this backend structural identity."
+                        if bundle.scenario.ev_chargers.charger_type_classes == "explicit" else "")),
     )
     rows = [
         CapacityToActivity(region=region, tech=tech, c2a=value, units=record.units,
@@ -239,7 +268,7 @@ def _rated_power(manual: pd.DataFrame, category: str, kind: str, source_year: in
 
 def charger_cost_components(
     manual: pd.DataFrame, category: str, source_year: int,
-    converter: CerCurrencyConverter,
+    converter: CerCurrencyConverter, *, representation=None,
 ) -> tuple[float, list[dict[str, Any]]]:
     """Divide expenditure per representative port by its rated kW.
 
@@ -248,6 +277,34 @@ def charger_cost_components(
     million CAD/GW; no additional million factor is applied. Power shares are
     derived audit evidence, never independent modelling assumptions.
     """
+    if representation is not None:
+        rows = representation.components.loc[representation.components.year.eq(source_year)
+                                              & representation.components.vehicle_class.eq(category.upper())]
+        combined = aggregate_components(rows.to_dict("records"))
+        records = []
+        for row in rows.to_dict("records"):
+            share = row["ports"] / combined["port_count"]
+            power_share = share * row["power_kw"] / combined["rated_power_kw"]
+            conversion = converter.convert(row["native_cost_per_port"], currency=row["native_currency"],
+                                           dollar_year=row["native_dollar_year"])
+            records.append({**row, "charger_class": category, "source_year": source_year,
+                            "charger_type": row["component"], "count_share": share,
+                            "rated_power_kw": row["power_kw"], "power_share": power_share,
+                            "source_cost_per_port": row["native_cost_per_port"],
+                            "source_unit": row["native_currency"], "source_dollar_year": row["native_dollar_year"],
+                            "cad_per_usd": conversion.cad_per_usd,
+                            "source_year_deflator": conversion.source_year_deflator,
+                            "target_year_deflator": conversion.target_year_deflator,
+                            "target_dollar_year": conversion.target_dollar_year,
+                            "cad_2020_cost_per_port": row["cost_cad_per_port"],
+                            "weighted_cad_2020_cost_per_port": share * row["cost_cad_per_port"],
+                            "weighted_rated_power_kw": share * row["power_kw"],
+                            "cad_2020_cost_per_gw": row["cost_cad_per_port"] / row["power_kw"],
+                            "weighted_cad_2020_cost_per_gw": power_share * row["cost_cad_per_port"] / row["power_kw"],
+                            "mean_rated_power_kw": combined["rated_power_kw"],
+                            "mean_cad_2020_cost_per_port": sum(item["ports"] * item["cost_cad_per_port"] for item in rows.to_dict("records")) / combined["port_count"],
+                            "aggregation_basis": "yearly_source_composition_total_expenditure_per_rated_power"})
+        return combined["capex_mcad_per_gw"], records
     cost_types = {"ldv": ("L1", "L2", "DCFC"), "mhdv": ("50kW", "350kW", "2MW")}
     if category not in cost_types:
         raise ValueError(f"Unknown charger cost category: {category}")
@@ -299,10 +356,60 @@ def charger_cost_components(
     return total, records
 
 
+def production_representation(bundle: ConfigBundle, manual: pd.DataFrame):
+    """Resolve production source frames and the real currency conversion once."""
+    rules = load_harmonization_rules(bundle, "ev_chargers")
+    settings = ChargerRepresentationSettings.model_validate(rules["production_representation"])
+    evidence, _ = load_evidence(bundle)
+    source_frames = infrastructure_frames(evidence)
+    cer = load_harmonization_rules(bundle, "cer_enerfuture")
+    edition = bundle.scenario.sources.selections["cer_canadas_energy_future"].edition
+    macro_path = resolve_input_path(bundle, "interim", cer["interim_subdir_template"].format(edition=edition),
+                                    cer["components"]["macro-indicators"]["output_file"])
+    converter = CerCurrencyConverter(pd.read_csv(macro_path), scenario=bundle.scenario.economics.cer_scenario,
+                                    target_year=bundle.scenario.economics.cost_reference_year)
+    # Keep a common source-evidence grid for the two modes and comparison reports.
+    # Consumers select their own evaluation year from this prepared trajectory.
+    periods = bundle.scenario.periods
+    years = [*periods.model, periods.end_of_horizon]
+    l1 = _period_value(manual, "ldv", "L1_capex", years[0])
+    representation = build_representation(
+        source_frames, settings, years, converter, l1_input=l1,
+        fixed_om_fraction=_manual_value(manual, "all", "fixed_to_capex_ratio", "all"),
+        ld_home_utilization=bundle.scenario.ev_chargers.ld_home_utilization,
+    )
+    return settings, representation, converter, macro_path
+
+
+def _capacity_mix_rows(bundle, representation, settings, regions, assumption_dataset, digest):
+    """Register backend group structure and source-derived available-GW shares."""
+    targets, groups = capacity_share_targets(
+        representation.parameters, settings, sorted(regions),
+        {period: bundle.scenario.periods.evaluation_year(period)
+         for period in bundle.scenario.periods.model})
+    group_rows = [TechGroup(group_name=name, notes="Configured CANOE charger capacity composition group.",
+                           data_id=assumption_dataset.data_id) for name in groups]
+    members = [TechGroupMember(group_name=name, tech=tech, data_id=assumption_dataset.data_id)
+               for name, techs in groups.items() for tech in techs]
+    # The revised legacy share values need an identity distinct from past
+    # closing-year values under the same scenario. Prospective shares are replayed.
+    transformation = ({"transformation": "Dunsky equivalent installed charger capacity composition at period opening"}
+                      if bundle.scenario.periods.period_mode == "legacy" else {})
+    context = _context(bundle, [("dunsky_ev_charging_infrastructure", "published_report")],
+                       name="explicit_capacity_mix", digest=digest, **transformation)
+    records = []
+    for row in targets.to_dict("records"):
+        records.append({key: row[key] for key in ("region", "period", "sub_group", "super_group", "operator", "share")} | {
+            "notes": f"Dunsky disjoint source port composition converted to available-GW share with source-year {row['source_year']} ratings; mixed-vintage installed capacity is an equivalent-stock approximation."})
+    rows = validate_parameter_rows(LimitCapacityShare, records, context, bundle=bundle)
+    return group_rows, members, rows, context, targets.to_dict("records")
+
+
 def _context(
     bundle: ConfigBundle, components: list[tuple[str, str]], *, name: str,
     digest: str, governing: str | None = None,
     additional: list[ResolvedProvenance] | None = None,
+    transformation: str = "reviewed transport charging and refueling parameterization",
 ) -> ResolvedProvenance:
     inputs = [
         resolve_provenance(
@@ -317,7 +424,7 @@ def _context(
     quality = next(item.data_quality for item in inputs if item.source_id == governing_id)
     return resolve_composite_provenance(
         inputs=inputs, dataset_key=f"ev_chargers.{name}",
-        transformation="reviewed transport charging and refueling parameterization",
+        transformation=transformation,
         transformation_version=load_harmonization_rules(bundle, "ev_chargers")["transformation_version"], governing_source_id=governing_id,
         data_quality=quality, value_variant={"input_digest": digest, "periods": bundle.scenario.periods.model_dump(),
                                            "charger_rules": load_harmonization_rules(bundle, "ev_chargers")},
@@ -328,8 +435,6 @@ def _validate_shares(manual: pd.DataFrame) -> None:
     groups = (
         ("ldv", "existing_private", ("L1", "L2"), "existing"),
         ("mhdv", "existing", ("50kW", "350kW"), "existing"),
-        ("ldv", "cost", ("L1", "L2", "DCFC"), "through_2050"),
-        ("mhdv", "cost", ("50kW", "350kW", "2MW"), "through_2050"),
     )
     for category, usage, types, period in groups:
         names = (
@@ -354,6 +459,8 @@ def prepare_charger_utilization_targets(
     vintage; configured slack applies only to annual lower bounds, not equalities.
     """
     rules = load_harmonization_rules(bundle, "ev_chargers")
+    if bundle.scenario.ev_chargers.charger_type_classes == "explicit":
+        raise ValueError("Explicit charger utilization requires prepare_ev_charger_rows so type-specific source contexts and operating inputs remain coupled")
     if rules["utilization_time_basis"] != "technology_kind":
         raise ValueError("Charger utilization requires technology-kind source selection")
     policies = rules["utilization"]
@@ -478,7 +585,8 @@ def _prepare_hydrogen_refueling(
                 )
                 rates[parameter] = converted.target_cad_value
                 conversions.append({"station_class": category, "vintage": vintage,
-                                    "parameter": parameter, **vars(converted)})
+                                    "parameter": parameter, "source_period": str(selected.period),
+                                    **vars(converted)})
             for region in sorted(regions):
                 base = {"region": region, "tech": tech, "vintage": vintage}
                 invest_rows.extend(validate_parameter_rows(CostInvest, [{
@@ -524,21 +632,23 @@ def prepare_ev_charger_rows(
         notes_column=manual_rules["notes_column"],
         selected_files={rules["manual_file"]},
     )
-    manual = frames[rules["manual_file"]]
+    manual, dunsky_path = load_charger_inputs(bundle, frames[rules["manual_file"]])
     _validate_shares(manual)
-    template = pd.read_csv(resolve_input_path(bundle, "template", "technology.csv"),
-                           dtype=str, keep_default_na=False)
+    template = select_charger_technologies(bundle, pd.read_csv(
+        resolve_input_path(bundle, "template", "technology.csv"), dtype=str, keep_default_na=False))
     commodity = pd.read_csv(resolve_input_path(bundle, "template", "commodity.csv"),
                             dtype=str, keep_default_na=False)
     technology = template.set_index("tech")
     if not technology.index.is_unique:
         raise ValueError("Duplicate technology template IDs")
-    for category, mapping in rules["technology"].items():
+    mappings = technology_mappings(bundle)
+    explicit = bundle.scenario.ev_chargers.charger_type_classes == "explicit"
+    for category, mapping in mappings.items():
         for kind in ("existing", "new"):
             tech = mapping[kind]
             if tech not in technology.index or (
                 technology.loc[tech, "category"] != "charger"
-                or technology.loc[tech, "sub_category"] != category
+                or technology.loc[tech, "sub_category"] != mapping["vehicle_class"]
             ):
                 raise ValueError(f"Charger technology mapping changed: {category}/{kind}")
         if mapping["output"] not in set(commodity.name):
@@ -546,36 +656,30 @@ def prepare_ev_charger_rows(
     if rules["input_commodity"] not in set(commodity.name):
         raise ValueError("Unknown charger input commodity")
 
-    dashboard = load_harmonization_rules(bundle, "assorted_sources")["tc_ev_dashboard"]
-    source_dir = resolve_artifact_path(bundle, "tc_ev_dashboard_interim")
-    charger_source = dashboard["public_chargers"]
-    charger_as_of = bundle.sources.sources[dashboard["source_id"]].component(
-        charger_source["component_id"]
-    ).adapter.get("reporting_date", charger_source["as_of"])
-    total_precedence = charger_source.get("national_total_precedence", "require_equal")
+    charger_source = load_harmonization_rules(bundle, "afdc")
+    source_dir = resolve_artifact_path(bundle, "afdc_interim")
+    source = bundle.sources.sources["afdc_alternative_fueling_stations"]
+    charger_as_of = str(source.adapter["snapshot_date"])
     province_path = source_dir / charger_source["province_output_file"]
     type_path = source_dir / charger_source["type_output_file"]
     manual_path = resolve_input_path(bundle, "manual", rules["manual_file"])
     provincial = pd.read_csv(province_path)
     types = pd.read_csv(type_path)
     if (
-        len(provincial) != 13 or set(provincial.source_region) != set(charger_source["source_regions"])
+        len(provincial) != 13 or set(provincial.source_region) != set(charger_source["geography"].values())
         or provincial.source_region.duplicated().any()
-        or set(types.charger_type) != {"L2", "DCFC"}
+        or set(types.charger_type) != {"L1", "L2", "DCFC"}
         or types.charger_type.duplicated().any()
         or set(provincial.units) != {"ports"} or set(types.units) != {"ports"}
-        or set(provincial.as_of) != {charger_as_of}
-        or set(types.as_of) != {charger_as_of}
-        or set(provincial.source_year) != {bundle.scenario.sources.selections[dashboard["source_id"]].year}
+        or set(provincial.as_of) != {charger_as_of} or set(types.as_of) != {charger_as_of}
+        or set(provincial.source_year) != {int(charger_as_of[:4])}
         or set(types.source_year) != set(provincial.source_year)
     ):
-        raise ValueError("Normalized TC public charger coverage or edition changed")
-    national, chart_total = _public_charger_totals(
-        provincial, types, precedence=total_precedence,
-    )
+        raise ValueError("Normalized AFDC public charger coverage or snapshot changed")
+    national = _public_charger_totals(provincial, types)
     region_map = rules["public_charger_region_map"]
     if set(sum((list(labels) for labels in region_map.values()), [])) != set(provincial.source_region):
-        raise ValueError("TC provinces/territories do not map to template regions")
+        raise ValueError("AFDC provinces/territories do not map to template regions")
     template_regions = set(pd.read_csv(resolve_input_path(bundle, "template", "region.csv")).region)
     if set(region_map) != template_regions:
         raise ValueError("Charger region mapping does not cover the template")
@@ -610,11 +714,12 @@ def prepare_ev_charger_rows(
         for region, labels in region_map.items()
     }
     if sum(public_by_region.values()) != national:
-        raise ValueError("TC public chargers were lost during regional harmonization")
+        raise ValueError("AFDC public chargers were lost during regional harmonization")
 
     stock_class_map = rules["stock_classes"]
     stock_data_ids: dict[tuple[str, str], set[str]] = {}
     stock_by_region: dict[tuple[str, str], float] = {}
+    required_ports_by_region: dict[tuple[str, str], float] = {}
     consumed_stock = []
     excluded_rows = int((~physical_stock.region.isin(model_regions)).sum())
     if excluded_rows:
@@ -634,38 +739,42 @@ def prepare_ev_charger_rows(
         consumed_stock.append(row._asdict())
         key = (row.region, matched[0])
         stock_by_region[key] = stock_by_region.get(key, 0.0) + row.surviving_k_vehicles * 1000
+        ratio_index = 0 if matched[0] == "ldv" else 1 if item["category"] == "medium_trucks" else 2
+        required_ports_by_region[key] = required_ports_by_region.get(key, 0.0) + (
+            row.surviving_k_vehicles * 1000 / bundle.scenario.ev_chargers.evs_per_port[ratio_index])
         stock_data_ids.setdefault(key, set()).add(row.data_id)
     expected_stock = {(region, category) for region in model_regions for category in stock_class_map}
     missing_stock = sorted(expected_stock - set(stock_by_region))
     for key in missing_stock:
         stock_by_region[key] = 0.0
+        required_ports_by_region[key] = 0.0
     if missing_stock:
         LOGGER.info("Zero BEV stock, omitting historical charger rows: %s", missing_stock)
     stock_identity, vehicle_contexts = _prepared_stock_identity(
         pd.DataFrame(consumed_stock, columns=physical_stock.columns), existing_capacity_contexts,
     )
-    paths = [manual_path, province_path, type_path]
+    paths = [manual_path, dunsky_path, province_path, type_path]
+    input_identity = _charger_input_identity(bundle, manual, paths)
     digest = hashlib.sha256(json.dumps(
-        {"files": [(path.name, file_sha256(path)) for path in paths],
+        {**input_identity,
          "prepared_stock": stock_identity,
          "scenario": bundle.scenario.ev_chargers.model_dump(),
-         "tc_total_precedence": total_precedence,
          "rules": rules, "stock": sorted((key, value) for key, value in stock_by_region.items()),
          "fixed_lifetimes": sorted((key, value) for key, value in fixed_lives.items())},
         sort_keys=True,
     ).encode()).hexdigest()
-    dunsky = ("dunsky_ev_charging_infrastructure", "charger_shares_and_utilization")
-    tc = ("transport_canada_ev_dashboard", "public_light_duty_chargers")
+    report = ("dunsky_ev_charging_infrastructure", "published_report")
+    afdc = ("afdc_alternative_fueling_stations", "public_electric_charging_ports")
     probe = ("pollution_probe_ev_charging_survey", "private_charger_shares")
+    representation_settings, representation, converter, macro_path = production_representation(bundle, manual)
     capacity_contexts = []
     port_records = []
     capacity_rows = []
     for region in sorted(model_regions):
         for category in ("ldv", "mhdv"):
             evs = stock_by_region[region, category]
-            ratio = (bundle.scenario.ev_chargers.ld_evs_per_port if category == "ldv"
-                     else bundle.scenario.ev_chargers.mhd_evs_per_port)
-            required_ports = evs / ratio
+            required_ports = required_ports_by_region[region, category]
+            ratio = evs / required_ports if required_ports else None
             port_counts: dict[str, float]
             public = None
             if category == "ldv":
@@ -673,12 +782,13 @@ def prepare_ev_charger_rows(
                 private = required_ports - public
                 if private < 0:
                     raise ValueError(f"Observed public ports exceed required LD ports in {region}")
-                type_shares = types.set_index("charger_type").national_share.to_dict()
+                observed = provincial.loc[provincial.source_region.isin(region_map[region])]
                 port_counts = {
-                    "L1": private * _manual_value(manual, "ldv", "existing_private_L1_share", "existing"),
+                    "L1": private * _manual_value(manual, "ldv", "existing_private_L1_share", "existing")
+                          + float(observed.level_1_ports.sum()),
                     "L2": private * _manual_value(manual, "ldv", "existing_private_L2_share", "existing")
-                          + public * type_shares["L2"],
-                    "DCFC": public * type_shares["DCFC"],
+                          + float(observed.level_2_ports.sum()),
+                    "DCFC": float(observed.dc_fast_ports.sum()),
                 }
             else:
                 private = None
@@ -693,6 +803,23 @@ def prepare_ev_charger_rows(
             power_rows = {kind: _rated_power(manual, category, kind, power_source_year)
                           for kind in port_counts}
             power_kw = {kind: float(row.value) for kind, row in power_rows.items()}
+            if explicit:
+                parameters = representation.parameters.loc[representation.parameters.year.eq(power_source_year)
+                    & representation.parameters.vehicle_class.eq(category.upper())].set_index("archetype")
+                names = representation_settings.archetypes
+                if category == "ldv":
+                    port_counts = {names.ldv_public_l2: float(observed.level_2_ports.sum()),
+                                   names.ldv_public_fast: float(observed.dc_fast_ports.sum()),
+                                   names.ldv_private: private}
+                    ignored_public_l1 = float(observed.level_1_ports.sum())
+                else:
+                    port_counts = {tech: required_ports * float(row.port_share)
+                                   for tech, row in parameters.iterrows()}
+                    ignored_public_l1 = 0.0
+                power_kw = parameters.rated_power_kw.to_dict()
+                if not math.isclose(sum(port_counts.values()) + ignored_public_l1, required_ports,
+                                    rel_tol=1e-12, abs_tol=1e-8):
+                    raise ValueError(f"Explicit charger port reconciliation failed: {region}/{category}")
             gw = sum(port_counts[kind] * power_kw[kind] for kind in port_counts) / 1_000_000
             if not math.isfinite(gw) or gw < 0:
                 raise ValueError(f"Invalid charger GW capacity: {region}/{category}")
@@ -706,45 +833,41 @@ def prepare_ev_charger_rows(
                 **{f"{kind}_rated_power_source_period": str(row.period) for kind, row in power_rows.items()},
                 "capacity_gw": gw, "bev_stock_year": bundle.scenario.periods.base_year,
                 "public_charger_as_of": charger_as_of,
+                "charger_type_classes": bundle.scenario.ev_chargers.charger_type_classes,
+                "ignored_public_l1_ports": ignored_public_l1 if explicit else 0,
             })
             if gw > 0:
                 context = _context(
-                    bundle, [tc, dunsky, probe] if category == "ldv" else [dunsky],
+                    bundle, [afdc, report, *([] if explicit else [probe])] if category == "ldv" else [report],
                     name=f"existing_capacity.{region}.{category}", digest=digest,
                     additional=[vehicle_contexts[key] for key in sorted(
                         stock_data_ids[region, category]
                     )],
                 )
                 capacity_contexts.append(context)
-                capacity_rows.extend(validate_parameter_rows(ExistingCapacity, [{
-                    "region": region, "tech": rules["technology"][category]["existing"],
-                    "vintage": bundle.scenario.periods.latest_observed_vintage, "capacity": gw,
-                    "units": "GW",
-                }], context, bundle=bundle))
-
-    cer = load_harmonization_rules(bundle, "cer_enerfuture")
-    edition = bundle.scenario.sources.selections["cer_canadas_energy_future"].edition
-    macro_path = resolve_input_path(
-        bundle, "interim", cer["interim_subdir_template"].format(edition=edition),
-        cer["components"]["macro-indicators"]["output_file"],
-    )
-    converter = CerCurrencyConverter(
-        pd.read_csv(macro_path), scenario=bundle.scenario.economics.cer_scenario,
-        target_year=bundle.scenario.economics.cost_reference_year,
-    )
+                payloads = [{"region": region, "tech": tech,
+                             "vintage": bundle.scenario.periods.latest_observed_vintage,
+                             "capacity": count * power_kw[tech] / 1_000_000, "units": "GW"}
+                            for tech, count in port_counts.items() if count > 0] if explicit else [{
+                                "region": region, "tech": rules["technology"][category]["existing"],
+                                "vintage": bundle.scenario.periods.latest_observed_vintage, "capacity": gw, "units": "GW"}]
+                capacity_rows.extend(validate_parameter_rows(ExistingCapacity, payloads, context, bundle=bundle))
     cost_digest = hashlib.sha256((digest + file_sha256(macro_path)).encode()).hexdigest()
     nlr = ("nlr_alternative_fueling_infrastructure", "residential_l1_cost")
     oeo = ("open_energy_outlook", "charger_fixed_cost_ratio")
     cer_macro = ("cer_canadas_energy_future", "macro-indicators")
     invest_contexts = {
-        "ldv": _context(bundle, [dunsky, nlr, cer_macro], name="ldv_cost_invest", digest=cost_digest),
-        "mhdv": _context(bundle, [dunsky, cer_macro], name="mhdv_cost_invest", digest=cost_digest),
+        key: _context(bundle, [report, *([nlr] if mapping["vehicle_class"] == "ldv"
+                                         and (not explicit or key == "ldv_private") else []), cer_macro],
+                      name=f"{key}_cost_invest", digest=cost_digest)
+        for key, mapping in mappings.items()
     }
     fixed_contexts = {
-        category: _context(bundle, [dunsky, *([nlr] if category == "ldv" else []), oeo, cer_macro,
+        key: _context(bundle, [report, *([nlr] if mapping["vehicle_class"] == "ldv"
+                                         and (not explicit or key == "ldv_private") else []), oeo, cer_macro,
                                     ("open_energy_outlook", "transport_process_lifetimes")],
-                           name=f"{category}_cost_fixed", digest=cost_digest)
-        for category in stock_class_map
+                           name=f"{key}_cost_fixed", digest=cost_digest)
+        for key, mapping in mappings.items()
     }
     if (bundle.scenario.economics.cost_reference_currency != "CAD"
             or bundle.scenario.economics.cost_reference_year != 2020):
@@ -754,19 +877,30 @@ def prepare_ev_charger_rows(
     fixed_ratio = _manual_value(manual, "all", "fixed_to_capex_ratio", "all")
     if not 0 <= fixed_ratio <= 1:
         raise ValueError("Invalid reviewed charger fixed cost ratio")
-    for category in stock_class_map:
+    for key, mapping in mappings.items():
+        category = mapping["vehicle_class"]
         existing_vintage = bundle.scenario.periods.latest_observed_vintage
         for vintage in [existing_vintage, *bundle.scenario.periods.model]:
             source_year = (
                 bundle.scenario.periods.model[0] if vintage == existing_vintage
-                else bundle.scenario.periods.projection_year(vintage, legacy_at_end=False)
+                else bundle.scenario.periods.evaluation_year(vintage)
             )
-            weighted, components = charger_cost_components(manual, category, source_year, converter)
-            cost_audit.extend({"vintage": vintage, **record} for record in components)
+            if explicit:
+                selected = representation.parameters.loc[representation.parameters.year.eq(source_year)
+                    & representation.parameters.archetype.eq(mapping["new"])]
+                if len(selected) != 1:
+                    raise ValueError(f"Missing explicit charger cost: {key}/{source_year}")
+                weighted = float(selected.iloc[0].capex_mcad_per_gw)
+                components = representation.components.loc[representation.components.year.eq(source_year)
+                    & representation.components.archetype.eq(mapping["new"])].to_dict("records")
+            else:
+                weighted, components = charger_cost_components(manual, category, source_year, converter,
+                                                                representation=representation)
+            cost_audit.extend({"vintage": vintage, "evaluation_year": source_year, **record} for record in components)
             for region in sorted(model_regions):
                 if vintage == existing_vintage and stock_by_region[region, category] == 0:
                     continue
-                tech = rules["technology"][category]["existing" if vintage == existing_vintage else "new"]
+                tech = mapping["existing" if vintage == existing_vintage else "new"]
                 base_record = {
                     "region": region, "tech": tech, "vintage": vintage,
                     "units": "$M 2020CAD / GW",
@@ -774,32 +908,75 @@ def prepare_ev_charger_rows(
                 if vintage != existing_vintage:
                     invest_rows.extend(validate_parameter_rows(CostInvest, [
                         {**base_record, "cost": weighted}
-                    ], invest_contexts[category], bundle=bundle))
+                    ], invest_contexts[key], bundle=bundle))
                 candidates = [period for period in bundle.scenario.periods.model if period >= vintage]
                 periods = [period for period in candidates if period < vintage + fixed_lives[region, tech]]
                 excluded_fixed_pairs += len(candidates) - len(periods)
                 fixed_rows.extend(validate_parameter_rows(CostFixed, [
                     {**base_record, "period": period, "cost": weighted * fixed_ratio}
                     for period in periods
-                ], fixed_contexts[category], bundle=bundle))
+                ], fixed_contexts[key], bundle=bundle))
 
     efficiency_rows = []
     unapplied_efficiencies = []
-    utilization_targets, utilization_context = prepare_charger_utilization_targets(bundle, manual=manual)
+    if explicit:
+        utilization_contexts = {}
+        targets = []
+        for key, mapping in mappings.items():
+            for vintage in [bundle.scenario.periods.latest_observed_vintage, *bundle.scenario.periods.model]:
+                source_year = (bundle.scenario.periods.model[0] if vintage == bundle.scenario.periods.latest_observed_vintage
+                               else bundle.scenario.periods.evaluation_year(vintage))
+                row = representation.parameters.loc[representation.parameters.year.eq(source_year)
+                    & representation.parameters.archetype.eq(mapping["new"])].iloc[0]
+                pieces = representation.components.loc[representation.components.year.eq(source_year)
+                    & representation.components.archetype.eq(mapping["new"])]
+                if mapping["vehicle_class"] == "mhdv":
+                    note = "; ".join(
+                        f"{piece.component}: {piece.session_hours:g} charging hours/session × {piece.vehicles_per_day:g} vehicles/operating day × {piece.operating_days:g} operating days/year / 8760; capacity-weighted across components"
+                        for piece in pieces.itertuples(index=False))
+                elif key == "ldv_private":
+                    note = f"Home L1/L2 utilization proxy {bundle.scenario.ev_chargers.ld_home_utilization:g}; residential L2 telemetry extended to home L1, future vintages and other provinces; source Table 31 workplace utilization; pool annual energy by rated capacity."
+                elif key == "ldv_public_fast":
+                    note = "Dunsky Table 31 reported annual port utilization; applied directly without rescaling for the Table 12 cost-matched DCFC rating."
+                else:
+                    note = "Dunsky Table 31 reported annual public Level 2 port utilization."
+                if key not in utilization_contexts:
+                    utilization_contexts[key] = _context(
+                        bundle, [report, *([("jonas_ev_charging_utilization", "residential_l2_utilization")]
+                                            if key == "ldv_private" else [])],
+                        name=f"{key}_utilization", digest=digest, transformation=note,
+                        governing="jonas_ev_charging_utilization" if key == "ldv_private" else None)
+                targets.extend({"region": region, "vintage": vintage, "source_period": str(source_year),
+                                "tech_or_group": mapping["new"], "output_comm": mapping["output"],
+                                "operator": "e", "target_utilization": float(row.annual_utilization),
+                                "floor_multiplier": 1.0, "factor": float(row.annual_utilization), "units": "fraction"}
+                               for region in sorted(model_regions))
+        utilization_targets = pd.DataFrame(targets)
+    else:
+        utilization_targets, utilization_context = prepare_charger_utilization_targets(bundle, manual=manual)
+        utilization_contexts = {"aggregated": utilization_context}
     utilization_records = []
-    for category in ("ldv", "mhdv"):
-        reviewed_efficiency = _manual_value(manual, category, "efficiency", "all")
+    for key, mapping in mappings.items():
+        category = mapping["vehicle_class"]
+        # These factors are retained evidence, without runtime period applicability.
+        # Select the unique review row independently of its period annotation.
+        reviewed_rows = manual.loc[
+            manual.category.eq("charger") & manual.sub_category.eq(category)
+            & manual.parameter.eq("efficiency")
+        ]
+        if len(reviewed_rows) != 1:
+            raise ValueError(f"Expected one reviewed charger efficiency evidence row: {category}")
+        source_row = reviewed_rows.iloc[0]
+        try:
+            reviewed_efficiency = float(source_row.value)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"Invalid charger efficiency: {category}") from exc
         if not 0 < reviewed_efficiency <= 1:
             raise ValueError(f"Invalid charger efficiency: {category}")
-        source_row = manual.loc[
-            manual.category.eq("charger") & manual.sub_category.eq(category)
-            & manual.parameter.eq("efficiency") & manual.period.eq("all")
-        ].iloc[0]
         unapplied_efficiencies.append({
             "charger_class": category, "reviewed_efficiency": reviewed_efficiency,
             "source": source_row[manual_rules["source_column"]],
         })
-        mapping = rules["technology"][category]
         for region in sorted(model_regions):
             for kind, vintages in (("existing", [bundle.scenario.periods.latest_observed_vintage]),
                                    ("new", bundle.scenario.periods.model)):
@@ -824,12 +1001,15 @@ def prepare_ev_charger_rows(
                     if len(selected) != 1:
                         raise ValueError(f"Missing charger utilization target: {region}/{tech}/{vintage}")
                     utilization_records.append(selected.iloc[0].to_dict())
-    utilization_rows = validate_parameter_rows(
-        LimitAnnualCapacityFactor,
-        [{key: value for key, value in record.items()
-          if key not in {"source_period", "units", "target_utilization", "floor_multiplier"}}
-         for record in utilization_records], utilization_context, bundle=bundle,
-    )
+    utilization_rows = []
+    for record in utilization_records:
+        context_key = next(key for key, mapping in mappings.items() if record["tech_or_group"] in {
+            mapping["existing"], mapping["new"]}) if explicit else "aggregated"
+        utilization_rows.extend(validate_parameter_rows(
+            LimitAnnualCapacityFactor,
+            [{key: value for key, value in record.items()
+              if key not in {"source_period", "units", "target_utilization", "floor_multiplier"}}],
+            utilization_contexts[context_key], bundle=bundle))
     utilization_records = [
         {**row.model_dump(), **{key: record[key] for key in (
             "source_period", "units", "target_utilization", "floor_multiplier",
@@ -851,9 +1031,20 @@ def prepare_ev_charger_rows(
     fixed_rows.extend(h2_fixed)
     efficiency_rows.extend(h2_efficiency)
     contexts = [*capacity_contexts, *invest_contexts.values(), *fixed_contexts.values(),
-                utilization_context, *h2_contexts]
+                *utilization_contexts.values(), *h2_contexts]
+    group_rows, member_rows, share_rows, share_targets = [], [], [], []
+    if explicit:
+        group_rows, member_rows, share_rows, share_context, share_targets = _capacity_mix_rows(
+            bundle, representation, representation_settings, model_regions, assumption_dataset, digest)
+        contexts.append(share_context)
     output_dir = resolve_artifact_path(bundle, "ev_chargers_processed")
     output_dir.mkdir(parents=True, exist_ok=True)
+    if not explicit:
+        for key in ("group_output_file", "group_member_output_file", "capacity_share_output_file"):
+            stale = output_dir / rules[key]
+            if stale.exists():
+                stale.unlink()
+                LOGGER.info("Removed inactive explicit charger artifact: %s", stale)
     frames_to_write = {
         rules["capacity_to_activity_output_file"]: pd.DataFrame([row.model_dump() for row in c2a_rows]),
         rules["capacity_output_file"]: pd.DataFrame([row.model_dump() for row in capacity_rows]),
@@ -862,11 +1053,29 @@ def prepare_ev_charger_rows(
         rules["fixed_output_file"]: pd.DataFrame([row.model_dump() for row in fixed_rows]),
         rules["utilization_output_file"]: utilization,
         rules["efficiency_output_file"]: pd.DataFrame([row.model_dump() for row in efficiency_rows]),
+        rules["source_archetypes_output_file"]: representation.parameters,
+        rules["source_components_output_file"]: representation.components,
+        rules["source_composition_output_file"]: representation.composition,
     }
+    if explicit:
+        frames_to_write.update({
+            rules["group_output_file"]: pd.DataFrame([row.model_dump() for row in group_rows]),
+            rules["group_member_output_file"]: pd.DataFrame([row.model_dump() for row in member_rows]),
+            rules["capacity_share_output_file"]: pd.DataFrame([row.model_dump() for row in share_rows]),
+        })
     for filename, frame in frames_to_write.items():
         write_dataframe_atomic(frame, output_dir / filename)
     audit = {
         "period_mapping": bundle.scenario.periods.audit(),
+        "charger_type_classes": bundle.scenario.ev_chargers.charger_type_classes,
+        "production_representation": representation_settings.model_dump(mode="json"),
+        "source_archetype_parameters": representation.parameters.to_dict("records"),
+        "source_component_assumptions": representation.components.astype(object).where(
+            representation.components.notna(), None).to_dict("records"),
+        "installed_capacity_share_targets": share_targets,
+        "historical_vintage_equipment_proxy_year": bundle.scenario.periods.model[0],
+        "capacity_share_rows": len(share_rows), "tech_group_rows": len(group_rows),
+        "tech_group_member_rows": len(member_rows),
         "capacity_to_activity_rows": len(c2a_rows),
         "capacity_to_activity": {
             "value": c2a_rows[0].c2a, "units": rules["capacity_to_activity_units"],
@@ -889,29 +1098,27 @@ def prepare_ev_charger_rows(
         "utilization_policy": rules["utilization"],
         "utilization_profile_enabled": bundle.scenario.charging_profiles.travel_behavior_source != "none",
         "utilization_provenance": {
-            "data_id": utilization_context.data_id,
-            "contributors": [item.source_key for item in utilization_context.contributors],
+            "data_id": None if explicit else utilization_context.data_id,
+            "data_ids": [context.data_id for context in utilization_contexts.values()],
+            "contributors": sorted({item.source_key for context in utilization_contexts.values()
+                                     for item in context.contributors}),
         },
-        "tc_public_ports": national, "tc_type_counts": types.set_index("charger_type").public_chargers.to_dict(),
-        "tc_type_total": chart_total,
-        "tc_total_reconciliation": {
-            "policy": total_precedence, "authoritative_total": national,
-            "provincial_total": national, "type_total": chart_total,
-            "difference": national - chart_total, "discrepancy": national != chart_total,
-            "type_mix_basis": "published type counts divided by their own sum",
-        },
-        "tc_as_of": charger_as_of, "bev_stock_year": bundle.scenario.periods.base_year,
+        "afdc_public_ports": national,
+        "afdc_type_counts": types.set_index("charger_type").public_chargers.to_dict(),
+        "afdc_type_mix_basis": "observed provincial L1/L2/DCFC counts; BCT combines BC and territories",
+        "afdc_as_of": charger_as_of, "bev_stock_year": bundle.scenario.periods.base_year,
         "zero_bev_stock_skipped": [list(key) for key in missing_stock],
-        "port_reconciliation": port_records, "cost_conversion": cost_audit,
+        "port_reconciliation": port_records, "cost_conversion": pd.DataFrame(cost_audit).astype(object).where(
+            pd.DataFrame(cost_audit).notna(), None).to_dict("records"),
         "fixed_period_vintage_pairs_excluded_by_lifetime": excluded_fixed_pairs,
         "hydrogen_refueling": h2_audit,
         "prepared_stock": stock_identity,
-        "input_sha256": {path.name: file_sha256(path) for path in [*paths, macro_path]},
+        "input_sha256": {**dict(input_identity["files"]), macro_path.name: file_sha256(macro_path)},
     }
     validation_dir = resolve_artifact_path(bundle, "ev_chargers_validation")
     validation_dir.mkdir(parents=True, exist_ok=True)
     (validation_dir / rules["validation_file"]).write_text(
-        json.dumps(audit, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        json.dumps(audit, indent=2, sort_keys=True, allow_nan=False) + "\n", encoding="utf-8"
     )
     LOGGER.info(
         "EV charger rows: capacity=%d invest=%d fixed=%d efficiency=%d annual_utilization=%d; public_ports=%d",
@@ -927,7 +1134,7 @@ def prepare_ev_charger_rows(
                 len(h2_invest), len(h2_fixed), len(h2_efficiency))
     return ChargerPreparation(capacity_rows, invest_rows, fixed_rows, efficiency_rows,
                               utilization_rows, utilization, contexts, audit,
-                              assumption_dataset, c2a_rows)
+                              assumption_dataset, c2a_rows, group_rows, member_rows, share_rows)
 
 
 def main() -> None:
@@ -944,7 +1151,7 @@ def main() -> None:
         physical_stock=vehicles.physical_stock,
     )
     print(json.dumps({key: value for key, value in result.audit.items()
-                      if key.endswith("_rows") or key in {"tc_public_ports", "tc_as_of"}},
+                      if key.endswith("_rows") or key in {"afdc_public_ports", "afdc_as_of"}},
                      indent=2))
 
 

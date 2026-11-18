@@ -277,3 +277,90 @@ def test_demand_rejects_wrong_native_source_edition(isolated_ceud):
     source_frame(years=(2020, 2021, 2022)).to_csv(native / "ceud_on.csv", index=False)
     with pytest.raises(ValueError, match="observation endpoint differs from selected edition"):
         ceud_inputs.read_ceud_observations(bundle, "ON")
+
+
+@pytest.mark.parametrize("reader", ["read_ceud_input", "read_ceud_observations"])
+@pytest.mark.parametrize("selected_year", [2023, 2025])
+def test_runtime_readers_follow_the_selected_native_edition(isolated_ceud, reader, selected_year):
+    bundle, native, output = isolated_ceud
+    bundle.scenario.periods.base_year = selected_year
+    bundle.scenario.sources.selections["nrcan_ceud_transport_provincial"].year = selected_year
+    years = tuple(range(2021, selected_year + 1))
+    source = source_frame(years=years, values=tuple(float(year - 2000) for year in years))
+    path = native / "ceud_on.csv"
+    source.to_csv(path, index=False)
+    before = file_sha256(path)
+
+    result = getattr(ceud_inputs, reader)(bundle, "ON", required_series=[(21, "Stock (thousands)|Cars")])
+
+    assert result.year.tolist() == list(years)
+    assert result.iloc[-1].value == selected_year - 2000
+    assert result.ceud_value_status.eq("observed").all()
+    assert result.ceud_source_endpoint_year.eq(selected_year).all()
+    assert file_sha256(path) == before
+    assert not output.exists()
+
+
+@pytest.mark.parametrize("selected_year", [2023, 2025])
+def test_preparation_uses_the_selected_edition_without_extending_observed_rows(isolated_ceud, selected_year):
+    bundle, native, _ = isolated_ceud
+    bundle.scenario.periods.base_year = selected_year
+    for selection in bundle.scenario.sources.selections.values():
+        selection.year = selected_year
+    years = tuple(range(2021, selected_year + 1))
+    source = source_frame(years=years, values=tuple(float(year - 2000) for year in years))
+    source.to_csv(native / "ceud_on.csv", index=False)
+    source.assign(source_id="nrcan_ceud_transport_national", region="national").to_csv(
+        native / "ceud_national.csv", index=False,
+    )
+    before = {path.name: file_sha256(path) for path in native.glob("*.csv")}
+
+    manifest = ceud_inputs.prepare_ceud_inputs(bundle)
+
+    assert manifest["extended_rows"] == 0
+    assert {item["selected_source_edition"] for item in manifest["sources"]} == {selected_year}
+    assert {item["observed_max_year"] for item in manifest["sources"]} == {selected_year}
+    assert {path.name: file_sha256(path) for path in native.glob("*.csv")} == before
+
+
+@pytest.mark.parametrize("consumer", ["read_ceud_input", "read_ceud_observations", "prepare_ceud_inputs"])
+@pytest.mark.parametrize("selected_year", [2023, 2025])
+@pytest.mark.parametrize("offset", [-1, 1], ids=["older_artifact", "newer_artifact"])
+def test_all_consumers_reject_a_different_native_edition_before_publication(
+    isolated_ceud, consumer, selected_year, offset,
+):
+    bundle, native, output = isolated_ceud
+    bundle.scenario.periods.base_year = selected_year
+    for selection in bundle.scenario.sources.selections.values():
+        selection.year = selected_year
+    years = tuple(range(2020, selected_year + offset + 1))
+    source_frame(years=years, values=tuple(float(year - 2000) for year in years)).to_csv(
+        native / "ceud_on.csv", index=False,
+    )
+    before = {path.name: file_sha256(path) for path in native.glob("*.csv")}
+
+    with pytest.raises(ValueError, match="observation endpoint differs from selected edition") as error:
+        if consumer == "prepare_ceud_inputs":
+            ceud_inputs.prepare_ceud_inputs(bundle)
+        else:
+            getattr(ceud_inputs, consumer)(bundle, "ON")
+
+    assert "python -m fetching.nrcan_ceud" in str(error.value)
+    assert bundle.scenario_path.as_posix() in str(error.value)
+    assert "--no-download" in str(error.value)
+    assert {path.name: file_sha256(path) for path in native.glob("*.csv")} == before
+    assert not output.exists()
+
+
+@pytest.mark.parametrize("reader", ["read_ceud_input", "read_ceud_observations"])
+def test_edition_check_does_not_require_discontinued_series_to_reach_edition_year(isolated_ceud, reader):
+    bundle, native, _ = isolated_ceud
+    discontinued = source_frame(years=(2021,), values=(2.0,)).assign(raw_series="Discontinued series")
+    pd.concat([source_frame(), discontinued], ignore_index=True).to_csv(native / "ceud_on.csv", index=False)
+
+    result = getattr(ceud_inputs, reader)(bundle, "ON")
+
+    assert result.loc[result.raw_series.eq("Discontinued series"), "year"].tolist() == [2021]
+    assert result.loc[result.raw_series.eq("Stock (thousands)|Cars"), "year"].max() == (
+        2025 if reader == "read_ceud_input" else 2023
+    )

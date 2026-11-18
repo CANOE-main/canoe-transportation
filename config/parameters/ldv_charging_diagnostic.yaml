@@ -1,0 +1,27 @@
+scenario: config/scenarios/validation_baseline.yaml
+surveys: [nhts, tts]
+strategies: [uncontrolled, night, day]
+import_case_pattern: "{survey}/{strategy}/{year}/seed-42-paper-overnight/North America/CA"
+columns:
+  charging: Charging Profile
+  mobility: Mobility Profile
+  usage: Usage
+mobility_watts_per_kw: 1000
+precision: 10
+max_lag_hours: 24
+hourly_file: "{component}_hourly.csv"
+manifest_file: manifest.json
+import_manifest_file: import_manifest.json
+presentation:
+  default_subset: All days
+  default_scale: Own annual mean
+  default_week_start: "2018-01-08"
+  line_width: 440
+  grid_width: 300
+  heatmap_width: 620
+  panel_height: 210
+  seasons:
+    Winter: [12, 1, 2]
+    Spring: [3, 4, 5]
+    Summer: [6, 7, 8]
+    Autumn: [9, 10, 11]

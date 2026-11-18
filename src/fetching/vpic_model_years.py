@@ -254,12 +254,13 @@ def fetch_to_cache(
     response = session.get(request.url, timeout=timeout)
     response.raise_for_status()
     payload = response.json()
+    parsed = _validate_payload(request, payload)
     write_text_atomic(
         json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
         request.cache_path,
         newline="\n",
     )
-    return _validate_payload(request, payload), "downloaded"
+    return parsed, "downloaded"
 
 
 def _model_names(

@@ -92,6 +92,10 @@ def replace_owned_ldv_rows(
                         "ldv-charging-profiles-%",
                         "Legacy charging shape scaled by native full-year hourly mean and projected to CANOE time slices v3",
                     ),
+                    (
+                        "ldv-charging-profiles-%",
+                        "Registered RAMP charging shape scaled by native full-year hourly mean and projected to CANOE time slices v4",
+                    ),
                 ),
             )
         )
@@ -529,8 +533,7 @@ def validate_transport_parameter_support(
     """Check active transport keys that SQLite foreign keys cannot express.
 
     An explicitly prepared empty dependency is checked; an omitted development
-    layer is outside this audit. Lifetime/scaling defaults do not activate a
-    technology and may remain without stock or efficiency. No rows are mutated.
+    layer is outside this audit. No rows are mutated.
     """
     historical = set(existing_vintages)
     keys = {
@@ -598,6 +601,9 @@ def validate_transport_parameter_support(
         supported = set(keys.get("lifetime_process", set()))
         supported.update(key for key in active if key[:2] in tech_lifetimes)
         record("active_process_lifetime_coverage", active, supported)
+        if {"existing_capacity", "efficiency"} <= keys.keys() and "lifetime_tech" in batches:
+            region_tech = {key[:2] for key in keys["existing_capacity"] | keys["efficiency"]}
+            record("fixed_lifetime_regional_support", tech_lifetimes, region_tech)
     if "lifetime_survival_curve" in batches:
         record("prepared_survival_curve_coverage", set(expected_survival_curve_keys),
                keys.get("lifetime_survival_curve", set()))
@@ -634,7 +640,8 @@ def validate_transport_parameter_support(
         }
         if invalid:
             errors.append(f"existing_capacity_positive: {len(invalid)} invalid rows {invalid[:8]}")
-        for table in ("efficiency", "cost_invest", "cost_fixed", "cost_variable", "emission_embodied"):
+        for table in ("efficiency", "cost_invest", "cost_fixed", "cost_variable", "emission_embodied",
+                      "lifetime_process", "lifetime_survival_curve"):
             if table in keys:
                 record(f"{table}_historical_capacity",
                        {key for key in keys[table] if key[2] in historical},

@@ -1,0 +1,841 @@
+{
+  "charging_profiles": {
+    "annual_hourly_peak": 1247.206201420266,
+    "applicability": "Ontario BEV charging shape scaled to reviewed annual utilization on shared LDV chargers in all configured regions; inherited fleet/range composition is not reweighted.",
+    "calendar_timezone": "America/Toronto",
+    "calendar_year": 2018,
+    "charging_strategy": "uncontrolled",
+    "clustered_legacy_parity": "not_comparable_without_the_existing_cluster_mapping",
+    "conservation_tolerance": 1e-08,
+    "embedded_range_shares": true,
+    "enabled": true,
+    "excluded_nulls_outside_local_year": 300,
+    "excluded_outside_local_year": 1440,
+    "hourly_integral": 5430342.011804911,
+    "hourly_operation": "mean",
+    "hourly_rows": 8760,
+    "inherited_time_structures_preserved": false,
+    "keys": 17520,
+    "label_basis": "elapsed_hours_from_local_year_start",
+    "limitations": [
+      "Frozen run range/fleet/charger composition; no new-market reweighting",
+      "Survey-specific assumptions are retained in the registered run metadata"
+    ],
+    "market_share_reweighting": false,
+    "metadata_sha256": "5e113328dacdb042113e3852bcd2337d80e1f5a0147264536c28c43ea353779e",
+    "model_revision": "ontario-2018-corrected-soc-weather-v1",
+    "native_integral_in_hour_units": 5430342.01180491,
+    "native_interval_seconds": 60,
+    "native_normalized_hourly_evidence_preserved": true,
+    "native_rows": 527040,
+    "new_time_structures": true,
+    "normalized_integral": 4354.004979785401,
+    "ok": true,
+    "precision": 10,
+    "profile": "nhts",
+    "projection_sha256": "b385386e23b995192d23aad78f749b6092f9059018eb0d2ad1be81a077dd73a3",
+    "regions": [
+      "ON"
+    ],
+    "repeated_wall_time_keys": 1,
+    "rolling_filter": false,
+    "rows": 17520,
+    "sha256": "eb2042927963de09f9b46237d73a566e798472da503563eaa26ddf716340167f",
+    "simulation_seed": 42,
+    "source_component": "nhts_uncontrolled",
+    "source_units": "Aggregate charging power (kW), minute samples; CANOE takes hourly means, peak-normalizes and rescales the full-year mean to reviewed charger utilization. Opt-in companions retain aggregate battery-side mobility power (W) and usage (active-driver counts, not charger occupancy).",
+    "target_technologies": [
+      "T_LDV_CHRG_EX",
+      "T_LDV_CHRG_N"
+    ],
+    "travel_behavior_source": "nhts",
+    "utilization_provenance": "ev-chargers-utilization:composite:10:25593119dd797d94",
+    "utilization_scaling": [
+      {
+        "mean_basis": "native_full_year_hourly_arithmetic_mean",
+        "normalized_profile_mean": 0.4970325319389727,
+        "region": "ON",
+        "scale_factor": 0.40238814795438116,
+        "scaled_maximum": 0.40238814795438116,
+        "scaled_minimum": 0.04744438314330581,
+        "scaled_profile_mean": 0.2,
+        "target_utilization": 0.2,
+        "tech": "T_LDV_CHRG_EX"
+      },
+      {
+        "mean_basis": "native_full_year_hourly_arithmetic_mean",
+        "normalized_profile_mean": 0.4970325319389727,
+        "region": "ON",
+        "scale_factor": 0.40238814795438116,
+        "scaled_maximum": 0.40238814795438116,
+        "scaled_minimum": 0.04744438314330581,
+        "scaled_profile_mean": 0.2,
+        "target_utilization": 0.2,
+        "tech": "T_LDV_CHRG_N"
+      }
+    ]
+  },
+  "config": {
+    "paths_sha256": "7db57642e0efc09172c7fe97bf2b8b7df940daaf0f0c95bddfdb41360da6d09c",
+    "scenario": {
+      "path": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\config\\scenarios\\validation_baseline.yaml",
+      "sha256": "933bf396754ce888b435d205d2e3c122aa9c7f49b6d95ee3be08ae89f03c7b75"
+    },
+    "sources_sha256": "95d6f404ccbd90798c3fcce8fd312d84069709be8723202d1186c62a12695c63"
+  },
+  "directory": "C:\\Users\\rashi\\ESM_databases\\canoe-transportation\\inputs\\2_processed\\scenario_tables\\validation_baseline",
+  "mode": "processed_only",
+  "ok": true,
+  "scenario": "validation_baseline",
+  "schema": {
+    "ddl_sha256": "cc949df14e654c0b2e549ea02ae165fe646974ddd5454c3f4ebf5a08838fb996",
+    "package": "canoe-schema",
+    "package_commit": "1e68c377d5a7499c78b009d7c472ffd5a6b44901",
+    "package_repository": "https://github.com/CANOE-main/canoe-schema.git",
+    "package_requested_revision": "main",
+    "package_vcs": "git",
+    "package_version": "4.0.0",
+    "schema_version": "4.0",
+    "technology_notes_extension_sha256": "93ec356bddc6a9b7544c5ca67a7a30b238bdc133537fd33191bc2de3be044c83"
+  },
+  "tables": {
+    "capacity_factor_tech": {
+      "columns": [
+        "region",
+        "season",
+        "tod",
+        "tech",
+        "factor",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "primary_key": [
+        "region",
+        "season",
+        "tod",
+        "tech",
+        "data_id"
+      ],
+      "rows": 17520,
+      "sha256": "97698ab2638adcba5d32afdb00f6e4040000e5b9688685ce1126465cc0e5ed64"
+    },
+    "capacity_to_activity": {
+      "columns": [
+        "region",
+        "tech",
+        "c2a",
+        "units",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "primary_key": [
+        "region",
+        "tech",
+        "data_id"
+      ],
+      "rows": 90,
+      "sha256": "1eb9001b4c4550640b50273c79dda96330875920c0fe63dceb26900a30ed2149"
+    },
+    "commodity": {
+      "columns": [
+        "name",
+        "flag",
+        "description",
+        "units",
+        "data_id"
+      ],
+      "primary_key": [
+        "name",
+        "data_id"
+      ],
+      "rows": 44,
+      "sha256": "73e1c6d6e809f4ce4f4faa741a15adae966f66ad85cfc805a70374a1703f1bcb"
+    },
+    "commodity_label": {
+      "columns": [
+        "commodity",
+        "notes"
+      ],
+      "primary_key": [
+        "commodity"
+      ],
+      "rows": 44,
+      "sha256": "3ab80f838ac8128e7ac991d1aaee7ff9a8f47062883438d77cdda2251b2e8205"
+    },
+    "cost_fixed": {
+      "columns": [
+        "region",
+        "period",
+        "tech",
+        "vintage",
+        "cost",
+        "units",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "primary_key": [
+        "region",
+        "period",
+        "tech",
+        "vintage",
+        "data_id"
+      ],
+      "rows": 46,
+      "sha256": "576b5e624e869cf9db537b2717b88d5a664fbd8a5186347c684fad169c3e5746"
+    },
+    "cost_invest": {
+      "columns": [
+        "region",
+        "tech",
+        "vintage",
+        "cost",
+        "units",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "primary_key": [
+        "region",
+        "tech",
+        "vintage",
+        "data_id"
+      ],
+      "rows": 365,
+      "sha256": "8cb4f0d9738913bae7cdf91b83d8448469f71cfc2ccb254e48baa44a77e368dd"
+    },
+    "cost_variable": {
+      "columns": [
+        "region",
+        "period",
+        "tech",
+        "vintage",
+        "cost",
+        "units",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "primary_key": [
+        "region",
+        "period",
+        "tech",
+        "vintage",
+        "data_id"
+      ],
+      "rows": 1150,
+      "sha256": "0a1bf81482492f70b9faf2325b639fe944b2be63ac4f1eacec0855c99f2ddb60"
+    },
+    "data_set": {
+      "columns": [
+        "data_id",
+        "label",
+        "version",
+        "description",
+        "status",
+        "author",
+        "date",
+        "parent_id",
+        "changelog",
+        "notes"
+      ],
+      "primary_key": [
+        "data_id"
+      ],
+      "rows": 230,
+      "sha256": "2db24c53596431a3d7657dbc2eb5f4594a7ef40781633114b6685d1823932c3d"
+    },
+    "data_source": {
+      "columns": [
+        "source_id",
+        "source",
+        "notes",
+        "data_id"
+      ],
+      "primary_key": [
+        "source_id",
+        "data_id"
+      ],
+      "rows": 917,
+      "sha256": "ebe22713b71966ca7def2ecc1a77b735dca3949888b18a6c4908c8ab4fc4d37d"
+    },
+    "data_source_label": {
+      "columns": [
+        "source_id",
+        "notes"
+      ],
+      "primary_key": [
+        "source_id"
+      ],
+      "rows": 26,
+      "sha256": "1186ad5c7f0400e1ccf74a0c5bd246c9a412f7c0625933cd6c0f1e119d2f54ee"
+    },
+    "demand": {
+      "columns": [
+        "region",
+        "period",
+        "commodity",
+        "demand",
+        "units",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "primary_key": [
+        "region",
+        "period",
+        "commodity",
+        "data_id"
+      ],
+      "rows": 75,
+      "sha256": "04b16cce16c380964ac3ac3873b0b94daafd9ee8cb5ce76079f1946b3d5527cf"
+    },
+    "efficiency": {
+      "columns": [
+        "region",
+        "input_comm",
+        "tech",
+        "vintage",
+        "output_comm",
+        "efficiency",
+        "units",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "primary_key": [
+        "region",
+        "input_comm",
+        "tech",
+        "vintage",
+        "output_comm",
+        "data_id"
+      ],
+      "rows": 574,
+      "sha256": "a96406974621ce198f992200ffdccf0fd0ac982d2c6e24c52bafab99f6aacc7b"
+    },
+    "emission_embodied": {
+      "columns": [
+        "region",
+        "emis_comm",
+        "tech",
+        "vintage",
+        "value",
+        "units",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "primary_key": [
+        "region",
+        "emis_comm",
+        "tech",
+        "vintage",
+        "data_id"
+      ],
+      "rows": 510,
+      "sha256": "17ac312da1b2e53878a190c9e554b5c347cbac90e074d9d2677d203ec5b237fe"
+    },
+    "existing_capacity": {
+      "columns": [
+        "region",
+        "tech",
+        "vintage",
+        "capacity",
+        "units",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "primary_key": [
+        "region",
+        "tech",
+        "vintage",
+        "data_id"
+      ],
+      "rows": 104,
+      "sha256": "4cc3bb6cd54009636a0bb2a33012018707d2aeba331a993ce3b008cbb0708992"
+    },
+    "lifetime_process": {
+      "columns": [
+        "region",
+        "tech",
+        "vintage",
+        "lifetime",
+        "units",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "primary_key": [
+        "region",
+        "tech",
+        "vintage",
+        "data_id"
+      ],
+      "rows": 0,
+      "sha256": "64e8258a1b01d9b989d47371a49eb80943f08bac51dd750d55582d649b3a439e"
+    },
+    "lifetime_survival_curve": {
+      "columns": [
+        "region",
+        "period",
+        "tech",
+        "vintage",
+        "fraction",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "primary_key": [
+        "region",
+        "period",
+        "tech",
+        "vintage",
+        "data_id"
+      ],
+      "rows": 0,
+      "sha256": "8f502bced59163a6371da02732baacbf39f1eaaf1fb9558fc2cd710b70747185"
+    },
+    "lifetime_tech": {
+      "columns": [
+        "region",
+        "tech",
+        "lifetime",
+        "units",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "primary_key": [
+        "region",
+        "tech",
+        "data_id"
+      ],
+      "rows": 110,
+      "sha256": "f6a4627b7d607710d18e6c1ccdcff97fa871599878ca08780161d2fa81579136"
+    },
+    "limit_annual_capacity_factor": {
+      "columns": [
+        "region",
+        "tech_or_group",
+        "vintage",
+        "output_comm",
+        "operator",
+        "factor",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "primary_key": [
+        "region",
+        "tech_or_group",
+        "vintage",
+        "output_comm",
+        "operator",
+        "data_id"
+      ],
+      "rows": 371,
+      "sha256": "35cc41383c8c21d62271d3ffabaa4ca0f61b8f9df3fa9169a6deabbc784356b2"
+    },
+    "limit_capacity_share": {
+      "columns": [
+        "region",
+        "period",
+        "sub_group",
+        "super_group",
+        "operator",
+        "share",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "primary_key": [
+        "region",
+        "period",
+        "sub_group",
+        "super_group",
+        "operator",
+        "data_id"
+      ],
+      "rows": 0,
+      "sha256": "4ac019fdf4c619f841a800116c0186a5261215707fa4d7d0a11ff87873b186f9"
+    },
+    "limit_new_capacity_share": {
+      "columns": [
+        "region",
+        "sub_group",
+        "super_group",
+        "vintage",
+        "operator",
+        "share",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "primary_key": [
+        "region",
+        "sub_group",
+        "super_group",
+        "vintage",
+        "operator",
+        "data_id"
+      ],
+      "rows": 0,
+      "sha256": "46fa7b89768d093ac90e1ae721b4afc566a8bd38eb34a1f461ddfa4555a24a4a"
+    },
+    "limit_tech_input_split_annual": {
+      "columns": [
+        "region",
+        "period",
+        "input_comm",
+        "tech",
+        "operator",
+        "proportion",
+        "notes",
+        "data_source",
+        "dq_cred",
+        "dq_geog",
+        "dq_struc",
+        "dq_tech",
+        "dq_time",
+        "data_id"
+      ],
+      "primary_key": [
+        "region",
+        "period",
+        "input_comm",
+        "tech",
+        "operator",
+        "data_id"
+      ],
+      "rows": 100,
+      "sha256": "6a3ee5834e615695c281e59273cecc3881b8df903e1f5edb902838577c9e6a5f"
+    },
+    "metadata_real": {
+      "columns": [
+        "element",
+        "value",
+        "notes"
+      ],
+      "primary_key": [
+        "element"
+      ],
+      "rows": 2,
+      "sha256": "4a65fbb09447b92be6334e8b84a5410b58a08c6a8542eb2d3efa523a43b2d498"
+    },
+    "region": {
+      "columns": [
+        "region",
+        "notes"
+      ],
+      "primary_key": [
+        "region"
+      ],
+      "rows": 10,
+      "sha256": "61d9497f7b301e6d988be127e6cf98e8cc468f527b0d2271217cfe6b41cc64b4"
+    },
+    "tech_group": {
+      "columns": [
+        "group_name",
+        "notes",
+        "data_id"
+      ],
+      "primary_key": [
+        "group_name",
+        "data_id"
+      ],
+      "rows": 0,
+      "sha256": "c7ecfafc827b9ce5b4aef458cca79044b6a4880ce8c452338f16b83dbfe4f967"
+    },
+    "tech_group_label": {
+      "columns": [
+        "group_name",
+        "notes"
+      ],
+      "primary_key": [
+        "group_name"
+      ],
+      "rows": 0,
+      "sha256": "3ae982f3555a775a1ff0a5347d69260c5912d89b9a83f19b504ba916e53dea31"
+    },
+    "tech_group_member": {
+      "columns": [
+        "group_name",
+        "tech",
+        "data_id"
+      ],
+      "primary_key": [
+        "group_name",
+        "tech",
+        "data_id"
+      ],
+      "rows": 0,
+      "sha256": "708f0d3352d03e1ae7eefb8a856217364e0e7037aaf4821bd50e762faa8c4628"
+    },
+    "technology": {
+      "columns": [
+        "tech",
+        "flag",
+        "sector",
+        "category",
+        "sub_category",
+        "unlim_cap",
+        "annual",
+        "reserve",
+        "curtail",
+        "retire",
+        "flex",
+        "exchange",
+        "seas_stor",
+        "description",
+        "data_id",
+        "notes"
+      ],
+      "primary_key": [
+        "tech",
+        "data_id"
+      ],
+      "rows": 125,
+      "sha256": "fd7eb1922c9e9886122dc6e01f83c8a9bb67c3796b95dc36d4c78072f400971f"
+    },
+    "technology_label": {
+      "columns": [
+        "tech",
+        "notes"
+      ],
+      "primary_key": [
+        "tech"
+      ],
+      "rows": 125,
+      "sha256": "4d3b226471606575c093479b6c0fee97e8d051b66d25d10ee54e33e2fc731b97"
+    },
+    "time_of_day": {
+      "columns": [
+        "sequence",
+        "tod",
+        "hours",
+        "notes"
+      ],
+      "primary_key": [
+        "tod"
+      ],
+      "rows": 24,
+      "sha256": "d34f0d56e8bb1bb412db8328ce04d0a0396b509c158f841bb6eb392f1d9a2b97"
+    },
+    "time_period": {
+      "columns": [
+        "sequence",
+        "period",
+        "flag"
+      ],
+      "primary_key": [
+        "period"
+      ],
+      "rows": 11,
+      "sha256": "5de94575d6a5291265e0ca49de1a0200f80b24097af01e5b14fd2c9b0eeb994c"
+    },
+    "time_season": {
+      "columns": [
+        "sequence",
+        "season",
+        "segment_fraction",
+        "notes"
+      ],
+      "primary_key": [
+        "season"
+      ],
+      "rows": 365,
+      "sha256": "e3269272ba0ab669093f3516cc2e1fcedc565ebec9b7af0b794d3a48891009d8"
+    }
+  },
+  "validation": {
+    "parameter_support": {
+      "checks": {
+        "active_process_lifetime_coverage": {
+          "checked_keys": 469,
+          "examples": [],
+          "unsupported_keys": 0
+        },
+        "capacity_to_activity_coverage": {
+          "checked_keys": 90,
+          "examples": [],
+          "unsupported_keys": 0
+        },
+        "capacity_to_activity_values": {
+          "checked_rows": 90,
+          "duplicate_keys": 0,
+          "examples": [],
+          "invalid_rows": 0
+        },
+        "cost_fixed_efficiency": {
+          "checked_keys": 22,
+          "examples": [],
+          "unsupported_keys": 0
+        },
+        "cost_fixed_historical_capacity": {
+          "checked_keys": 2,
+          "examples": [],
+          "unsupported_keys": 0
+        },
+        "cost_invest_efficiency": {
+          "checked_keys": 365,
+          "examples": [],
+          "unsupported_keys": 0
+        },
+        "cost_invest_historical_capacity": {
+          "checked_keys": 0,
+          "examples": [],
+          "unsupported_keys": 0
+        },
+        "cost_variable_efficiency": {
+          "checked_keys": 447,
+          "examples": [],
+          "unsupported_keys": 0
+        },
+        "cost_variable_historical_capacity": {
+          "checked_keys": 102,
+          "examples": [],
+          "unsupported_keys": 0
+        },
+        "efficiency_historical_capacity": {
+          "checked_keys": 104,
+          "examples": [],
+          "unsupported_keys": 0
+        },
+        "emission_embodied_efficiency": {
+          "checked_keys": 170,
+          "examples": [],
+          "unsupported_keys": 0
+        },
+        "emission_embodied_historical_capacity": {
+          "checked_keys": 0,
+          "examples": [],
+          "unsupported_keys": 0
+        },
+        "existing_capacity_efficiency": {
+          "checked_keys": 104,
+          "examples": [],
+          "unsupported_keys": 0
+        },
+        "existing_capacity_positive": {
+          "checked_rows": 104,
+          "examples": [],
+          "invalid_rows": 0
+        },
+        "new_capacity_factor_efficiency": {
+          "checked_keys": 295,
+          "examples": [],
+          "unsupported_keys": 0
+        },
+        "prepared_survival_curve_coverage": {
+          "checked_keys": 0,
+          "examples": [],
+          "unsupported_keys": 0
+        },
+        "survival_curve_lifetime_contract": {
+          "checked_keys": 0,
+          "examples": [],
+          "invalid_keys": 0
+        }
+      },
+      "errors": [],
+      "ok": true,
+      "prepared_tables": [
+        "capacity_to_activity",
+        "cost_fixed",
+        "cost_invest",
+        "cost_variable",
+        "efficiency",
+        "emission_embodied",
+        "existing_capacity",
+        "lifetime_process",
+        "lifetime_survival_curve",
+        "lifetime_tech",
+        "limit_annual_capacity_factor"
+      ]
+    },
+    "primary_keys": true,
+    "provenance": true,
+    "row_models": true,
+    "sqlite_insertion": false,
+    "sqlite_integrity": "not_run"
+  }
+}

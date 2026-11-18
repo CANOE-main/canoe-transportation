@@ -66,7 +66,7 @@ def test_cleanup_plan_separates_runtime_generated_cache_and_external(tmp_path: P
     assert {
         "inputs/1_interim",
         "inputs/2_processed",
-        "inputs/validation",
+        "inputs/validation/review.csv",
         "outputs",
     }.issubset(generated_targets)
     assert "inputs/0_cache" in cache_targets
@@ -93,6 +93,20 @@ def test_cleanup_skips_tracked_targets(tmp_path: Path) -> None:
     assert results[0].action == "skipped"
     assert "tracked" in results[0].reason
     assert tracked_file.exists()
+
+
+def test_cleanup_removes_generated_validation_but_preserves_curated_inputs(tmp_path: Path) -> None:
+    generated = tmp_path / "inputs/validation/build_audit/report.json"
+    curated = tmp_path / "inputs/validation/transportation_reference/sales_cohorts/manifest.json"
+    touch(generated)
+    touch(curated)
+
+    targets = clean_runtime.build_cleanup_plan(tmp_path, include_generated=True)
+    results = clean_runtime.run_cleanup(targets, dry_run=False, tracked=set())
+
+    assert [result.action for result in results] == ["removed"]
+    assert not generated.exists()
+    assert curated.exists()
 
 
 @pytest.mark.parametrize("link_check", ["is_symlink", "is_junction"])
@@ -133,14 +147,16 @@ def test_doctor_runs_without_mutating_by_default() -> None:
             "charger_parameters.csv",
             "cost_invest_multipliers.csv",
             "cost_variable_multipliers.csv",
-                "efficiency_multipliers.csv",
-                "lifetime_process.csv",
-                "vehicle_class_market_shares.csv",
-            ],
+            "efficiency_multipliers.csv",
+            "lifetime_process.csv",
+            "vehicle_class_market_shares.csv",
+        ],
         "file_count": 7,
         "component_count": 18,
-            "selected_cited_rows": 129,
-        }
+        # Dunsky powers and composition come from the report; only its two
+        # aggregate-utilization overrides remain manual.
+        "selected_cited_rows": 94,
+    }
 
 
 def test_doctor_accepts_disabled_comparison_without_a_reference(monkeypatch) -> None:

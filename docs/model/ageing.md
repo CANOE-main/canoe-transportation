@@ -7,12 +7,13 @@ which quantity belongs in the database. This also affects the ages used in
 
 ## Sales, survival and stock calibration
 
-The first question is how to infer an annual cohort when only aggregate stock is
-observed. The production method starts with annual sales and a survival schedule.
-The earlier stock-based method instead allocated the observed class total over an
-Ontario MTO age distribution. These alternatives can reproduce the same class
-total while giving different vintage sizes. They also differ from the choice of
-how Temoa subsequently retires those vehicles.
+For cars and trucks, the production method combines annual sales and survival
+to reconstruct cohorts. The earlier stock-based method allocated the observed
+class total using an Ontario MTO age distribution. Both derivations can reproduce
+the total while giving different stocks by vintage. Temoa's retirement
+representation is a separate choice. Buses and motorcycles use
+[class-specific age evidence](vehicles.md#buses-and-motorcycles) and fixed
+lifetimes in both scenarios.
 
 The illustrated reference is 2025 using CEUD's registered 2023 edition. Its
 2024–2025 sales and stock values follow the explicit constant-extension policy;
@@ -104,11 +105,11 @@ reconstruction and future retirement. The default uses [*EPA MOVES*](https://www
     retirement. Consequently, similarity to a [*NHTSA CAFE*](https://www.nhtsa.gov/corporate-average-fuel-economy) cumulative curve is not independent
     validation of a physical survival schedule. Annual rates, exposed counts and
     mapping coverage must accompany the cumulative comparison in the population
-    notebook. The recorded car result fails the monotone-survival gate; the light-truck
-    result fails the mapped-exposure gate (13.12% of its eligible transition exposure,
-    versus 59.31% for cars). Neither passes all gates, so these results do not promote
-    an [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data)-derived schedule into production. Transition-exposure denominators differ
-    from the single-snapshot fleet denominator in the 100-vehicle illustration.
+    notebook. In the recorded figures below, car retention fails the monotonicity
+    check. Mapped light trucks account for 13.12% of eligible starting-stock
+    exposure, below the coverage threshold. The corresponding car coverage is
+    59.31%. These denominators pool transitions and differ from the
+    [single-snapshot fleet view](vehicles.md#ontario-as-100-vehicles).
 
 Primary methods are documented by [*NHTSA CAFE*](https://www.nhtsa.gov/corporate-average-fuel-economy),
 [*EPA MOVES*](https://www.epa.gov/moves) and [*EIA NEMS*](https://github.com/EIAgov/NEMS).
@@ -140,7 +141,7 @@ population-19 and population-20 and the recorded diagnostic gates.*
 
 | Representation | Exported capacity | What Temoa does |
 | --- | --- | --- |
-| Fixed lifetime | Calibrated surviving stock after audited lifetime-eligible redistribution | Retires the cohort at its lifetime, with a partial final model period where applicable. |
+| Fixed lifetime | Calibrated surviving stock after audited lifetime-eligible redistribution | Retires the cohort at its fixed lifetime, set for cars and trucks by the first age with survival at or below 50%. The final period may be partial. |
 | Survival curve | Calibrated installed-equivalent acquisitions | Multiplies capacity by absolute annual survival and averages surviving capacity within a period. |
 
 For vintage $\boldsymbol{v}$ and model period $\boldsymbol{p}$ containing $\boldsymbol{L_p}$ annual years, curve-mode

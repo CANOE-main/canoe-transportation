@@ -148,8 +148,11 @@ def test_scenario_entrypoint_dispatches_optional_comparison(
         assert report["comparison"]["equivalent"] is True
     assert report_path.exists()
     assert report["database_sha256"] == build_transport.file_sha256(Path(report["database"]))
+    from utils import harmonization_rule_paths
+
     assert {Path(item["path"]).name for item in report["config"]["parameters"]} == {
-        "rules.yaml", "conversion.yaml", "vehicle_reference.csv", "vehicle_source_links.csv",
+        *(path.name for path in harmonization_rule_paths(configured)), "conversion.yaml", "dunsky_charger_inputs.yaml",
+        "vehicle_reference.csv", "vehicle_source_links.csv",
     }
     assert report["config"]["manual_inputs"]
 
@@ -157,7 +160,7 @@ def test_scenario_entrypoint_dispatches_optional_comparison(
 @pytest.mark.parametrize("changes", [
     {"reference_sqlite": None}, {"absolute_tolerance": -1},
     {"relative_tolerance": float("nan")}, {"mode": "unknown"},
-    {"mode": "legacy", "include_provenance": True},
+    {"mode": "legacy"},
 ])
 def test_comparison_options_are_validated(changes: dict) -> None:
     with pytest.raises(ValueError):

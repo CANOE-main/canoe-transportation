@@ -190,3 +190,80 @@ def test_wrong_vintage_detail_is_rejected_even_when_class_totals_match(compariso
     comparison_frames[frame].loc[comparison_frames[frame].vintage_year.eq(2013), "vintage"] = 2015
     with pytest.raises(ValueError, match="Annual comparison contributions"):
         independent_fleet_comparison(comparison_frames, step=5)
+
+
+@pytest.fixture
+def comparison_with_cleanup(comparison_frames):
+    """One tiny technology-vintage is removed, with its two annual origins kept."""
+    frames = comparison_frames
+    backend = frames["sales_cohort_reconciliation"]
+    shares = backend[["region", "road_class", "vintage", "vintage_year", "inserted_cohort_k_vehicles"]].rename(
+        columns={"inserted_cohort_k_vehicles": "capacity"},
+    ).assign(tech="gas")
+    bev = shares.loc[shares.vintage_year.isin([2013, 2014])].copy()
+    bev["tech"] = "bev"
+    bev["capacity"] = [.0001, .0003]
+    shares.loc[shares.vintage_year.isin([2013, 2014]), "capacity"] -= bev.capacity.to_numpy()
+    frames["road_fuel_shares"] = pd.concat([shares, bev], ignore_index=True)
+    frames["fleet_cohort_accounting"]["tech"] = "gas"
+    frames["fleet_cohort_accounting"].loc[lambda rows: rows.vintage.eq(2010), "capacity"] -= .0004
+    stages = frames["cohort_utilization_energy"]
+    selected = stages.vintage.eq(2010)
+    stages.loc[selected, "capacity"] -= .0004
+    stages.loc[selected, "activity_bn"] -= .0004 * stages.loc[selected, "c2a"] * stages.loc[selected, "annual_utilization"]
+    stages.loc[selected, "vehicle_input_pj"] = stages.loc[selected, "activity_bn"] / stages.loc[selected, "efficiency"]
+    cleanup = {"epsilon": .001, "removed_rows": [{
+        "table": "existing_capacity", "region": "ON", "tech": "bev", "vintage": 2010,
+        "value": .0004, "units": "k vehicles", "reason": "below_cleanup_tolerance",
+    }]}
+    return frames, cleanup
+
+
+def test_audited_cleanup_preserves_exact_annual_origins_and_inserted_accounting(comparison_with_cleanup):
+    frames, cleanup = comparison_with_cleanup
+    originals = {name: frame.copy(deep=True) for name, frame in frames.items()}
+    result = independent_fleet_comparison(frames, step=5, cleanup_audit=cleanup)
+    annual = result["comparison_annual_stock"].query("evidence == 'Current backend'").set_index("vintage_year")
+    assert annual.loc[2013, "cleanup_removed_k_vehicles"] == .0001
+    assert annual.loc[2014, "cleanup_removed_k_vehicles"] == .0003
+    assert annual.allocated_before_cleanup_k_vehicles.sum() == 80.
+    assert annual.surviving_k_vehicles.sum() == pytest.approx(79.9996)
+    vintage = result["comparison_vintage_stock"].query("evidence == 'Current backend' and vintage == 2010").iloc[0]
+    assert vintage.surviving_k_vehicles == pytest.approx(59.9996)
+    current = result["baseline_activity_energy_cases"].query("case == 'Current backend'").iloc[0]
+    assert current.implied_activity_bn == pytest.approx(79.9996)
+    assert current.implied_vehicle_input_pj == pytest.approx(24.9999)
+    for name, original in originals.items():
+        pd.testing.assert_frame_equal(frames[name], original)
+
+
+@pytest.mark.parametrize("defect", [
+    "missing_audit", "wrong_value", "wrong_technology", "wrong_vintage", "wrong_unit",
+    "above_threshold", "retained_removed", "wrong_annual_allocation", "wrong_inserted_capacity",
+])
+def test_cleanup_does_not_hide_unexplained_stock_differences(comparison_with_cleanup, defect):
+    frames, cleanup = comparison_with_cleanup
+    if defect == "missing_audit":
+        cleanup = None
+    elif defect == "wrong_value":
+        cleanup["removed_rows"][0]["value"] = .0005
+    elif defect == "wrong_technology":
+        cleanup["removed_rows"][0]["tech"] = "another_bev"
+    elif defect == "wrong_vintage":
+        cleanup["removed_rows"][0]["vintage"] = 2015
+    elif defect == "wrong_unit":
+        cleanup["removed_rows"][0]["units"] = "vehicles"
+    elif defect == "above_threshold":
+        cleanup["epsilon"] = .0001
+    elif defect == "retained_removed":
+        frames["fleet_cohort_accounting"] = pd.concat([
+            frames["fleet_cohort_accounting"], pd.DataFrame([{
+                "region": "ON", "road_class": "cars", "tech": "bev", "vintage": 2010, "capacity": .0004,
+            }]),
+        ], ignore_index=True)
+    elif defect == "wrong_annual_allocation":
+        frames["road_fuel_shares"].loc[0, "capacity"] += 1.
+    else:
+        frames["fleet_cohort_accounting"].loc[0, "capacity"] += .0001
+    with pytest.raises(ValueError, match="Annual comparison"):
+        independent_fleet_comparison(frames, step=5, cleanup_audit=cleanup)

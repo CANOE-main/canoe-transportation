@@ -1540,7 +1540,7 @@ def load_history_manifest(bundle: ConfigBundle) -> pd.DataFrame:
 
 
 def fetch_and_normalize(
-    scenario_path: str | Path,
+    scenario_path: str | Path | ConfigBundle,
     *,
     year: int | None = None,
     download: bool = True,

@@ -25,12 +25,16 @@ def trajectory_helper(recorded):
 
 @pytest.mark.parametrize("metric", ["consumption", "service_efficiency"])
 def test_bridge_reference_remains_visible_without_duplicate_anchor_annotations(metric):
+    # Compare final cohort periods with a diagnostic class median. The source
+    # anchor has no vintage; the future 2025 vintage consumes its 2030 endpoint.
     frame = pd.DataFrame([
-        {"vehicle_group": "Cars", "atb_class": diagnostic.COHORT, "powertrain": powertrain,
+        {"vehicle_group": "Cars", "atb_class": diagnostic.COHORT if series == "Production method" else "Compact", "powertrain": powertrain,
          "series": series, "stage": "Indexed bridge", "metric": metric,
          "year": year, "value": value, "units": "MJ/vkm" if metric == "consumption" else "bn passenger-km/PJ",
          "sample_kind": "base_year_anchor" if year == 2025 else "period",
-         "marker_source": "NRCan-cohort projection anchor" if series == "Production method" else "Catalogue median"}
+         "vintage": np.nan if year == 2025 else 2025, "existing": None if year == 2025 else False,
+         "marker_source": ("NRCan-cohort projection anchor" if year == 2025 else
+                           "Final prepared period CSV" if series == "Production method" else "ATB class recalculation")}
         for powertrain in ["bev_150_miles", "bev_300_miles"]
         for series, value in [("Production method", .65), ("Catalogue median", .75)]
         for year in [2025, 2030]

@@ -1,4 +1,6 @@
 from pathlib import Path
+from dataclasses import replace
+import socket
 
 import pandas as pd
 import pytest
@@ -22,7 +24,7 @@ from utils import load_config_bundle, load_harmonization_rules
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SCENARIO = "config/scenarios/legacy_comparison.yaml"
+SCENARIO = "config/scenarios/validation_opening_periods.yaml"
 
 
 def config():
@@ -641,8 +643,22 @@ def test_fleet_composition_weights_use_latest_snapshot_and_age_grain() -> None:
     ].sum().item() == pytest.approx(1.0)
 
 
-def test_repository_ratings_load_with_existing_class_harmonization() -> None:
+def test_repository_ratings_load_with_existing_class_harmonization(tmp_path, monkeypatch) -> None:
+    from fetching import fueleconomy_vehicles, nrcan_ceud
+
     bundle, rules, _ = config()
+    private_inputs = bundle.paths.inputs.model_copy(update={"interim": str(tmp_path / "interim")})
+    bundle = replace(bundle, paths=bundle.paths.model_copy(update={"inputs": private_inputs}))
+
+    def reject_network(*_args, **_kwargs):
+        pytest.fail("Rating harmonization must replay registered offline inputs")
+
+    monkeypatch.setattr(socket.socket, "connect", reject_network)
+    monkeypatch.setattr(socket, "create_connection", reject_network)
+    # Auxiliary FuelEconomy class evidence is an explicit diagnostic prerequisite;
+    # ordinary production replay validates its raw cache without publishing it.
+    nrcan_ceud.fetch_and_normalize_ratings(bundle, download=False)
+    fueleconomy_vehicles.fetch_and_normalize(bundle, download=False)
 
     evidence = load_rating_evidence(bundle, rules=rules)
 

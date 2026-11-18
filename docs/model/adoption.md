@@ -1,23 +1,20 @@
-# Upcoming: evidence on technology adoption rates
+# Research on technology adoption rates
 
-An optimizer can select rapid technology growth when costs and constraints permit
-it. Historical adoption evidence may help distinguish plausible diffusion paths
-from unconstrained replacements, but observed growth does not automatically define
-a transferable future limit.
+An optimizer can select rapid adoption when costs and constraints permit it.
+Historical diffusion can inform growth scenarios if the measurement, starting
+stock and market match the question. Starting from a small stock, the same
+absolute additions give a much larger percentage increase.
 
 !!! warning "Evidence limit: stock growth, registrations and shares differ"
     The existing [growth diagnostic](../insights/growth_constraint_diagnosis.py)
     examines registered [*HATCH*](https://zenodo.org/records/10231865)/[*Extended HATCH*](https://zenodo.org/records/19579793) and [*EAFO Norway*](https://alternative-fuels-observatory.ec.europa.eu/transport-mode/road/norway/vehicles-and-fleet) histories. It compares
-    measurement definitions, windows, growth rates, maturity and starting levels.
-    Stock growth, new registrations and market share are different quantities;
-    small starting stocks can create large percentage changes.
+    stock growth, new registration rates and market shares over different windows.
+    A stock growth rate measures the change in the surviving fleet. A registration
+    share measures the new-vehicle mix. They need different denominators and
+    imply different model constraints.
 
-!!! note "Upcoming feature: reviewed adoption constraints"
-    The intended feature is an explicit, reviewable choice of growth representation
-    and calibrated starting conditions, with regional/technology transfer limits.
-    **Production adoption constraints are not implemented by this documentation work.**
-    Research candidates do not become scenario parameters merely because they are
-    plotted. See [*HATCH*](https://zenodo.org/records/10231865) and
-    [*EAFO Norway*](https://alternative-fuels-observatory.ec.europa.eu/transport-mode/road/norway/vehicles-and-fleet)
-    for the primary evidence, and the [research-source inventory](../source_inventory.md#growth-research-inputs)
-    for the registered inputs.
+The notebook explores candidate growth formulations and deployment seeds.
+This workflow is diagnostic only. Production scenario builds omit adoption
+constraints from this research. Before promoting a formulation, establish which
+regions, vehicle classes and maturity stages its evidence can describe. See
+the [research-source inventory](../source_inventory.md#growth-research-inputs).

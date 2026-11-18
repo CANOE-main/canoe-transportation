@@ -95,6 +95,35 @@ def test_weighted_age_profile_preserves_pattern_and_rejects_gaps() -> None:
         )
 
 
+def test_unequal_native_mileage_endpoints_are_held_before_class_weighting():
+    mileage = pd.DataFrame([
+        {"vehicle_class": label, "year_index": age, "vmt_mi": value, "unit": "mi/vehicle-year"}
+        for label, values in (("Compact", [10, 8, 6]), ("Midsize", [20, 10]))
+        for age, value in enumerate(values)
+    ])
+    original = mileage.copy(deep=True)
+    weights = pd.DataFrame([
+        {"nrcan_ceud_class": "Car", "nlr_atb_class": "Compact", "aggregation_weight": .25},
+        {"nrcan_ceud_class": "Car", "nlr_atb_class": "Midsize", "aggregation_weight": .75},
+    ])
+    profile = aggregate_normalized_mileage_profiles(
+        mileage, weights, mile_to_km=1.609344, max_age=4, endpoint_policy="hold_last",
+    )
+    assert profile.age.tolist() == [0, 1, 2, 3, 4]
+    assert profile.normalized_utilization.tolist() == pytest.approx(
+        [1, 9.5 / 17.5, 9 / 17.5, 9 / 17.5, 9 / 17.5])
+    pd.testing.assert_frame_equal(mileage, original)
+    with pytest.raises(ValueError, match="not contiguous from zero"):
+        aggregate_normalized_mileage_profiles(
+            mileage.loc[~(mileage.vehicle_class.eq("Compact") & mileage.year_index.eq(1))],
+            weights, mile_to_km=1.609344, max_age=4, endpoint_policy="hold_last",
+        )
+    with pytest.raises(ValueError, match="Unsupported mileage endpoint policy"):
+        aggregate_normalized_mileage_profiles(
+            mileage, weights, mile_to_km=1.609344, max_age=4, endpoint_policy="invented",
+        )
+
+
 def test_flat_road_factor_records_apply_constant_values_to_owned_vintages() -> None:
     baseline = pd.DataFrame([
         {"region": "ON", "road_class": "cars", "utilization": 0.2},

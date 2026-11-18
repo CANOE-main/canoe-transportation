@@ -33,11 +33,10 @@ P_{rep}=\sum_rw_rP_r,\qquad M_{rep}=\sum_rw_rM_r.$$
     exact preservation of every per-vintage liquid/electric component under the
     shared horizon-mean blend representation.
 
-!!! info "Diagnostic finding: retained PHEV component approximation"
+!!! info "Recorded PHEV component approximation"
     In the recorded Ontario off/on pair, total-energy conservation passes and the
     maximum per-vintage PHEV component approximation is 0.05898% in both cases. The
-    common calibration factor preserves that existing approximation; it does not
-    remove the shared-blend representation's limitation.
+    common calibration factor preserves that approximation in the recorded pair.
 
 ![Inherited range composition](../assets/figures/ldv-eff-3.svg)
 
@@ -99,13 +98,13 @@ For LDV class $\boldsymbol{c}$ and powertrain $\boldsymbol{p}$, the implemented 
 $$R_{acp}=s_c m_p b_{\min(a,14)}\exp(\beta P),\qquad
 C^{MR}_{acp}=R_{acp}+M_p.$$
 
-!!! warning "Transfer assumptions: dollar bases and terminal-age hold"
-    $\boldsymbol{R}$, $\boldsymbol{b}$ and $\boldsymbol{M}$ are on the source USD/mile basis; $\boldsymbol{s_c}$ and $\boldsymbol{m_p}$ are
-    dimensionless class/powertrain multipliers; $\boldsymbol{P}$ is retail MSRP in the source's
-    specified USD basis and $\boldsymbol{\beta}$ has reciprocal-USD units. The age-14 value is
-    held for older ages. The source MSRP dollar basis and empirical coefficient
-    dollar basis are retained separately; a monetary conversion cannot resolve that
-    empirical mismatch. US repair behavior is transferred to Canadian vehicles.
+!!! note "Repair price basis and age limit"
+    $\boldsymbol{R}$, $\boldsymbol{b}$ and $\boldsymbol{M}$ are in 2020 USD per vehicle-mile.
+    $\boldsymbol{s_c}$ and $\boldsymbol{m_p}$ are dimensionless class and powertrain multipliers.
+    $\boldsymbol{P}$ is retail MSRP rebased from 2022 to 2020 USD before the repair equation
+    is evaluated, and $\boldsymbol{\beta}$ is expressed per 2020 USD. The price conversion uses
+    the [*BEA U.S. GDP implicit price deflator*](https://downloads.regulations.gov/BOEM-2024-0037-0002/content.pdf).
+    The age-14 coefficient is held for older ages. The model transfers U.S. repair behavior to Canadian vehicles.
 
 For medium/heavy trucks, the registered [*ANL BEAN*](https://publications.anl.gov/anlpubs/2023/11/179337.pdf) relationship is
 
@@ -128,8 +127,11 @@ modeling limitations, not independently measured Canadian trajectories.*
 !!! tip "Modeler note: normalize operating costs to service"
     Convert cost per vehicle-km to cost per service-km by dividing by the applicable
     occupancy/payload. A cost in CAD/passenger-km or CAD/tonne-km is multiplied by 1,000
-    to obtain million CAD per billion service-km. The production cost layer retains
-    source years, conversions and the actual operating-period/vintage age.
+    to obtain million CAD per billion service-km. Prospective ages use period-end
+    year minus the vintage's evidence year. Legacy ages subtract the vintage
+    label from the period label. Costs apply only to operating vintages, including
+    a partial final period. Calendar-year source series hold their last reviewed
+    cost where a cohort operates beyond source coverage.
 
 ## Manufacturing emissions
 
@@ -142,6 +144,8 @@ are distinct from fuel-cycle and operating emissions.
 !!! note "Assumption: held manufacturing evidence and material coverage"
     Shared class/range weights aggregate the masses. CO2 uses kt per thousand vehicles;
     CH4 and N2O use tonnes per thousand vehicles. The registered 2025 simulation is held
-    through the horizon. Lightweight-material choices apply to LDVs; a common switch
-    does not imply equivalent medium/heavy-truck evidence. Full restrictions and the
-    known [*ANL GREET*](https://greet.anl.gov/greet/versions.html) range-selector issue remain in [embodied-emission assumptions](../assumptions.md#emission_embodied).
+    through the horizon. The lightweight-material selection applies only to LDVs.
+    The saved range inputs affected by the known GREET glider selector mismatch
+    are identical in the registered bank. Unequal source inputs require a reviewed
+    correction before lightweight use. See
+    [embodied-emission assumptions](../assumptions.md#emission_embodied).

@@ -186,16 +186,17 @@ def test_class_weights_apply_after_the_selected_model_statistic(ratings, rules, 
 
 
 def test_scenario_rejects_the_obsolete_catalogue_statistic_selection(ratings, rules):
-    assert ScenarioEfficiencies(atb_trajectory="Mid").atb_trajectory == "Mid"
+    selections = {"atb_trajectory": "Mid", "ceud_energy_calibration": False}
+    assert ScenarioEfficiencies(**selections).atb_trajectory == "Mid"
     with pytest.raises(ValidationError, match="rating_statistic"):
-        ScenarioEfficiencies(atb_trajectory="Mid", rating_statistic="mean")
+        ScenarioEfficiencies(**selections, rating_statistic="mean")
     with pytest.raises(ValidationError, match="rating_statistic"):
-        ScenarioEfficiencies(atb_trajectory="Mid", rating_statistic="mode")
+        ScenarioEfficiencies(**selections, rating_statistic="mode")
     with pytest.raises(ValueError, match="Unsupported distinct-model rating statistic"):
         rating_class_statistics(ratings, rules=rules, statistic="mode")
 
 
-@pytest.mark.parametrize("scenario", ["default", "legacy_comparison", "notebook_diagnostics"])
+@pytest.mark.parametrize("scenario", ["default", "validation_opening_periods", "notebook_diagnostics"])
 def test_versioned_scenarios_use_the_shared_fixed_catalogue_policy(scenario):
     bundle = load_config_bundle(
         f"config/scenarios/{scenario}.yaml", repo_root=Path(__file__).resolve().parents[1],

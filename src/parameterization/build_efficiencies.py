@@ -7,7 +7,6 @@ import hashlib
 import json
 import logging
 import re
-import zipfile
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
@@ -17,7 +16,7 @@ import pandas as pd
 from parameterization.ceud_inputs import read_ceud_input
 from canoe_schema.v4_0 import DataSet, Efficiency, LimitTechInputSplitAnnual
 
-from fetching.fueleconomy_vehicles import build_request, validate_cache
+from fetching.fueleconomy_vehicles import build_request, read_configuration_evidence, validate_cache
 from fetching.nlr_atb_autonomie import configured_trajectory
 from fetching.transport_canada_izev import SOURCE as IZEV, build_requests as izev_requests, validate_cache as validate_izev_cache
 from parameterization.manual_parameters import validate_manual_registry
@@ -455,9 +454,9 @@ def historical_stock_evidence(
     rows: list, contexts: list[ResolvedProvenance], audit: dict,
     physical_stock: pd.DataFrame | None = None,
 ) -> tuple[Path, pd.DataFrame, dict[tuple, tuple]]:
-    """Validate capacity lineage, retaining raw age-distribution counts for weighting."""
+    """Reconcile full stock lineage, then retain raw cohorts in historical support."""
     stock_rules = load_harmonization_rules(bundle, "road_stocks_and_demands")["existing_capacity"]
-    expected = resolve_artifact_path(bundle, "existing_capacity_interim", stock_rules["fuel_shares_file"])
+    expected = resolve_artifact_path(bundle, "existing_capacity_interim", stock_rules["annual_stock_file"])
     descriptor = audit.get("annual_stock_evidence", {})
     supplied = Path(descriptor.get("path", ""))
     supplied = supplied if supplied.is_absolute() else bundle.repo_root / supplied
@@ -484,18 +483,15 @@ def historical_stock_evidence(
             raise ValueError("Curve-mode annual lineage lacks installation-equivalent contributions")
         stock["solver_capacity_k_vehicles"] = stock.capacity
     modes = rules["historical_stock_weighted_modes"]
-    if not modes or len(set(modes)) != len(modes) or any(
-        mode not in rules["road_classes"] or rules["road_classes"][mode]["pathway"] not in {"ldv", "mhdv"}
-        for mode in modes
-    ):
-        raise ValueError("Invalid stock-weighted historical road modes")
+    if len(set(modes)) != len(modes) or set(modes) != set(rules["road_classes"]):
+        raise ValueError("Invalid stock-weighted historical road modes: include every road class exactly once")
     weighted_technologies = relationships.loc[relationships["mode"].isin(modes)].set_index("tech")["mode"].to_dict()
     stock = stock.loc[stock.road_class.isin(modes)].copy()
-    for column in ("raw_capacity", "capacity", "vintage", "vintage_year"):
+    for column in ("raw_capacity", "capacity", "solver_capacity_k_vehicles", "vintage", "vintage_year"):
         stock[column] = pd.to_numeric(stock[column], errors="raise")
         if not np.isfinite(stock[column]).all():
             raise ValueError(f"Annual stock evidence has non-finite {column}")
-    if stock[["raw_capacity", "capacity"]].lt(0).any().any() or stock[["vintage", "vintage_year"]].mod(1).ne(0).any().any():
+    if stock[["raw_capacity", "capacity", "solver_capacity_k_vehicles"]].lt(0).any().any() or stock[["vintage", "vintage_year"]].mod(1).ne(0).any().any():
         raise ValueError("Annual stock evidence has negative stock or non-integral years")
     if stock.duplicated([*keys, "vintage_year"]).any():
         raise ValueError("Duplicate annual age-distribution cohort")
@@ -519,7 +515,11 @@ def historical_stock_evidence(
         if len(physical) != 1 or not np.isclose(cohort.capacity.sum(), physical.surviving_k_vehicles.iloc[0],
                                              rtol=tolerance, atol=tolerance):
             raise ValueError(f"Annual surviving stock does not reconcile to the physical-stock handoff: {key}")
-        cohort = cohort.loc[cohort.raw_capacity.gt(0)].copy()
+        # Bus age evidence can predate the first modeled historical interval.
+        # Reconcile its full retained stock above, but use the same within-bin
+        # annual support as every other road class for consumption weighting.
+        years = bundle.scenario.periods.historical_years(row.vintage)
+        cohort = cohort.loc[cohort.raw_capacity.gt(0) & cohort.vintage_year.isin(years)].copy()
         if cohort.empty:
             raise ValueError(f"Missing positive raw age-distribution stock: {key}")
         context = by_id.get(row.data_id)
@@ -557,7 +557,7 @@ def prepare_efficiency_rows(
         if scenario.sources.nrcan_ceud_beyond_observed == "extrapolated" else None
     )
     if (
-        rules["future_year_rule"] != "interval_end"
+        rules["legacy_new_road_aggregation"] != "equal_supported_years"
         or rules["missing_rating_classes"] != "renormalize_observed"
     ):
         raise ValueError("Unsupported efficiency period/aggregation policy")
@@ -626,23 +626,12 @@ def prepare_efficiency_rows(
     paths.append(omega_request(bundle).extract_path)
     commodity = read(resolve_input_path(bundle, "template", "commodity.csv"))
     region_template = read(resolve_input_path(bundle, "template", "region.csv"))
-    period_template = read(resolve_input_path(bundle, "template", "time_period.csv"))
     expected_regions = {
         rules["region_output_map"].get(region, region)
         for region in scenario.geography.regions
     }
     if not expected_regions.issubset(set(region_template.region)):
         raise ValueError("Efficiency scenario region is not owned by the template")
-    for periods, flag in (
-        (scenario.periods.existing, "e"),
-        (scenario.periods.model, "f"),
-    ):
-        if not set(periods).issubset(
-            set(period_template.loc[period_template.flag.eq(flag), "period"])
-        ):
-            raise ValueError(
-                "Efficiency vintage/period differs from template ownership"
-            )
     road_rules = load_harmonization_rules(bundle, "road_stocks_and_demands")["demand"]
     offroad_rules = load_harmonization_rules(bundle, "offroad_stocks_and_demands")[
         "demand"
@@ -708,13 +697,9 @@ def prepare_efficiency_rows(
     epa_request = build_request(bundle)
     validate_cache(epa_request)
     paths.append(epa_request.cache_path)
-    with (
-        zipfile.ZipFile(epa_request.cache_path) as archive,
-        archive.open(epa_request.archive_member) as member,
-    ):
-        epa = pd.read_csv(
-            member, usecols=rules["ratings"]["evidence_columns"], low_memory=False
-        )
+    epa = read_configuration_evidence(
+        epa_request, columns=rules["ratings"]["evidence_columns"],
+    )
     atb_rules = load_harmonization_rules(bundle, "nlr_atb_autonomie")
     atb_dir = resolve_input_path(bundle, "interim", atb_rules["interim_subdir"])
     phev_source = read(
@@ -859,6 +844,9 @@ def prepare_efficiency_rows(
     )
     manual = manual_frames[rules["offroad"]["manual_file"]]
     paths.append(resolve_input_path(bundle, "manual", rules["offroad"]["manual_file"]))
+    observation_vintage = scenario.periods.existing_vintage(
+        min(scenario.periods.base_year, rules["projection_reference_year"])
+    )
     evidence = RoadEfficiencyEvidence(
         ceud=provincial,
         loads=loads,
@@ -869,7 +857,7 @@ def prepare_efficiency_rows(
         base_year=scenario.periods.base_year,
         rules=rules,
         conversions=conversions,
-        projection_years=tuple(scenario.periods.historical_years(scenario.periods.latest_observed_vintage)),
+        projection_years=tuple(scenario.periods.historical_years(observation_vintage)),
         projection_reference_year=rules["projection_reference_year"],
         cohort_stock=annual_stock.merge(
             relationships.loc[relationships.tech.isin(annual_stock.tech), ["tech", "powertrain"]].drop_duplicates(),
@@ -882,7 +870,7 @@ def prepare_efficiency_rows(
     component_cache = {}
 
     def components_for(region, mode, powertrain, year, result):
-        key = region, mode, powertrain, year
+        key = region, mode, powertrain, year, result.get("treatment")
         if key not in component_cache:
             component_cache[key] = efficiency_components(
                 bundle, mode, rules, road_rules, offroad_rules, region=region,
@@ -899,10 +887,10 @@ def prepare_efficiency_rows(
                     & relationships.tech.str.endswith(rules["existing_suffix"]), "tech"
                 ]
                 for stock_tech in stock_edges:
-                    stock_key = (stock_region, stock_tech, scenario.periods.latest_observed_vintage)
+                    stock_key = (stock_region, stock_tech, observation_vintage)
                     if stock_key in stock_components:
                         component_cache[key].extend(stock_components[stock_key])
-                if not any((stock_region, tech, scenario.periods.latest_observed_vintage) in stock_components for tech in stock_edges):
+                if not any((stock_region, tech, observation_vintage) in stock_components for tech in stock_edges):
                     raise ValueError(f"Missing projection-anchor stock lineage: {region}/{mode}/{powertrain}")
         return component_cache[key]
 
@@ -921,11 +909,17 @@ def prepare_efficiency_rows(
                 else scenario.periods.model
             )
             for vintage in vintages:
-                years = (
-                    scenario.periods.historical_years(vintage)
-                    if edge.tech.endswith(rules["existing_suffix"]) and edge.kind != "unit"
-                    else [scenario.periods.projection_year(vintage, legacy_at_end=True)]
+                historical = edge.tech.endswith(rules["existing_suffix"]) and edge.kind != "unit"
+                new_road_cohort = (
+                    not historical and edge.kind == "road"
+                    and scenario.periods.period_mode == "legacy"
                 )
+                if historical:
+                    years = scenario.periods.historical_years(vintage)
+                elif new_road_cohort:
+                    years = list(scenario.periods.evaluation_window(vintage))
+                else:
+                    years = [scenario.periods.evaluation_year(vintage)]
                 if edge.tech in rules["historical_single_year_technologies"]:
                     source_year = rules["historical_single_year_technologies"][
                         edge.tech
@@ -935,8 +929,10 @@ def prepare_efficiency_rows(
                             f"Unexpected historical vintage for {edge.tech}: {vintage}"
                         )
                     years = [source_year]
+                if not years:
+                    raise ValueError(f"No supported annual consumption observations: {region}/{edge.tech}/{vintage}")
                 source_components = []
-                historical = edge.tech.endswith(rules["existing_suffix"]) and edge.kind != "unit"
+                evaluation_start, evaluation_end = years[0], years[-1]
                 weighted_stock = historical and edge.mode in rules["historical_stock_weighted_modes"]
                 if weighted_stock:
                     cohort = annual_stock.loc[annual_stock.region.eq(region) & annual_stock.tech.eq(edge.tech)
@@ -948,10 +944,20 @@ def prepare_efficiency_rows(
                     temporal_basis = "age_distribution_cohort_stock"
                 else:
                     candidate_weights = {year: 1 / len(years) for year in years}
-                    temporal_basis = "equal_annual_observations" if historical else "future_interval_end"
+                    if historical:
+                        temporal_basis = "equal_annual_observations"
+                    elif new_road_cohort:
+                        temporal_basis = "new_cohort_equal_supported_years"
+                    elif scenario.periods.period_mode == "legacy":
+                        temporal_basis = "new_vintage_opening_year"
+                    else:
+                        temporal_basis = "future_interval_end"
                 range_mix = historical_weights.get((edge.mode, edge.powertrain), {}) if edge.tech.endswith(rules["existing_suffix"]) else {}
                 first_source_year = int(provincial.year.min() if edge.kind == "road" else national.year.min())
-                supported_years = [year for year in years if not historical or year >= first_source_year]
+                supported_years = [
+                    year for year in years
+                    if not (historical or new_road_cohort) or year >= first_source_year
+                ]
                 range_observations = {}
                 range_combination = None
                 if not supported_years:
@@ -973,6 +979,7 @@ def prepare_efficiency_rows(
                         observations = evidence.period_observations(
                             source_region, edge.mode, edge.powertrain, supported_years,
                             allow_analogue_when_empty=allow_analogue_when_empty,
+                            new_cohort=new_road_cohort,
                         )
                 else:
                     observations = {}
@@ -1002,7 +1009,8 @@ def prepare_efficiency_rows(
                                 "cohort_weight": candidate_weights[year], "source_available": result is not None,
                                 "included_in_period": result is not None, "omission_reason": omission}
                     common = {**edge._asdict(), "region": region, "ceud_region": source_region,
-                              "vintage": vintage, "source_year": year, "trajectory": trajectory, **temporal}
+                              "vintage": vintage, "source_year": year, "evaluation_year": year,
+                              "evaluation_window_end": evaluation_end, "trajectory": trajectory, **temporal}
                     for bucket, records in range_observations.items():
                         component = records.get(year)
                         annual_records.append({**common, "powertrain": bucket, "range_weight": range_mix[bucket],
@@ -1026,6 +1034,7 @@ def prepare_efficiency_rows(
                 period_records.append({
                     **edge._asdict(), "region": region, "ceud_region": source_region, "vintage": vintage,
                     "trajectory": trajectory, **period_result, "temporal_weight_basis": temporal_basis,
+                    "evaluation_window_start": evaluation_start, "evaluation_window_end": evaluation_end,
                     "source_year_start": min(included_years), "source_year_end": max(included_years),
                     "candidate_year_count": len(years), "included_year_count": len(included_years),
                     "candidate_source_years": "|".join(map(str, years)), "included_source_years": "|".join(map(str, included_years)),
@@ -1061,7 +1070,9 @@ def prepare_efficiency_rows(
                         "components": component_signature,
                     }
                 )
-    endpoints = [scenario.periods.projection_year(p, legacy_at_end=True) for p in scenario.periods.model]
+    # The emitted blend is a single horizon mean. Sample the actual model interval
+    # ends for both modes so an opening evaluation shift does not change the blend.
+    endpoints = [scenario.periods.period_end(p) for p in scenario.periods.model]
     split_audit = phev_split_evidence(atb, endpoints=endpoints, rules=rules, fleet=fleet)
     split_audit = pd.concat([split_audit, existing_phev_split_evidence(
         atb_audit, endpoints=endpoints, rules=rules, range_weights=historical_weights,
@@ -1090,7 +1101,7 @@ def prepare_efficiency_rows(
             c2a=pd.DataFrame([row.model_dump() for row in road_utilization.capacity_to_activity_rows]),
             factors=pd.DataFrame([row.model_dump() for row in road_utilization.flat_factor_rows]),
             split_audit=split_audit, ceud=provincial, relationships=relationships,
-            activity_targets=pd.DataFrame(road_utilization.audit["sales_activity_calibration"]),
+            activity_targets=pd.DataFrame(road_utilization.audit["base_year_activity_calibration"]),
             base_year=scenario.periods.base_year,
             source_edition=scenario.sources.selections[CEUD].year,
             regions=list(scenario.geography.regions), calibration_rules=calibration_rules,
@@ -1294,6 +1305,7 @@ def prepare_efficiency_rows(
     audit["annual_stock_evidence"] = dict(existing_capacity_audit["annual_stock_evidence"])
     audit["pev_projection_anchors"] = dict(evidence.pev_projection_anchors)
     audit["ldv_projection_reference_year"] = evidence.projection_reference_year
+    audit["projection_observation_vintage"] = observation_vintage
     audit["historical_source_backed_rows_without_capacity"] = len(
         existing_keys - capacity_keys
     )
@@ -1305,11 +1317,13 @@ def prepare_efficiency_rows(
     audit["omitted_annual_observations"] = int((period_frame.candidate_year_count - period_frame.included_year_count).sum())
     audit["periods_with_incomplete_observation_coverage"] = len(incomplete)
     audit["incomplete_observation_coverage"] = incomplete[[
-        "region", "tech", "input_comm", "output_comm", "vintage", "candidate_source_years", "included_source_years",
+        "region", "tech", "input_comm", "output_comm", "vintage", "evaluation_window_start", "evaluation_window_end",
+        "candidate_source_years", "included_source_years",
         "candidate_cohort_stock_k_vehicles", "included_cohort_stock_k_vehicles", "cohort_stock_coverage", "observation_coverage",
         "range_source_years", "range_stock_coverage",
     ]].replace({np.nan: None}).to_dict("records")
     audit["phev_energy_basis"] = rules["atb"]["phev_energy_basis"]
+    audit["phev_split_horizon_sample_years"] = endpoints
     audit["existing_ev_representatives"] = {
         "rules": range_rules.existing.model_dump(),
         "weights": range_evidence.bucket_totals.to_dict("records"),
@@ -1568,7 +1582,7 @@ def efficiency_components(
     base = bundle.scenario.periods.base_year
     if pathway == "motorcycle":
         components = [(CEUD, spec["intensity_table"])]
-        if year > base:
+        if year > base or "index_source_year" in result:
             components.append(("jgcri_gcam_motorcycle_inputs", "canada_motorcycle_inputs"))
         return components
     components = [(CEUD, road["activity_series"][mode]["table_id"]), (CEUD, spec["stock_table"])]
@@ -1576,6 +1590,7 @@ def efficiency_components(
         components.append((CEUD, spec["intensity_table"]))
     if pathway == "ldv":
         components.append(aggregation_component(bundle, "ldv", region))
+        observation_end = min(base, rules["projection_reference_year"])
         treatment = result["treatment"]
         if treatment == "NRCan_observed_class_weighted":
             components.extend(rating_inputs(mode, powertrain, year, "mj", region))
@@ -1587,11 +1602,11 @@ def efficiency_components(
             # The caller adds each observed anchor year and its raw-stock lineage.
         else:
             components.extend(baseline_inputs(mode, powertrain, (), region))
-            if year > base:
+            if year > observation_end:
                 components.extend(atb_efficiency_components(powertrain, pathway, rules))
             else:
                 components.extend(rating_inputs(mode, result["analogue"], year, "native", region))
-                components.extend(rating_inputs(mode, result["analogue"], base, "native", region))
+                components.extend(rating_inputs(mode, result["analogue"], observation_end, "native", region))
     elif pathway == "mhdv":
         spec = rules["mhdv_fleet_baseline"]
         observed = spec["observed_fuels"][mode]

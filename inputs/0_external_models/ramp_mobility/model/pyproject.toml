@@ -1,0 +1,23 @@
+[project]
+name = "ramp-mobility-legacy-reruns"
+version = "0.1.0"
+description = "Isolated runtime for the Ontario legacy charging-profile case"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "numpy==1.24.4",
+    "pandas==1.5.3",
+    "matplotlib==3.7.5",
+    "holidays==0.10.5.2",
+    "convertdate==2.4.0",
+    "pytz==2024.2",
+]
+
+[dependency-groups]
+dev = ["pytest==8.4.2", "ruff==0.14.5"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--basetemp=.pytest_tmp"

@@ -12,7 +12,9 @@ from utils import (
     load_config_bundle,
     load_harmonization_rules,
     load_parameter_yaml,
+    load_rules_config,
     load_yaml,
+    harmonization_rule_paths,
     resolve_artifact_path,
     resolve_input_path,
 )
@@ -21,6 +23,38 @@ from validation.config_smoke import run_smoke_validation
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_loaded_bundle_preserves_explicit_root_from_foreign_cwd(tmp_path, monkeypatch):
+    bundle = load_config_bundle("config/scenarios/default.yaml", repo_root=REPO_ROOT)
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("utils.find_repo_root", lambda: pytest.fail("Caller bundle rebound to cwd"))
+    assert load_config_bundle(bundle) is bundle
+
+
+def test_parameter_directory_is_bound_before_cross_file_validation(tmp_path, monkeypatch):
+    paths, _, scenario = _write_config_copy(tmp_path)
+    recorded_paths = paths.read_bytes()
+    selected = tmp_path / "captured_parameters"
+    selected.mkdir()
+    live = tmp_path / "config/parameters"
+    for member in live.iterdir():
+        (selected / member.name).write_bytes(member.read_bytes())
+    # Valid captured controls must not be validated through the missing live member.
+    (live / "fleet_stock_and_activity.yaml").unlink()
+    monkeypatch.chdir(selected)
+    bundle = load_config_bundle(scenario, repo_root=tmp_path, parameter_dir=selected)
+    assert Path(bundle.paths.config.parameters) == selected
+    assert load_harmonization_rules(bundle, "road_stocks_and_demands")["existing_capacity"]
+    assert paths.read_bytes() == recorded_paths
+
+
+@pytest.mark.parametrize("override", ["repo_root", "paths_path", "sources_path", "parameter_dir"])
+def test_loaded_bundle_rejects_ambiguous_path_overrides(tmp_path, override):
+    bundle = load_config_bundle("config/scenarios/default.yaml", repo_root=REPO_ROOT)
+    value = tmp_path if override in {"repo_root", "parameter_dir"} else "other.yaml"
+    with pytest.raises(ValueError, match="ConfigBundle controls cannot be combined"):
+        load_config_bundle(bundle, **{override: value})
 SCENARIO = "config/scenarios/default.yaml"
 
 
@@ -57,12 +91,14 @@ def test_config_bundle_loads_typed_contracts() -> None:
     ].edition == 2026
     assert bundle.scenario.demand.cer_scenario == "Current Measures"
     assert bundle.scenario.demand.future_car_demand == "GDP-indexed"
-    assert bundle.scenario.sources.selections["transport_canada_ev_dashboard"].year == 2026
+    assert "afdc_alternative_fueling_stations" in bundle.sources.sources
     assert bundle.scenario.aggregation_sources.source_for("stock_age", "QC") == "ontario_ministry_transport_vehicle_population"
     assert bundle.scenario.existing_capacity.cleanup_tolerance == 0.001
+    assert bundle.scenario.existing_capacity.vehicle_population_year == bundle.scenario.periods.base_year
     assert bundle.scenario.aggregation_sources.source_for("medium_trucks", "QC") == "wards_intelligence_sales_shares"
-    assert bundle.scenario.ev_chargers.ld_evs_per_port == 1.0
-    assert bundle.scenario.ev_chargers.mhd_evs_per_port == 1.5
+    assert bundle.scenario.ev_chargers.evs_per_port == (1.0, 1.5, 1.5)
+    assert bundle.scenario.ev_chargers.charger_type_classes == "aggregated"
+    assert bundle.scenario.ev_chargers.ld_home_utilization == 0.08
     assert bundle.scenario.economics.global_discount_rate == 0.03
     assert bundle.sources.sources["statcan_transport_tables"].component(
         "20-10-0021-01"
@@ -70,6 +106,78 @@ def test_config_bundle_loads_typed_contracts() -> None:
     assert bundle.sources.sources["cer_canadas_energy_future"].component(
         "macro-indicators"
     ).short_name == "macro_indicators_for_demand_and_currency_conversion"
+
+
+def test_old_captured_atb_registry_requires_rebuild_with_actionable_error(tmp_path):
+    _, sources, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(sources.read_text(encoding="utf-8"))
+    adapter = payload["sources"]["nlr_atb_transportation"]["adapter"]
+    adapter.pop("supported_scenario_trajectories")
+    # Native labels include Constant and cannot serve as complete scenario choices.
+    assert "Constant" in adapter["expected_trajectories"]
+    sources.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    with pytest.raises(ValueError, match="supported_scenario_trajectories.*Rebuild the capture"):
+        load_config_bundle(scenario, repo_root=tmp_path)
+
+
+@pytest.mark.parametrize("base_year", [2023, 2025])
+@pytest.mark.parametrize("selection", ["null", "omitted"])
+def test_population_year_inherits_the_configured_base_year(tmp_path: Path, base_year: int, selection: str) -> None:
+    from fetching.vehicle_population import registered_requests
+
+    _, _, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
+    payload["periods"]["base_year"] = base_year
+    if selection == "omitted":
+        payload["existing_capacity"].pop("vehicle_population_year")
+    else:
+        payload["existing_capacity"]["vehicle_population_year"] = None
+    scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+
+    bundle = load_config_bundle(scenario, repo_root=tmp_path)
+
+    assert bundle.scenario.existing_capacity.vehicle_population_year == base_year
+    assert isinstance(bundle.scenario.existing_capacity.vehicle_population_year, int)
+    requests = registered_requests(bundle, year=bundle.scenario.existing_capacity.vehicle_population_year)
+    assert {request.year for request in requests} == {base_year}
+    # This source-year selector must not move the independently reviewed efficiency anchor.
+    rules = load_harmonization_rules(bundle, "efficiencies")
+    assert rules["projection_reference_year"] == 2023
+    assert rules["historical_rating_observations"] == "through_projection_reference_year"
+
+
+def test_explicit_population_year_remains_an_independent_source_choice(tmp_path: Path) -> None:
+    _, _, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
+    payload["periods"]["base_year"] = 2023
+    payload["existing_capacity"]["vehicle_population_year"] = 2025
+    scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+
+    bundle = load_config_bundle(scenario, repo_root=tmp_path)
+
+    assert bundle.scenario.periods.base_year == 2023
+    assert bundle.scenario.existing_capacity.vehicle_population_year == 2025
+
+
+@pytest.mark.parametrize("value", [0, -2023, True, "2025", 2025.5])
+def test_population_year_override_requires_a_positive_integer(tmp_path: Path, value) -> None:
+    _, _, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
+    payload["existing_capacity"]["vehicle_population_year"] = value
+    scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+
+    with pytest.raises(ValidationError, match="vehicle_population_year"):
+        load_config_bundle(scenario, repo_root=tmp_path)
+
+
+@pytest.mark.parametrize("scenario_name", [
+    "default", "validation_opening_periods", "notebook_diagnostics", "validation_baseline",
+    "validation_charging_nhts_uncontrolled", "validation_energy_calibration",
+    "validation_energy_calibration_regions",
+])
+def test_standard_presets_inherit_population_evidence_year(scenario_name: str) -> None:
+    bundle = load_config_bundle(f"config/scenarios/{scenario_name}.yaml", repo_root=REPO_ROOT)
+    assert bundle.scenario.existing_capacity.vehicle_population_year == bundle.scenario.periods.base_year
 
 
 def test_registry_owns_source_availability_and_template_is_not_a_source() -> None:
@@ -242,21 +350,6 @@ def test_artifact_validation_surface_must_be_a_dotted_interface(
         load_config_bundle(scenario, repo_root=tmp_path)
 
 
-def test_legacy_diagram_route_stays_inside_legacy_root(tmp_path: Path) -> None:
-    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
-    assert bundle.paths.artifacts["legacy_transport_diagram"].layer == "legacy"
-    assert resolve_artifact_path(bundle, "legacy_transport_diagram") == (
-        REPO_ROOT / "legacy_backend" / "diagrams"
-    )
-
-    paths, _, scenario = _write_config_copy(tmp_path)
-    payload = yaml.safe_load(paths.read_text(encoding="utf-8"))
-    payload["artifacts"]["legacy_transport_diagram"]["path"] = "outputs/validation/figures"
-    paths.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
-    with pytest.raises(ValidationError, match="must be within the legacy root"):
-        load_config_bundle(scenario, repo_root=tmp_path)
-
-
 def test_shared_energy_conversion_is_not_scenario_local() -> None:
     bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
     conversions = load_parameter_yaml(bundle, "conversion.yaml")
@@ -272,7 +365,7 @@ def test_setup_smoke_status_uses_packaged_schema_without_building() -> None:
     assert status["scenario"] == "baseline"
     assert status["periods"] == selected.periods.model_dump(mode="json")
     assert status["packaged_schema"]["package_commit"].startswith("1e68c377")
-    assert status["reference_sqlite_exists"] is True
+    assert status["reference_sqlite_exists"] is None
     assert "cer_canadas_energy_future" in status["active_sources"]
     assert "wards_intelligence_sales_shares" in status["active_sources"]
     assert status["parameter_options"]["lifetimes"] == selected.lifetimes.model_dump()
@@ -287,9 +380,9 @@ def _write_config_copy(tmp_path: Path) -> tuple[Path, Path, Path]:
     scenario_dir.mkdir(parents=True)
     parameter_dir = config_dir / "parameters"
     parameter_dir.mkdir()
-    (parameter_dir / "rules.yaml").write_text(
-        (REPO_ROOT / "config/parameters/rules.yaml").read_text(encoding="utf-8"), encoding="utf-8",
-    )
+    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    for path in harmonization_rule_paths(bundle):
+        (parameter_dir / path.name).write_bytes(path.read_bytes())
     paths = config_dir / "paths.yaml"
     sources = config_dir / "sources.yaml"
     scenario = scenario_dir / "scenario.yaml"
@@ -464,13 +557,13 @@ def test_invalid_scenario_choices_are_rejected(
         ("lifetimes", "tail_derivation"),
         ("lifetimes", "tail_survival_threshold"),
         ("lifetimes", "road_lifetime_survival_source"),
-        ("existing_capacity", "vehicle_population_year"),
         ("existing_capacity", "cleanup_tolerance"),
         ("demand", "cer_scenario"),
         ("economics", "cer_scenario"),
         ("road_utilization", "vkt_schedules"),
-        ("ev_chargers", "ld_evs_per_port"),
-        ("ev_chargers", "mhd_evs_per_port"),
+        ("ev_chargers", "evs_per_port"),
+        ("ev_chargers", "charger_type_classes"),
+        ("ev_chargers", "ld_home_utilization"),
         ("efficiencies", "atb_trajectory"),
         ("costs", "atb_trajectory"),
         ("row_note_overrides", "technology"),
@@ -604,7 +697,7 @@ def test_demand_and_currency_cer_choices_are_independent(tmp_path: Path) -> None
 
 def test_rules_modules_have_one_owner_and_source_annotations_are_explicit() -> None:
     bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
-    payload = load_parameter_yaml(bundle, "rules.yaml")
+    payload = load_rules_config(REPO_ROOT / bundle.paths.config.parameters)
     assert not (payload["fetching"].keys() & payload["parameterization"].keys())
     for modules in (payload["fetching"], payload["parameterization"]):
         for name, rules in modules.items():
@@ -634,6 +727,31 @@ def test_derived_terminal_age_and_vkt_share_one_optional_cap(tmp_path, profile):
     bundle = load_config_bundle(scenario, repo_root=tmp_path)
     assert bundle.scenario.lifetimes.survival_curve_max_age == 30
     assert "vkt_max_age" not in type(bundle.scenario.road_utilization).model_fields
+
+
+@pytest.mark.parametrize("curves", [False, True])
+@pytest.mark.parametrize("cap", [1, 4])
+def test_vkt_accepts_lifetime_cap_with_a_partial_operating_period(tmp_path, curves, cap):
+    _, _, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
+    assert cap < payload["periods"]["step"]
+    payload["lifetimes"].update(survival_curves=curves, survival_curve_max_age=cap)
+    payload["road_utilization"]["vkt_schedules"] = True
+    scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    selected = load_config_bundle(scenario, repo_root=tmp_path)
+    assert selected.scenario.lifetimes.survival_curve_max_age == cap
+    assert selected.scenario.road_utilization.vkt_schedules
+
+
+@pytest.mark.parametrize("cap", [0, -1])
+def test_vkt_still_rejects_nonpositive_lifetime_caps(tmp_path, cap):
+    _, _, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
+    payload["lifetimes"]["survival_curve_max_age"] = cap
+    payload["road_utilization"]["vkt_schedules"] = True
+    scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    with pytest.raises(ValidationError, match="survival_curve_max_age"):
+        load_config_bundle(scenario, repo_root=tmp_path)
 
 
 @pytest.mark.parametrize("selection", ["constant_terminal_hazard", "source_cutoff", None])

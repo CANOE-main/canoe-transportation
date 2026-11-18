@@ -7,11 +7,10 @@ configuration-driven Python pipeline converting registered data, external-model
 outputs, and reviewed assumptions into validated, provenance-traceable parameters
 for the CANOE database used in the Temoa energy system optimization modeling framework.
 
-Legacy reproduction is the initial validation priority and ongoing regression
-reference. Verify equivalence within documented tolerances; investigate and document
-deviations, distinguishing intentional changes from regressions. New assumptions,
-scenarios, and representation experiments must be explicit, evidence-based,
-configurable, and independently validated without silently altering the baseline.
+Validate current scenario behavior and check regressions against comparable builds
+within documented tolerances. Investigate and document deviations, distinguishing
+intentional changes from regressions. New assumptions, scenarios, and representation
+experiments must be explicit, evidence-based, configurable, and independently validated.
 
 Support independently usable standalone Temoa/CANOE-ready SQLite compilation and
 CANOE-main integration through the same transport parameterization and
@@ -35,7 +34,7 @@ of shared structures and resources without duplicating transport logic.
   or CANOE-main orchestration.
 - `src/build_transport.py` exposes caller-owned contribution preparation/insertion and owns
   the complete native scenario lifecycle: registered-source replay, prerequisite preparation,
-  and standalone atomic database publication for reproducibility and legacy parity.
+  and standalone atomic database publication.
 - `src/validation/` owns configuration, provenance, schema, insertion, integrity,
   parity, and validation-report logic.
 - `docs/` and `docs/insights/` provide targeted explanation, diagnostics, and research
@@ -56,13 +55,14 @@ receive external citations, DQ scores, or `Txx` identifiers.
 
 Keep production ETL, opt-in development/review diagnostics, and research insight
 workflows distinct. Do not silently mutate cached downloads, registered external-model
-outputs, `legacy_backend/`, reviewed mappings or evidence, or user-controlled
+outputs, reviewed mappings or evidence, or user-controlled
 representations unless the task explicitly places them in scope.
 
 Keep one-off debug scripts, comparison exports and captures in ignored `tmp/`; remove
 them before task completion and do not register them as source inputs or ETL provenance.
-Retain workflow evidence only when supported ETL or notebook commands regenerate it from
-registered/reviewed inputs; keep notebook snapshots local and out of Git.
+Keep generated validation evidence and notebook snapshots local and out of Git. Supported
+commands regenerate these outputs from registered/reviewed inputs. The compact historical
+references in `inputs/validation/transportation_reference/` are tracked notebook inputs.
 
 ## Context retrieval and presentation
 
@@ -70,6 +70,10 @@ Do not discover or retrieve Markdown trees by default. Normal documentation is l
 to `docs/backend_architecture.md`, `docs/etl_flowcharts.md`, `docs/assumptions.md`,
 `docs/codebase_diagnostic_snapshot.md`, `docs/canoe_main_orchestrator.md`, and user-named
 documents. Frontmatter routes them; it cannot enroll new ones.
+
+For parameter-contract work, including reviewed configuration CSVs and their loader,
+provenance or capture consumers, read [config/parameters/AGENTS.md](config/parameters/AGENTS.md).
+Use its scope map to retrieve only the affected partitions and executable owners.
 
 Select skills from session metadata; read only applicable `SKILL.md` files and required
 references. Skill, ExecPlan, and scenario-authoring procedures are exceptions to this
@@ -122,17 +126,19 @@ Use `rg` for filenames and literal text; use
   with reviewable scores owned by the typed source registry.
 - Make unit conversions explicit in config or code, log them, and test them.
 - Log material missing, skipped, fallback, cleanup, count, validation, and artifact events.
-- During baseline work, preserve legacy-equivalent assumptions, compare against the
-  reference SQLite, document differences, and isolate intentional changes in named
-  scenarios or commits.
+- For regression work, compare matching current-backend scenarios or reproducible
+  reference builds, document differences, and isolate intentional modeling changes.
 
 Keep acquisition, physical validation, parsing, harmonization, and writing separately
 testable. Preserve source-native audit values, make reruns safe, and prohibit hidden
 network access during offline or `--no-download` execution.
 
-Diagnostic or research evidence does not become an accepted modeling assumption merely
-because it exists. Promote it only through the owning configuration or contract, with
-review and validation appropriate to the changed interface.
+Use diagnostic notebooks to visualize and explain the scientific rationale connecting
+source evidence to model-ready assumptions; follow `docs/insights/AGENTS.md`. Use findings
+to refine backend rules and documentation together. Implement accepted changes in their
+owning configuration and code through bounded ExecPlans and validation under
+`.agents/PLANS.md`, then refresh the affected explanations and diagnostics. Keep views of
+current methods aligned with production; label historical comparisons and proposals.
 
 ## Validation interfaces
 

@@ -1,0 +1,288 @@
+# Registered report parsing and source-native charger production extraction.
+infrastructure_output_files:
+  ldv: infrastructure_ldv.csv
+  mhdv: infrastructure_mhdv.csv
+  power: infrastructure_power.csv
+  utilization: infrastructure_utilization.csv
+  costs: infrastructure_costs.csv
+  operating: infrastructure_operating.csv
+required_edition_tokens:
+- February 2024
+- '23028'
+- Updated forecasts of vehicle charging needs, grid impacts and costs for all vehicle segments
+context_patterns:
+  mhdv_partial_charge: For example, the 6-vehicle partial charge throughput input for public vehicles which would draw (?P<daily_energy_kwh>\d+)
+    kWh daily on average.*?Return to footnote 67 referrer
+  mhdv_population: We mapped the CEUD vehicle categories.*?used in this study \(as described in Section 3\.1\)
+  mhdv_zev_scrappage: We assume a ZEV scrappage rate of (?P<scrappage_percent>\d+)%.*?over time\.
+  mhdv_scenarios: 'Three MHDV sales forecast scenarios: Policy Reference.*?Slow Adoption \(35% by 2032\)\.'
+  mhdv_hydrogen_sensitivity: We further assume that all MHDVs will be battery-electric vehicles.*?lower hydrogen prices\.
+tables:
+  6:
+    html_id: t6
+    caption_pattern: Table 6\. Estimated total charging infrastructure needs for light-duty vehicles charging for Canada
+    rows: 25
+    columns: 6
+    header_rows: 1
+    evidence_kind: projected_requirement
+  12:
+    html_id: t12
+    caption_pattern: Table 12\. Per-port installation and equipment cost estimates \(2022 dollars\)
+    rows: 3
+    columns: 5
+    header_rows: 1
+    evidence_kind: source_cost_assumption
+  19:
+    html_id: t19
+    caption_pattern: Table 19\. Assumptions for power levels, daily throughput, and share of MHDV charger types
+    rows: 7
+    columns: 7
+    header_rows: 2
+    evidence_kind: source_operating_assumption
+  21:
+    html_id: t21
+    caption_pattern: Table 21\. MHDV per-port power and capital cost assumptions
+    rows: 5
+    columns: 6
+    header_rows: 2
+    evidence_kind: source_cost_assumption
+  30:
+    html_id: t430
+    caption_pattern: Table 30\. Average nameplate power of all installed chargers \(kW\)
+    rows: 7
+    columns: 7
+    header_rows: 1
+    evidence_kind: source_installed_power_assumption
+  31:
+    html_id: t31
+    caption_pattern: Table 31\. Average annual charging port utilization rate
+    rows: 5
+    columns: 7
+    header_rows: 1
+    evidence_kind: source_utilization_assumption
+  38:
+    html_id: t38
+    caption_pattern: Table 38\. MHDV port counts under each scenario
+    rows: 28
+    columns: 7
+    header_rows: 1
+    evidence_kind: projected_requirement
+  44:
+    html_id: t44
+    caption_pattern: Table 44\. MHDV public port count by region and charger type \(Policy Reference Scenario\)
+    rows: 12
+    columns: 17
+    header_rows: 2
+    evidence_kind: projected_requirement
+production:
+  expected_rows: 29
+  trajectories:
+  - sub_category: ldv
+    parameter: L1_rated_power
+    table: 30
+    labels:
+    - Home - L1
+    value_kind: annual_cell
+    periods:
+      all:
+      - 2025
+      - 2030
+      - 2035
+      - 2040
+      - 2045
+      - 2050
+    unit: kW
+    currency_year: ''
+    notes: 'Obtained from Table 30: Average nameplate power of all installed chargers (kW)'
+  - sub_category: ldv
+    parameter: L2_rated_power
+    table: 30
+    labels:
+    - Public - L2
+    value_kind: annual_cell
+    periods:
+      '2025':
+      - 2025
+      '2030':
+      - 2030
+      through_2050:
+      - 2035
+      - 2040
+      - 2045
+      - 2050
+    unit: kW
+    currency_year: ''
+    notes: 'Obtained from Table 30: Average nameplate power of all installed chargers (kW)'
+  - sub_category: ldv
+    parameter: DCFC_rated_power
+    table: 12
+    labels: [DCFC]
+    value_kind: cell_power
+    periods:
+      '2025': [2025]
+      '2030': [2030]
+      '2035': [2035]
+      through_2050: [2040]
+    unit: kW
+    currency_year: ''
+    notes: 'Table 12 cost-matched average DCFC power: 125/175/250/300 kW in 2025/2030/2035/2040; hold 300 kW after the last source point.'
+  - sub_category: ldv
+    parameter: L2_capex
+    table: 12
+    labels:
+    - L2
+    value_kind: annual_cell
+    periods:
+      '2025':
+      - 2025
+      through_2050:
+      - 2030
+      - 2035
+      - 2040
+    unit: CAD
+    currency_year: '2022'
+    notes: 'Obtained from Table 12: per-port installation and equipment cost estimates'
+  - sub_category: ldv
+    parameter: DCFC_capex
+    table: 12
+    labels:
+    - DCFC
+    value_kind: annual_cell
+    periods:
+      '2025':
+      - 2025
+      through_2050:
+      - 2030
+      - 2035
+      - 2040
+    unit: CAD
+    currency_year: '2022'
+    notes: 'Obtained from Table 12: per-port installation and equipment cost estimates'
+  - sub_category: mhdv
+    parameter: 50kW_rated_power
+    table: 21
+    labels:
+    - Overnight
+    - '50'
+    value_kind: row_power
+    periods:
+      all:
+      - 2025
+      - 2030
+      - 2035
+      - 2040
+    unit: kW
+    currency_year: ''
+    notes: 'Obtained from Table 21: per-port power and capital cost assumptions'
+  - sub_category: mhdv
+    parameter: 350kW_rated_power
+    table: 21
+    labels:
+    - Fast Charge
+    - '350'
+    value_kind: row_power
+    periods:
+      all:
+      - 2025
+      - 2030
+      - 2035
+      - 2040
+    unit: kW
+    currency_year: ''
+    notes: 'Obtained from Table 21: per-port power and capital cost assumptions'
+  - sub_category: mhdv
+    parameter: 2MW_rated_power
+    table: 21
+    labels:
+    - Ultra-Fast Charge
+    - 2,000
+    value_kind: row_power
+    periods:
+      all:
+      - 2025
+      - 2030
+      - 2035
+      - 2040
+    unit: kW
+    currency_year: ''
+    notes: 'Obtained from Table 21: per-port power and capital cost assumptions'
+  - sub_category: mhdv
+    parameter: 50kW_capex
+    table: 21
+    labels:
+    - Overnight
+    - '50'
+    value_kind: annual_cell
+    periods:
+      '2025':
+      - 2025
+      '2030':
+      - 2030
+      '2035':
+      - 2035
+      through_2050:
+      - 2040
+    unit: CAD
+    currency_year: '2022'
+    notes: 'Obtained from Table 21: per-port power and capital cost assumptions'
+  - sub_category: mhdv
+    parameter: 350kW_capex
+    table: 21
+    labels:
+    - Fast Charge
+    - '350'
+    value_kind: annual_cell
+    periods:
+      '2025':
+      - 2025
+      '2030':
+      - 2030
+      '2035':
+      - 2035
+      through_2050:
+      - 2040
+    unit: CAD
+    currency_year: '2022'
+    notes: 'Obtained from Table 21: per-port power and capital cost assumptions'
+  - sub_category: mhdv
+    parameter: 2MW_capex
+    table: 21
+    labels:
+    - Ultra-Fast Charge
+    - 2,000
+    value_kind: annual_cell
+    periods:
+      '2025':
+      - 2025
+      '2030':
+      - 2030
+      '2035':
+      - 2035
+      through_2050:
+      - 2040
+    unit: CAD
+    currency_year: '2022'
+    notes: 'Obtained from Table 21: per-port power and capital cost assumptions'
+  compositions:
+  - table: 38
+    scenario: Policy Reference (primary scenario)
+    locations:
+    - Public
+    - Private
+    population_chargers:
+    - Overnight
+    - FC
+    - UFC
+    years:
+    - 2025
+    round_digits: 1
+    period: existing
+    parameters:
+      Overnight: existing_50kW_share
+      FC: existing_350kW_share
+    notes:
+      existing_50kW_share: 'Derived from Table 38: MHDV port counts under each scenario (primary policy reference scenario)'
+      existing_350kW_share: 'Derived from Table 38: MHDV port counts under each scenario (primary policy reference scenario)'
+    zero_dash_cells:
+    - charger: UFC
+      year: 2025

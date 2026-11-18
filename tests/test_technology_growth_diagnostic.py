@@ -5,7 +5,9 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from dataclasses import replace
 from pathlib import Path
+import shutil
 
 import numpy as np
 import pandas as pd
@@ -35,7 +37,7 @@ from fetching.technology_growth_evidence import (
     validate_asset,
 )
 from parameterization import road_adoption_constraints as analysis
-from utils import active_source_keys, load_config_bundle, load_harmonization_rules
+from utils import active_source_keys, harmonization_rule_paths, load_config_bundle, load_harmonization_rules
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -50,6 +52,53 @@ def bundle():
 @pytest.fixture(scope="module")
 def controls(bundle):
     return load_diagnostic_config(bundle)
+
+
+def test_implementation_hashes_capture_relocated_selected_controls_and_every_rule_member(bundle, tmp_path):
+    artifact_root = tmp_path / "artifacts"
+    for name in ("src/parameterization/road_adoption_constraints.py", "src/fetching/technology_growth_evidence.py",
+                 "src/validation/config_models.py", "uv.lock"):
+        destination = artifact_root / name
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(ROOT / name, destination)
+    rule_paths = harmonization_rule_paths(bundle)
+    selected = []
+    for name in ("original", "relocated"):
+        directory = tmp_path / name
+        directory.mkdir()
+        for path in (*rule_paths, ROOT / "config/parameters/technology_growth_diagnostic.yaml"):
+            shutil.copyfile(path, directory / path.name)
+        (directory / "source").mkdir()
+        (directory / "scenario").mkdir()
+        shutil.copyfile(bundle.sources_path, directory / "source/shared.yaml")
+        shutil.copyfile(bundle.scenario_path, directory / "scenario/shared.yaml")
+        shutil.copyfile(bundle.paths_path, directory / "paths.yaml")
+        selected.append(replace(bundle, repo_root=artifact_root,
+            paths=bundle.paths.model_copy(update={
+                "config": bundle.paths.config.model_copy(update={"parameters": str(directory)}),
+            }), sources_path=directory / "source/shared.yaml", scenario_path=directory / "scenario/shared.yaml",
+            paths_path=directory / "paths.yaml"))
+    original = analysis.implementation_hashes(selected[0])
+    relocated = analysis.implementation_hashes(selected[1])
+    assert original == relocated
+    expected_controls = {"configuration:rules", "configuration:sources", "configuration:paths",
+                         "configuration:scenario", "configuration:technology_growth_diagnostic",
+                         *(f"configuration:rules:{path.name}" for path in rule_paths[1:])}
+    assert {name for name in original if name.startswith("configuration:")} == expected_controls
+    assert original["configuration:sources"] != original["configuration:scenario"]
+    for index, path in enumerate(harmonization_rule_paths(selected[1])):
+        before = path.read_bytes()
+        path.write_bytes(before + b"\n# Reviewed source or parameter control.\n")
+        changed = analysis.implementation_hashes(selected[1])
+        role = "configuration:rules" if index == 0 else f"configuration:rules:{path.name}"
+        assert {key for key in original if original[key] != changed[key]} == {role}
+        path.write_bytes(before)
+
+
+def test_implementation_hashes_reject_external_implementation_files(bundle, monkeypatch, tmp_path):
+    monkeypatch.setattr(analysis, "resolve_repo_path", lambda *_: tmp_path / "outside.py")
+    with pytest.raises(ValueError, match="implementation file escapes repository root"):
+        analysis.implementation_hashes(replace(bundle, repo_root=tmp_path / "artifacts"))
 
 
 @pytest.mark.parametrize("annual,years", [(0, 5), (0.1, 2), (0.3, 5), (-0.1, 5)])
@@ -588,7 +637,7 @@ def test_existing_reference_respects_cleanup_and_missing_fuel_representation(
                 "road_class": road_class,
                 "tech": tech,
                 "vintage": 2020,
-                "capacity": 100,
+                "capacity": 130,
                 "units": "k vehicles",
             }
         )
@@ -600,10 +649,10 @@ def test_existing_reference_respects_cleanup_and_missing_fuel_representation(
                     "tech": tech,
                     "vintage": vintage,
                     "capacity": value,
+                    "solver_capacity_k_vehicles": 130 if vintage == 2020 else value,
                     "source_year": 2023,
                     "source_region": "ON",
                     "proxy_geography": False,
-                    "dashboard_override": False,
                 }
             )
         cohort_rows.append(
@@ -626,9 +675,12 @@ def test_existing_reference_respects_cleanup_and_missing_fuel_representation(
         lambda p: frames[p.name].copy() if p.name in frames else native_read(p),
     )
     monkeypatch.setattr(analysis, "file_sha256", lambda p: "f" * 64)
+    monkeypatch.setattr(analysis, "read_capacity_evidence_fingerprints",
+                        lambda bundle, paths: {path: "f" * 64 for path in paths})
     references, members, _ = analysis.existing_capacity_references(bundle, controls)
     assert len(references) == 24
     assert np.allclose(references.cleanup_removed_class_k, 0.0005)
+    assert np.allclose(references.class_stock_k_vehicles, 100)
     assert (
         references.loc[references.powertrain.eq("fcev"), "deployment_status"]
         .eq("absent_existing_representation")
@@ -641,6 +693,27 @@ def test_existing_reference_respects_cleanup_and_missing_fuel_representation(
     frames["road_existing_capacity.csv"].loc[0, "capacity"] += 1
     with pytest.raises(ValueError, match="differs from cleanup"):
         analysis.existing_capacity_references(bundle, controls)
+
+
+def test_capacity_evidence_requires_the_completed_scenario_and_original_bytes(bundle, tmp_path, monkeypatch):
+    from parameterization import build_existing_capacity as existing
+
+    marker = tmp_path / "integrity.json"
+    artifact = tmp_path / "capacity.csv"
+    artifact.write_text("capacity\n42\n", encoding="utf-8")
+    monkeypatch.setattr(existing, "resolve_artifact_path", lambda *args: marker)
+    artifact_hash = existing.file_sha256(artifact)
+    handoff = {"version": 2, "scenario_sha256": existing._capacity_scenario_digest(bundle),
+               "artifacts": [{"path": str(artifact), "sha256": artifact_hash}]}
+    marker.write_text(json.dumps({"prepared_handoff": handoff}), encoding="utf-8")
+    assert existing.read_capacity_evidence_fingerprints(bundle, [artifact])[artifact] == artifact_hash
+    artifact.write_text("capacity\n43\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="differs from the completed handoff"):
+        existing.read_capacity_evidence_fingerprints(bundle, [artifact])
+    handoff["scenario_sha256"] = "stale"
+    marker.write_text(json.dumps({"prepared_handoff": handoff}), encoding="utf-8")
+    with pytest.raises(ValueError, match="different preparation scenario"):
+        existing.read_capacity_evidence_fingerprints(bundle, [artifact])
 
 
 @pytest.mark.parametrize("changed_kind", ["input", "artifact", "missing_input"])

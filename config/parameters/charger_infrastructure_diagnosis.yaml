@@ -1,0 +1,36 @@
+version: 1
+scenario: config/scenarios/validation_baseline.yaml
+# Opt-in display and research sensitivities; source parsing is owned by dunsky_charger_inputs.yaml.
+comparison:
+  report_years: [2025, 2030, 2035, 2040]
+  operating_days_per_week: 6
+  manual_file: charger_parameters.csv
+  afdc_components: [mhdv_accessible_2025, mhdv_accessible_2026]
+
+# Opt-in diagnostic sensitivities; adopted source choices belong to production rules.
+representation_diagnostic:
+  years: [2025, 2030, 2035, 2040, 2045, 2050]
+  private_home_utilization_cases: [0.10, 0.20, 0.30]
+  mhdv_recharge_fractions: [0.60, 0.75]
+  stock_review_report: null
+
+# Point-year registrations for the diagnostic stock alternative; not backend cohorts.
+stock_evidence:
+  table_id: 23-10-0308-01
+  fuel_type: Battery electric
+  statistic: Number of vehicles
+  region_members:
+    BCT: [BC, YT, NT, NU]
+  groups:
+    cars:
+      vehicle_class: LDV
+      vehicle_types: ['Passenger cars, weighing 4,536 kilograms or less']
+    light_trucks:
+      vehicle_class: LDV
+      vehicle_types: ['Pickup trucks, weighing 4,536 kilograms or less', 'Multi-purpose vehicles, weighing 4,536 kilograms or less', 'Vans, weighing 4,536 kilograms or less']
+    medium_trucks:
+      vehicle_class: MHDV
+      vehicle_types: ['Total, vehicles weighing 4,536 to 11,793 kilograms']
+    heavy_trucks:
+      vehicle_class: MHDV
+      vehicle_types: ['Class 7 vehicles, weighing 11,794 to 14,969 kilograms', 'Class 8 vehicles, weighing 14,969 kilograms or more']

@@ -119,16 +119,17 @@ T_LDV_CHRG_EX,p,charger,ldv,,,Charging infrastructure for light-duty electric ve
 T_LDV_CHRG_N,p,charger,ldv,,,Charging infrastructure for light-duty electric vehicles and motorcycles,
 T_MHDV_CHRG_EX,p,charger,mhdv,,1,Charging infrastructure for medium- and heavy-duty trucks,
 T_MHDV_CHRG_N,p,charger,mhdv,,1,Charging infrastructure for medium- and heavy-duty trucks,
+T_LDV_CHRG_PUB_L2,p,charger,ldv,,,Public Level 2 charging infrastructure for light-duty electric vehicles,Scenario-selected public Level 2 charger archetype.
+T_LDV_CHRG_PUB_FC,p,charger,ldv,,,Public fast charging infrastructure for light-duty electric vehicles,Scenario-selected public fast charger archetype.
+T_LDV_CHRG_PRIV,p,charger,ldv,,,Private charging infrastructure for light-duty electric vehicles,Scenario-selected private charger archetype.
+T_MHDV_CHRG_NIGHT,p,charger,mhdv,,1,Overnight charging infrastructure for medium- and heavy-duty trucks,Scenario-selected overnight charger archetype.
+T_MHDV_CHRG_FC,p,charger,mhdv,,1,Fast charging infrastructure for medium- and heavy-duty trucks,Scenario-selected fast charger archetype.
 T_H2_LDV_REFUEL,p,h2_refuel,ldv,,1,Hydrogen refuelling station for light-duty vehicles,
 T_H2_MHDV_REFUEL,p,h2_refuel,mhdv,,1,Hydrogen refuelling station for on-road heavy-duty vehicles,
-T_BLND_ETH_GSL,p,,,1,1,Blending technology for ethanol and gasoline blendstock,
-T_BLND_RDSL_DSL,p,,,1,1,Blending technology for renewable diesel and diesel,
 T_BLND_DSL_ELC_MDV,p,,,1,1,Blending technology for diesel and electricity (MD-PHEV),
 T_BLND_DSL_ELC_HDV,p,,,1,1,Blending technology for diesel and electricity (HD-PHEV),
 T_BLND_GSL_ELC_PHEV35,p,,,1,1,Blending technology for gasoline and electricity (LD-PHEV 35-mile CD range ratio),
 T_BLND_GSL_ELC_PHEV50,p,,,1,1,Blending technology for gasoline and electricity (LD-PHEV 50-mile CD range ratio),
-T_BLND_JTF,p,,,1,1,Blending technology for renewable jetfuel and jetfuel (jetfuel),
-T_BLND_SPK,p,,,1,1,Blending technology for renewable jetfuel and jetfuel (SPK),
 T_LDV_LTF_BEV_EX,p,freight_light_trucks,bev,,1,Existing representative freight light truck BEV,OMEGA MY2022 light-truck range weights; includes registered BEV stock.
 T_BLND_GSL_ELC_PHEV_C_EX,p,,,1,1,Existing representative cars PHEV energy blend,Unlimited unit-energy blend; reviewed horizon-mean mixture.
 T_BLND_GSL_ELC_PHEV_LTP_EX,p,,,1,1,Existing representative passenger_light_trucks PHEV energy blend,Unlimited unit-energy blend; reviewed horizon-mean mixture.

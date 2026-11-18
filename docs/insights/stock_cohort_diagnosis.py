@@ -163,30 +163,32 @@ def _(load_stock_cohort_diagnosis):
 def _(diagnosis, mo):
     reference_year = diagnosis["metadata"]["reference_year"]
     mo.md(f"""
-    # Stock cohorts and existing capacity
+          # How do historical sales become existing vehicle capacity?
 
-    **Reference year: {reference_year}**, from `periods.base_year` in
-    `{diagnosis['metadata']['scenario_path']}`. This notebook recomputes the production owners'
-    calculations from registered inputs. It does not build a database, publish parameters or download sources.
-    [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) **sales, stock and energy** beyond the latest observed year are held constant under the selected
-    policy; held values are estimates, not additional observations. There is no extrapolated diagnostic scenario.
+          **Reference year: {reference_year}**, selected by `periods.base_year` in
+          `{diagnosis['metadata']['scenario_path']}`. This notebook recomputes the backend's
+          cohort calculations from registered inputs without downloading data or publishing
+          parameters. It covers cars and trucks; buses and motorcycles use separate methods.
 
-    With curves **off**, existing capacity is surviving stock assigned to fixed-lifetime vintages.
-    With curves **on**, it is original-installation-equivalent acquisitions; Temoa applies absolute annual
-    survival and averages effective capacity over each model period. Supplying already retired stock to that
-    curve would retire it twice. Physical survivors remain the basis for utilization and efficiency weights.
-    The approved **constant-retirement** treatment continues each source's last observed retirement rate
-    to the configured **{100 * diagnosis['metadata']['tail_survival_threshold']:g}% survival threshold**, followed by zero. The same treatment supports stock calibration
-    and future fleet retirement for both survival sources.
-    Stock closure here precedes the configured
-    `{diagnosis['metadata']['scenario']['existing_capacity']['cleanup_tolerance']:g}` thousand-vehicle cleanup
-    threshold; the inserted database can differ by removed tiny rows.
-    [Inspected Temoa capacity rule](https://github.com/TemoaProject/temoa/blob/cb2f51503ddb4dc6607c73635098d34c5e2d1283/temoa/components/capacity.py#L471)
-    and [annual survival/period averaging](https://github.com/TemoaProject/temoa/blob/cb2f51503ddb4dc6607c73635098d34c5e2d1283/temoa/components/technology.py#L116).
+          Two capacity definitions must remain distinct:
+          - **Fixed lifetimes (curves off):** surviving vehicles allocated to model vintages.
+          - **Survival curves on:** acquisitions expressed as installation-equivalent capacity.
+            Temoa applies survival and averages capacity over each period. Giving it already
+            retired stock would count retirement twice. Physical survivors still determine
+            utilization and efficiency weights.
 
-    Cars and trucks use sales cohorts; motorcycles and buses keep their separate stock methods.
-    Every chart states whether its numbers are acquisitions or surviving stock.
-    """)
+          Beyond observed NRCan CEUD years, the selected policy holds sales, stock and energy
+          constant. These held values are estimates. The last observed annual retirement rate
+          is extended to **{100 * diagnosis['metadata']['tail_survival_threshold']:g}% survival**,
+          then zero. Section 5 tests this tail treatment.
+
+          Stock totals here are measured before the configured
+          `{diagnosis['metadata']['scenario']['existing_capacity']['cleanup_tolerance']:g}`
+          thousand-vehicle small-row threshold; database totals can be slightly lower.
+          [Temoa capacity rule](https://github.com/TemoaProject/temoa/blob/cb2f51503ddb4dc6607c73635098d34c5e2d1283/temoa/components/capacity.py#L471)
+          and [survival/period averaging](https://github.com/TemoaProject/temoa/blob/cb2f51503ddb4dc6607c73635098d34c5e2d1283/temoa/components/technology.py#L116)
+          define the receiving model's treatment.
+          """)
     return (reference_year,)
 
 
@@ -242,18 +244,19 @@ def _(CLASS_LABELS, STOCK_LABELS, alt, diagnosis, display_chart, display_table, 
         diagnosis["vintage"].region.eq(region.value) & diagnosis["vintage"].profile.eq(profile.value)
     ].assign(Class=lambda frame: frame.road_class.map(CLASS_LABELS))
     mo.vstack([mo.md(f"""
-    ## 1. Curves off: survivors and fixed-lifetime redistribution
+                     ## 1. With fixed lifetimes, where are surviving vehicles allocated?
 
-    Blue + grey reconstruct raw sales. Blue is sales × cumulative annual survival at {reference_year};
-    orange applies one [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) stock multiplier per region/class. The black dashed line redistributes
-    ineligible surviving stock within each technology, preserving its total. Light-truck plots combine
-    passenger and freight; tables retain those services separately. Cohort year is the sales year.
+                     Blue plus grey reconstruct annual sales. Blue is sales × cumulative survival at
+                     {reference_year}; orange applies one NRCan CEUD stock multiplier per region/class.
+                     The black dashed line reallocates survivors that cannot remain in their original
+                     model vintage, preserving each technology's total. Light-truck plots combine
+                     passenger and freight services; the table separates them. Cohort year means sales year.
 
-    Eligibility requires both the annual cohort and its representative model vintage to remain alive at
-    the first model period. Passing that test does not guarantee a full period of effective capacity:
-    Temoa prorates fixed lifetimes that end within a period. The table shows signed redistribution by vintage;
-    cumulative redistribution must return to zero within each class.
-    """), display_chart(retirement_chart, 'cohort-1', 'Fixed lifetimes redistribute calibrated surviving cohorts'), display_table(redistribution[[
+                     Both the annual cohort and its representative model vintage must still be alive
+                     in the first model period. Temoa then prorates lifetimes ending during that period.
+                     The table reports signed changes by vintage; their cumulative total must return to
+                     zero within each class. This is an allocation check, not extra vehicle acquisition.
+                     """), display_chart(retirement_chart, 'cohort-1', 'Fixed lifetimes redistribute calibrated surviving cohorts'), display_table(redistribution[[
         "Class", "vintage", "calibrated_surviving_k_vehicles", "fixed_allocated_k_vehicles",
         "redistributed_k_vehicles", "cumulative_redistribution_k_vehicles",
     ]].rename(columns={"vintage": "Model vintage", "calibrated_surviving_k_vehicles": "Before allocation (k)",
@@ -294,20 +297,20 @@ def _(CLASS_LABELS, STOCK_LABELS, alt, diagnosis, display_chart, display_table, 
         diagnosis["vintage"].region.eq(region.value) & diagnosis["vintage"].profile.eq(profile.value)
     ].assign(Class=lambda frame: frame.road_class.map(CLASS_LABELS))
     mo.vstack([mo.md(f"""
-    ## 2. Curves on: acquisitions before and after stock calibration
+                     ## 2. With survival curves, what does stock calibration change?
 
-    Blue and orange are **original-installation equivalents**, not survivors. One region/class multiplier preserves
-    annual sales shape while its surviving stock closes to [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) at the reference year {reference_year}.
-    No fixed-lifetime redistribution is applied to acquisitions. Aggregated model vintages use
-    acquisition-weighted combined vintage curves, preserving the contributions of their actual sales years.
+                     Blue and orange show acquisitions on their **original installation basis**, not
+                     survivors. One region/class multiplier preserves the sales profile while matching
+                     its surviving stock to NRCan CEUD in {reference_year}. Acquisitions are not subject
+                     to fixed-lifetime reallocation. Model-vintage curves combine actual sales years
+                     using acquisition weights.
 
-    The red comparison shows **physical survivors before fixed-lifetime redistribution**. It has a
-    different quantity basis from acquisitions, even though both describe the same annual sales cohorts.
-    Under the approved curve-mode capacity contract, physical
-    survivors are used separately for utilization and efficiency weights. The table keeps raw and calibrated
-    acquisitions adjacent, including cumulative totals; future survival is not a new [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) calibration.
-    Matching point-year physical stock does not force Temoa's first model-period average to equal [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) stock.
-    """), display_chart(acquisitions_chart, 'cohort-2', 'Curve mode separates acquisitions from physical survivors'), display_table(acquisitions[[
+                     Red shows physical survivors before reallocation: a different quantity from the
+                     acquisitions used as curve-mode capacity. Physical stock supplies utilization and
+                     efficiency weights. The table pairs raw and calibrated acquisitions with cumulative
+                     totals. Matching reference-year stock does not force Temoa's first-period average
+                     to that point-year total, nor calibrate future survival to new CEUD observations.
+                     """), display_chart(acquisitions_chart, 'cohort-2', 'Curve mode separates acquisitions from physical survivors'), display_table(acquisitions[[
         "Class", "vintage", "sales_k_vehicles", "calibrated_acquisitions_k_vehicles",
         "cumulative_sales_k_vehicles", "cumulative_calibrated_acquisitions_k_vehicles", "calibrated_surviving_k_vehicles",
     ]].rename(columns={"vintage": "Model vintage", "sales_k_vehicles": "Raw acquisitions (k)",
@@ -325,17 +328,21 @@ def _(mo):
         value="Acquisitions versus stock", label="Paired cohort comparison",
     )
     mo.vstack([mo.md("""
-    ## 3. Sales cohorts versus the deprecated MTO method
+                     ## 3. How does sales-based reconstruction differ from the former MTO method?
 
-    Solid sales bars and striped MTO bars retain the annual-position colours from the transportation
-    comparison. **Default quantities differ:** curve-mode sales parameters are calibrated acquisitions;
-    deprecated MTO quantities are age-allocated survivors **before fixed-lifetime redistribution**. Select physical surviving stock for a like-quantity
-    comparison. Each annual segment sums exactly to its model-vintage total; partial bins remain visible.
-    The acquisition view uses the production installation basis. In the configured prospective bins
-    this equals calibrated acquisitions; right-labelled synthetic bins would use their own normalized basis.
-    Both methods are shown before fixed-lifetime redistribution here. The deprecated MTO distribution still
-    uses its original historical-window restriction and renormalization; it is not unfiltered source stock.
-    """), lineage_basis])
+                     Solid bars use sales cohorts; striped bars use the former MTO age allocation.
+                     **Their default quantities differ:** curve-mode sales inputs are calibrated
+                     acquisitions, while MTO bars are age-allocated survivors. Select physical surviving
+                     stock for a comparison on the same quantity basis. Both are shown before fixed-lifetime
+                     reallocation. Each annual segment adds exactly to its model-vintage total, including
+                     partial bins.
+
+                     The acquisition view follows the production installation basis. Configured prospective
+                     bins equal calibrated acquisitions; right-labelled synthetic bins use their own
+                     normalization. The former MTO method retains its historical window and renormalization,
+                     so its distribution is not unfiltered source stock. These differences explain the
+                     representation choice; they are not two independent estimates of identical capacity.
+                     """), lineage_basis])
     return (lineage_basis,)
 
 
@@ -409,26 +416,27 @@ def _(CLASS_LABELS, PROFILE_LABELS, alt, diagnosis, display_chart, display_table
         ["road_class", "method"]).physical_stock_k_vehicles.transform("sum")
     largest_factor = calibration.loc[calibration.multiplier.idxmax()]
     mo.vstack([mo.md(f"""
-    ## 4. [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm)-stock scaling across regions and classes
+                     ## 4. How much scaling is needed to match regional stock?
 
-    Each factor is `NRCan CEUD reference stock / reconstructed raw survivors`, separately by region and class.
-    Values above one increase original-installation equivalents; values below one reduce them. This is a level
-    calibration, not evidence that every historical sales count was wrong. Large factors can reflect incomplete
-    history before {diagnosis['metadata']['scenario']['periods']['existing'][0]}, regional fleet boundaries
-    and transfers, survival proxies, or the held observation tail.
-    Aggregate stock alone cannot identify a separate correction for every vintage.
+                     Each multiplier is **NRCan CEUD reference stock / reconstructed raw survivors** for
+                     one region/class. It scales both acquisitions and survivors while preserving their
+                     age profile. A factor above one increases the level; below one reduces it. Matching
+                     the total does not validate every vintage or show that historical sales were wrong.
 
-    The largest factor shown is **{largest_factor.multiplier:.3f}** for {largest_factor.region}
-    {largest_factor.Class.lower()} using {largest_factor.Source}: {largest_factor.raw_survivors_k_vehicles:,.2f}
-    thousand reconstructed survivors must match {largest_factor.ceud_stock_k_vehicles:,.2f} thousand [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) stock.
-    This identifies the size of the mismatch; the aggregate inputs cannot isolate which explanation causes it.
+                     The largest factor is **{largest_factor.multiplier:.3f}** for {largest_factor.region}
+                     {largest_factor.Class.lower()} using {largest_factor.Source}:
+                     {largest_factor.raw_survivors_k_vehicles:,.2f} thousand reconstructed survivors versus
+                     {largest_factor.ceud_stock_k_vehicles:,.2f} thousand CEUD vehicles. Possible causes
+                     include missing history before {diagnosis['metadata']['scenario']['periods']['existing'][0]},
+                     fleet boundaries/transfers, survival proxies and held observations. Aggregate stock
+                     cannot identify their separate contributions.
 
-    The same class factor is used for acquisitions and physical survivors. Utilization uses calibrated physical
-    stock, while combined vintage curves use acquisition weights. Existing fuel, powertrain and geography proxy rules
-    are preserved; changing annual age weights can still change aggregate technology composition. The composition
-    audit makes that consequence visible. LDV shares represent new registrations; truck shares include registered
-    stock proxies and the existing medium-truck EV override.
-    """), display_chart(calibration_chart, 'cohort-4', 'NRCan CEUD stock calibration changes the level of inferred cohorts'), display_table(calibration[[
+                     Utilization uses calibrated physical stock; combined vintage curves use acquisition
+                     weights. The composition audit shows whether changed age weights alter technology
+                     shares. LDV fuel shares describe new registrations; truck shares include registered-stock
+                     proxies and the existing medium-truck EV override. Geography and powertrain proxy rules
+                     remain unchanged.
+                     """), display_chart(calibration_chart, 'cohort-4', 'NRCan CEUD stock calibration changes the level of inferred cohorts'), display_table(calibration[[
         "Source", "region", "Class", "raw_sales_k_vehicles", "raw_survivors_k_vehicles", "ceud_stock_k_vehicles",
         "multiplier", "adjustment_percent", "stock_residual_k_vehicles",
     ]].rename(columns={"region": "Region", "raw_sales_k_vehicles": "Raw sales (k)", "raw_survivors_k_vehicles": "Raw survivors (k)",
@@ -514,27 +522,30 @@ def _(CLASS_LABELS, PROFILE_LABELS, alt, diagnosis, display_chart, display_table
     reference_change_label = (f"{reference_change:,.6f} thousand vehicles" if pd.notna(reference_change)
                               else "unavailable because native support is incomplete")
     mo.vstack([mo.md(f"""
-    ## 5. Native survival versus constant retirement
+                     ## 5. What does extending the last observed retirement rate change?
 
-    The approved method preserves native survival observations, then continues the **last observed annual
-    retirement rate** after source support ends. When the extended survival reaches **{100 * threshold:g}% or below**,
-    the next year is zero. {age_cap_note} These are the production calculations for both [*EPA MOVES*](https://www.epa.gov/moves) and [*NHTSA CAFE*](https://www.nhtsa.gov/corporate-average-fuel-economy) + [*EIA NEMS*](https://github.com/EIAgov/NEMS).
-    The upper panels use independent age axes so each source's complete tail remains readable.
+                     Production keeps observed survival, then extends the **last observed annual retirement
+                     rate**. After survival reaches **{100 * threshold:g}% or below**, the next year is zero.
+                     {age_cap_note} Both EPA MOVES and NHTSA CAFE + EIA NEMS use this treatment. Independent
+                     age axes keep each source's full tail visible in the upper panels.
 
-    The lower panels follow the same calibrated historical acquisitions, with **no future sales or future
-    [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) calibration**. Values are point-year survivors, not Temoa period averages. Native evidence stops when
-    any positive cohort exceeds its known support; missing native tails are never treated as zero.
-    A native comparison line appears only where known-support values differ from production: **{changed_pairs}
-    source/class pairs** in {region.value}. Otherwise, one production line represents the overlapping values.
-    The table quantifies differences that may be too small to see.
+                     The lower panels follow the same calibrated historical acquisitions with **no future
+                     sales or CEUD calibration**. They show point-year survivors, not Temoa period averages.
+                     The native comparison ends when any contributing cohort exceeds observed support;
+                     a missing tail is not zero. A native line is drawn only where supported values differ
+                     from production: **{changed_pairs} source/class pairs** in {region.value}. The table
+                     resolves differences too small to see.
 
-    The selected {100 * threshold:g}% threshold governs source extension. Combining annual cohorts into model
-    vintages preserves those stock totals. Only final survival values below Temoa's supported numerical
-    limit end earlier, and that stock loss is measured directly by the production calculation.
-    Physical stock for utilization remains based on the source annual schedule, with the same stock multiplier. The maximum
-    reference-year cohort-stock change from source harmonization in this region is
-    **{reference_change_label}** among cohorts with complete native support; the audit also separates any final tail removal.
-    """), display_chart(survival_chart, 'cohort-5', 'Native survival and the shared constant-retirement tail'), display_table(survival_audit[[
+                     Combining annual cohorts into model vintages preserves stock. Final curve values below
+                     Temoa's numerical limit can end earlier; the audit measures that loss. Utilization
+                     retains the source annual schedule and stock multiplier. The maximum reference-year
+                     change from source harmonization is **{reference_change_label}** among cohorts with
+                     complete native support, with final tail removal reported separately.
+
+                     **Modeling consequence:** document capacity basis, stock calibration and tail assumptions
+                     separately. Stock closure checks the calibration; these comparisons test allocation
+                     and tail effects, rather than independently validating the historical fleet.
+                     """), display_chart(survival_chart, 'cohort-5', 'Native survival and the shared constant-retirement tail'), display_table(survival_audit[[
         "Source", "Class", "known_survival_max_age", "retirement_percent", "terminal_age"]].rename(columns={
             "known_survival_max_age": "Last native age", "retirement_percent": "Last annual retirement (%)",
             "terminal_age": "Zero-survival age"}), selection=None, pagination=False,

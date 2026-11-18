@@ -314,17 +314,24 @@ def heatmap_helpers(alt, pd):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    # Historical and future road efficiency
+    # How do vehicle observations become road-efficiency parameters?
 
     Follow [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) through vehicle composition, cohort aggregation and [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data)
-    projections. This notebook and the vehicle-stock notebook use the **same latest
-    successful diagnostic build**, including its captured data and modelling rules.
-    Display years, class order and chart dimensions use current diagnostic settings.
+    projections. The question is how catalogue measurements and observed vehicle counts
+    shape consumption estimates, and how those estimates become model-period parameters.
+    Start with catalogue variation, inspect the vehicles contributing to each estimate,
+    then follow the historical-to-future bridge and independent population checks.
 
     Rebuild with the command below after changing inputs or backend rules, then reload.
-    Opening the notebook reads captured tables; it runs no ETL. The recorded SQLite
-    path and hash identify the published database. Catalogue comparisons and independent
-    population benchmarks are diagnostic views.
+    This and the vehicle-population notebook read the **same latest successful build**;
+    opening them runs no ETL. Captured inputs and rules determine the estimates; current
+    diagnostic settings control display years, ordering and dimensions. Build/database
+    identities remain in the audit below.
+
+    **Terms:** BEV means battery-electric vehicle; PHEV means plug-in hybrid; together
+    they are plug-in electric vehicles (PEVs). PHEV charge-depleting (CD) operation
+    draws down the battery and may also use fuel; charge-sustaining (CS) operation
+    maintains its charge using fuel. HEVs are hybrids without plug-in charging.
     """)
     return
 
@@ -356,18 +363,17 @@ def _(diagnostic, mo):
         base year **{diagnostic.summary['base_year']}** · region **{diagnostic.summary['region']}** ·
         [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) edition **{diagnostic.summary['population_year']}** · [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) **{diagnostic.summary['atb_trajectory']}**.
         Production uses **documented [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) gasoline composition, [*Transport Canada iZEV*](https://open.canada.ca/data/en/dataset/42986a95-be23-436e-af15-7c6bf292a2e1) PEV acquisitions,
-        and hierarchical catalogue medians where empirical weights are unavailable**.
+        and catalogue medians where observed composition is unavailable**.
         Historical period efficiencies and load factors use raw cohort-stock weights
         before lifetime eligibility or redistribution.
 
-        The captured canonical/source-link tables cover **{vehicle_reference['canonical_identities']:,} identities**,
-        including **{vehicle_reference['identities_without_mto_link']:,} without [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) links**.
-        They retain **{vehicle_reference['unlinked_identity_intervals']:,} unlinked identity intervals** and
-        **{vehicle_reference['configuration_unresolved_intervals']:,} configuration-uncertain intervals**;
-        the matching review separates actionable issues from expected exclusions.
-        Inspect their year, class and powertrain scopes in the stock diagnostic.
-        Consumption and electric range use complete compatible target-year configurations;
-        ordinary builds read both authoritative tables without rewriting them.
+        The reviewed vehicle reference covers **{vehicle_reference['canonical_identities']:,} identities**,
+        including **{vehicle_reference['identities_without_mto_link']:,} without MTO links**.
+        Missing links and uncertain configurations limit which observations can supply
+        composition weights. The matching review below distinguishes these gaps from
+        expected exclusions; full identities and year/class scopes remain in the audit
+        and vehicle-population notebook. Consumption and range estimates consider all
+        compatible configurations in the target year.
         """),
         mo.accordion({"Recorded build, canonical reference and input identity": mo.json({
             "build": build, "vehicle_reference": vehicle_reference, "inputs": diagnostic.summary["inputs"]})}),
@@ -378,12 +384,14 @@ def _(diagnostic, mo):
 @app.cell(hide_code=True)
 def _(composition_view, mo):
     mo.md(f"""
-    ## [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) catalogue distributions
+    ## What varies within the [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) catalogue?
 
     Distinct eligible trims form one median per canonical family, model year, size
     class and powertrain/range. Boxes span the middle half of family medians, with
     min–max whiskers. Black diamonds mark their mean; red crosses mark their median.
-    These describe catalogue variation and carry no observed vehicle weights.
+    These describe the vehicles offered in the catalogue, without weighting by how
+    many were bought or remain on the road. They establish the reference against
+    which the composition-weighted production estimate is compared below.
 
     Select native consumption, engine displacement or electric motor power; motor
     kW is separate from combustion-engine displacement. PHEV consumption shows CD
@@ -392,7 +400,7 @@ def _(composition_view, mo):
     using the configured display years. Unsupported ends are trimmed and interior
     gaps stay empty. Columns follow size order within each body family. Each
     powertrain shares an axis across its classes; axis limits vary between powertrains.
-    Size ordering is separate within body families. `*` marks years after the build's baseline.
+    `*` marks years after the build's baseline.
     """)
     return
 
@@ -542,7 +550,7 @@ def _(composition_view, diagnostic, mo):
         if "izev_historical_composition_proxy" in diagnostic.summary["production_methods"] else
         "Historical cohorts without recorded empirical support retain catalogue medians.")
     mo.md(f"""
-    ## Observed composition behind production cohorts
+    ## How does observed composition change the estimate?
 
     Rows show powertrain/range groups; columns show all observed size classes in
     size order within each body family. **Grey dots/ranges** describe catalogue
@@ -560,10 +568,15 @@ def _(composition_view, diagnostic, mo):
     {temporal_composition} Later cohorts and unsupported class/range cells use
     hierarchical catalogue medians.
 
-    Column shares use the captured [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) snapshot pooled across vintages and fuels,
+    Column shares use the captured MTO snapshot pooled across vintages and fuels,
     matching production's outer class weights. They describe mapped surviving
     stock, not new sales or powertrain-specific shares. Each powertrain shares an
     axis across classes; unlike body types have no common measured size scale.
+
+    The gap between the blue and red markers shows how composition or the selected
+    fallback changes consumption within a class. It does not by itself establish
+    that the represented vehicles describe the entire fleet; coverage is part of
+    the modeling assumption.
     """)
     return
 
@@ -765,7 +778,7 @@ def composition_plot(alt, chart_ui, composition_class_columns, composition_view,
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ### Inspect the observations and matched Ratings rows
+    ### Which observations support each estimate?
 
     PEV and gasoline [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) evidence have independent filters. The source tables retain
     native labels, vehicle and request years, recipient geography, counts, selection
@@ -919,10 +932,10 @@ def ambiguity_review(composition_review_cases, composition_review_summary, diagn
         return table_ui(rows[columns].rename(columns=labels), title)
     mo.vstack([
         mo.md("""
-        ### Matching review · ranked by source-count exposure
+        ### Which matching gaps affect the most observed vehicles?
 
         One row groups a source description and province. **Source-count exposure**
-        counts each own-year observation once, retaining legitimate native records.
+        is the number of affected source observations, counted once in their own year.
         Repeated target-year or geographic applications add no exposure. [*Transport Canada iZEV*](https://open.canada.ca/data/en/dataset/42986a95-be23-436e-af15-7c6bf292a2e1) counts
         acquisitions; [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) counts fit-active stock, so their totals represent different populations.
 
@@ -951,13 +964,15 @@ def _(diagnostic, mo, range_label):
     bev_anchor = range_label(diagnostic.summary["anchor_powertrains"]["bev"])
     phev_anchor = range_label(diagnostic.summary["anchor_powertrains"]["phev"])
     mo.md(f"""
-    ## [*EPA OMEGA*](https://github.com/USEPA/EPA_OMEGA_Model) range composition and projection anchors
+    ## How do range shares and projection anchors connect past and future vehicles?
 
     **{bev_anchor}** and **{phev_anchor}** provide the historical [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) cohort
     anchors through {diagnostic.summary['atb_reference_year']}. [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) supplies later
     relative changes and ratios between range variants.
     Existing fleet consumption combines independently aggregated range-period values
     using recorded [*EPA OMEGA*](https://github.com/USEPA/EPA_OMEGA_Model) shares; ranges can have different observed years.
+    OMEGA supplies the range mix, while NRCan supplies observed consumption and ATB
+    supplies projected changes. Each source therefore answers a different question.
 
     In consumption units, the projection is
     `C_range(p) = C_NRCan-anchor × C_ATB-range(p) / C_ATB-anchor({diagnostic.summary['atb_reference_year']})`.
@@ -1005,48 +1020,52 @@ def _(composition_view, diagnostic, mo, range_label):
     anchor_vintage = bridge_periods.latest_observed_vintage
     anchor_window = bridge_periods.historical_years(anchor_vintage)
     bev_reference = range_label(diagnostic.summary["anchor_powertrains"]["bev"])
+    first_new_vintage = bridge_periods.model[0]
+    bridge_rows = diagnostic.frames["bridge"]
+    first_new_rows = bridge_rows.loc[bridge_rows.vintage.eq(first_new_vintage)
+                                     & bridge_rows.marker_source.eq("Final prepared period CSV")]
+    first_year = int(first_new_rows.get("evaluation_window_start", first_new_rows.source_year_start).min())
+    last_year = int(first_new_rows.get("evaluation_window_end", first_new_rows.source_year_end).max())
+    first_new_window = str(last_year) if first_year == last_year else f"{first_year}–{last_year}"
     mo.md(f"""
-    ## Existing-to-future bridge
+    ## How do source values become model-period efficiencies?
 
-    **Distinct trims → family medians → empirical count weighting / cohort median fallback → energy → production periods**.
-    Lower consumption means greater efficiency. Graph 1 shows native catalogue trajectories
-    from {composition_view['native_year_start']} through the latest captured model year,
-    using the median of distinct-trim family medians.
-    Graph 2 displays **production − catalogue median (total MJ/vkm)** by size class
-    and model year, with separate range panels. **Blue/negative means lower production
-    consumption; red/positive means higher.** Grey cells lack a comparison; white means zero.
-    The heatmap compares within-class estimates before outer-class and period aggregation.
-    PHEV comparisons use utility-weighted total energy on both sides.
+    **Distinct trims → model-family medians → observed composition or median fallback
+    → energy use → model-period parameters**.
+    Lower consumption means greater efficiency. Read the four views in order:
 
-    Graphs 3 and 4 span {composition_view['bridge_years'][0]}–{composition_view['bridge_years'][1]}.
-    Graph 3 labels the final [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) source observation beside its multi-year,
-    stock-weighted cohort anchor. Graph 4 shows prepared production trajectories
-    alongside dotted **Reference-only [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) aggregates** for historical ranges.
-    Historical range references end with the existing cohorts. Solid trajectories
-    connect each series' prepared production periods. **Dashed segments show [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) indexing** from the {diagnostic.summary['atb_reference_year']}
-    cohort reference to the first later **new-vehicle parameter of the same range
-    or powertrain**. Existing cohort averages and range-blended representatives
-    retain their solid production path. Triangular reference
-    markers identify the [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) reference levels. Historical reference squares and
-    **Final prepared period CSV** diamonds distinguish calculated aggregates from
-    published parameters. The audit table retains source details and model vintages.
-    Detailed [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data)-class selections are diagnostic recalculations using parent loads,
-    cohort counts and [*EPA OMEGA*](https://github.com/USEPA/EPA_OMEGA_Model) shares. Light trucks use passenger service units.
-    The grey line marks the build's base year. Tooltips retain source years and vintages.
+    1. **Catalogue median trajectories:** medians of distinct-trim family medians from {composition_view['native_year_start']}
+       through the latest captured model year, before observed composition is applied.
+    2. **Within-class changes:** **production − catalogue median**, in total MJ/vkm.
+       Blue/negative means lower production consumption; red/positive means higher.
+       Grey means missing and white means zero. PHEVs use utility-weighted total
+       energy on both sides. These differences precede class and period aggregation.
+    3. **Harmonized energy:** the final NRCan observation beside its stock-weighted,
+       multi-year cohort anchor, with ATB reference levels shown by triangles.
+    4. **Prepared parameters:** solid lines connect production periods; dotted lines
+       retain historical range references. Dashed lines apply ATB changes from the
+       {diagnostic.summary['atb_reference_year']} anchor to the first later new-vehicle
+       parameter of the same range/powertrain. Existing averages and blended ranges
+       keep their solid production path. Squares identify historical references;
+       diamonds identify final prepared parameter values.
+
+    The last two views span {composition_view['bridge_years'][0]}–{composition_view['bridge_years'][1]};
+    the grey line marks the build's base year. Detailed ATB-class selections are
+    diagnostic recalculations using parent loads, cohort counts and OMEGA shares.
+    Light trucks use passenger-service units. Full source timing remains in the audit.
 
     Partial historical periods report coverage; wholly empty periods require a
-    configured analogue. Missing years are not interpolated.
+    configured analogue. Missing historical Ratings years are not interpolated;
+    the future ATB interpolation described above is a separate projection step.
 
     **Source year and model vintage differ.** In this {bridge_periods.period_mode} build,
-    historical vintage **{anchor_vintage}** represents the
-    **{anchor_window[0]}–{anchor_window[-1]}** cohort window. The observed [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64)/[*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm)
-    anchor aligns with [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) at **{diagnostic.summary['atb_reference_year']}**.
-    Later annual values apply [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) consumption changes from that aligned year.
-    A 2025 base year therefore combines observed 2021–2023 values with projected
-    2024–2025 values in vintage 2020. Other BEV ranges use [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) range ratios relative
-    to the shared **{bev_reference}** anchor at the same reference year.
-    The first future parameter has vintage **{bridge_periods.model[0]}** and uses
-    source year **{bridge_periods.projection_year(bridge_periods.model[0], legacy_at_end=True)}**.
+    vintage **{anchor_vintage}** covers **{anchor_window[0]}–{anchor_window[-1]}**.
+    NRCan/CEUD cohort anchors align with ATB at **{diagnostic.summary['atb_reference_year']}**;
+    later values apply ATB consumption changes and range ratios relative to the
+    shared **{bev_reference}** anchor.
+    The first new-vehicle parameter has vintage **{first_new_vintage}** with
+    evaluation years **{first_new_window}**. The recorded annual evidence gives
+    the source points and the weight applied within that window.
     """)
     return
 
@@ -1192,7 +1211,7 @@ def _(diagnostic, mo, source_markdown):
 @app.cell(hide_code=True)
 def _(diagnostic, mo):
     mo.md(f"""
-    ## Independent composition benchmarks
+    ## Do independent counts support the composition assumptions?
 
     **Diagnostic only · {diagnostic.summary['region']}.** [*StatCan*](https://www.statcan.gc.ca/en/developers/wds) provides independent
     population counts; the broad-class mappings reuse reviewed source links. These
@@ -1209,6 +1228,9 @@ def _(diagnostic, mo):
     and report year and does not establish full-fleet fuel shares. [*StatCan*](https://www.statcan.gc.ca/en/developers/wds) stock
     powertrain shares remain a separate reference. Tables retain exact populations,
     request/model years and native classes; missing or suppressed cells remain missing.
+
+    These checks can reveal population and selection differences. Agreement in a
+    broad vehicle class cannot validate detailed range shares or consumption values.
     """)
     return
 
@@ -1343,6 +1365,95 @@ def _(diagnostic, mo, table_ui):
     benchmark_audit_output = benchmark_audits()
     benchmark_audit_output
     return (benchmark_audit_output,)
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    ## What should the model explanation retain?
+
+    Consumption depends on both measured vehicle performance and the population
+    represented by the weights. Explain catalogue fallback, empirical coverage and
+    historical proxies alongside the parameter estimate. Future values add the ATB
+    projection assumption to an observed cohort anchor; a smooth trajectory does
+    not establish that future fleet composition or technology uptake is observed.
+
+    The documentation should distinguish source years, model vintages and the final
+    prepared parameter. Independent count comparisons help diagnose selection and
+    coverage, but do not independently validate consumption, range allocation or
+    the transfer of Ontario composition to other regions.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def medium_truck_incumbent_comparison(alt, chart_ui, COHORT, diagnostic, mo, pd, range_color, range_label, source_markdown):
+    bridge = diagnostic.frames["bridge"]
+    rows = bridge.loc[bridge.vehicle_group.eq("Medium trucks") & bridge.atb_class.eq(COHORT)
+                      & bridge.powertrain.isin(["gasoline", "diesel"]) & bridge.units.eq("MJ/vkm")]
+    history = rows.loc[rows.series.str.startswith("CEUD ") & rows.calibration_observation.eq(True)].assign(
+        series="CEUD fleet-year proxy")
+    prepared = rows.loc[rows.marker_source.eq("Final prepared period CSV")].assign(series="Prepared model vintage")
+    anchors = rows.loc[rows.marker_source.eq("CEUD-cohort projection anchor")].assign(series="CEUD cohort anchor")
+    projected = pd.concat([anchors, prepared.loc[prepared.existing.eq(False)]]).assign(series="ATB-indexed vintages")
+
+    fields = ["vehicle_group", "atb_class", "powertrain", "series", "year", "value", "units", "vintage",
+              "source_year_start", "source_year_end"]
+    region = diagnostic.summary["region"]
+    plot = pd.concat([history, projected, prepared, anchors], ignore_index=True)[fields].assign(region=region)
+    plot["powertrain"] = plot.powertrain.map(range_label)
+    data = alt.Data(values=plot.astype(object).where(plot.notna(), None).to_dict("records"))
+    fuel = range_color("powertrain", plot.powertrain).title("Fuel").legend(
+        alt.Legend(symbolType="stroke", symbolStrokeWidth=2.3, symbolSize=350))
+    base = alt.Chart(data).encode(
+        x=alt.X("year:Q", title="Source or evaluation year", scale=alt.Scale(zero=False, nice=False, padding=8),
+                axis=alt.Axis(format="d", tickMinStep=5)),
+        y=alt.Y("value:Q", title="Energy consumption (MJ/vehicle-km)", scale=alt.Scale(zero=False)),
+        color=fuel,
+        tooltip=[alt.Tooltip("powertrain:N", title="Fuel"), alt.Tooltip("series:N", title="Evidence"),
+                 alt.Tooltip("year:Q", title="Source or evaluation year", format="d"),
+                 alt.Tooltip("value:Q", title="Consumption (MJ/vehicle-km)", format=".3f"),
+                 alt.Tooltip("vintage:O", title="Model vintage"),
+                 alt.Tooltip("source_year_start:O", title="First contributing year"),
+                 alt.Tooltip("source_year_end:O", title="Last contributing year")],
+    )
+    line_types = ["CEUD fleet-year proxy", "ATB-indexed vintages"]
+    lines = base.transform_filter(alt.FieldOneOfPredicate(field="series", oneOf=line_types)).mark_line(
+        strokeWidth=2.3).encode(
+        detail="powertrain:N", order="year:Q",
+        strokeDash=alt.StrokeDash("series:N", title="Trajectory", scale=alt.Scale(domain=line_types, range=[[], [7, 4]]),
+                                 legend=alt.Legend(symbolType="stroke", symbolStrokeWidth=2.3, symbolSize=350)),
+    )
+    point_types = ["Prepared model vintage", "CEUD cohort anchor"]
+    points = base.transform_filter(alt.FieldOneOfPredicate(field="series", oneOf=point_types)).mark_point(
+        filled=False, strokeWidth=1.7).encode(
+        shape=alt.Shape("series:N", title="Model points", scale=alt.Scale(domain=point_types, range=["diamond", "circle"])),
+        size=alt.condition(alt.datum.series == "CEUD cohort anchor", alt.value(190), alt.value(65)),
+    )
+    chart = (lines + points).resolve_legend(strokeDash="independent", shape="independent", color="shared").properties(
+        width=680, height=280,
+    )
+    title = f"{region} medium trucks · Gasoline and diesel consumption"
+    mo.vstack([
+        mo.md(source_markdown("""
+        ## How do medium-truck gasoline and diesel incumbents compare?
+
+        Each solid line shows annual NRCan CEUD fleet consumption converted to
+        MJ per vehicle-km with the fuel's own heating value. Diamonds show the
+        consumption underlying the prepared model vintages. Dashed lines connect
+        each fuel's stock-weighted CEUD anchor to its new-vintage values, using
+        the NLR ATB diesel improvement index for both fuels. Historical diamonds
+        sit at the last contributing source year and future diamonds at the model's
+        evaluation year. Hover over a diamond for its model vintage.
+
+        A greater share of Class 2b–3 trucks in the gasoline fleet could help explain
+        lower energy per vehicle-km. The fleet series leaves payload and weight-class
+        mix by fuel unobserved. Freight service efficiency also depends on the
+        tonnes carried per vehicle.
+        """)),
+        chart_ui(chart, "ldv-eff-8-medium-trucks-incumbents-mj-vkm", title),
+    ])
+    return
 
 
 if __name__ == "__main__":

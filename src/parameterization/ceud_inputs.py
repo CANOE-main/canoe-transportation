@@ -221,6 +221,14 @@ def _read_native(bundle: ConfigBundle, region: str) -> tuple[pd.DataFrame, Path]
     )
     if set(frame.source_id) != {source} or set(frame.region) != {region}:
         raise ValueError(f"CEUD source/region identity differs from {source}/{region}: {path}")
+    selected_year = bundle.scenario.sources.selections[source].year
+    # The artifact covers a complete source edition. Individual series may end
+    # earlier, but a stale normalized file must not acquire a new edition label
+    # merely because a consumer extends its last observation to the base year.
+    if selected_year is None or int(frame.year.max()) != selected_year:
+        command = f'uv run python -m fetching.nrcan_ceud --scenario "{bundle.scenario_path.as_posix()}" --no-download'
+        raise ValueError(f"Native CEUD observation endpoint differs from selected edition: {path}. "
+                         f"Prepare the selected registered edition with: {command}")
     return frame, path
 
 
@@ -258,13 +266,9 @@ def read_ceud_observations(
     scenarios, use the base year instead. Required series must have a real value
     at that year; a discontinued or missing series cannot choose an older anchor.
     """
-    native, path = _read_native(bundle, region)
-    if native.empty:
-        raise ValueError(f"CEUD observations are empty: {path}")
+    native, _ = _read_native(bundle, region)
     source_id = str(native.source_id.iloc[0])
     selected_year = bundle.scenario.sources.selections[source_id].year
-    if selected_year is None or int(native.year.max()) != selected_year:
-        raise ValueError(f"Native CEUD observation endpoint differs from selected edition: {path}")
     observed_year = min(bundle.scenario.periods.base_year, selected_year)
     # Reuse physical validation and annotations at a year that cannot extend any
     # table. Every returned value consequently remains a native observation.

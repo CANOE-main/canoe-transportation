@@ -40,6 +40,44 @@ class MappingModel(BaseModel, Mapping[str, Any]):
         return len(type(self).model_fields)
 
 
+RuleOwner = Annotated[str, StringConstraints(strict=True, pattern=r"^[a-z][a-z0-9_]*$")]
+RuleFilename = Annotated[str, StringConstraints(strict=True, pattern=r"^[a-z][a-z0-9_]*\.yaml$")]
+
+
+class RulePartition(MappingModel):
+    """One explicit, flat parameter file and its complete executable-owner set."""
+
+    file: RuleFilename
+    fetching: list[RuleOwner] = Field(default_factory=list)
+    parameterization: list[RuleOwner] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_membership(self) -> Self:
+        owners = self.fetching + self.parameterization
+        if not owners or len(owners) != len(set(owners)):
+            raise ValueError("A rules partition needs nonempty, unique executable owners")
+        if self.file == "rules.yaml":
+            raise ValueError("A rules partition cannot include its own routing index")
+        return self
+
+
+class RulesManifest(MappingModel):
+    """Versioned routing only: no parameter overrides, discovery or nested includes."""
+
+    version: Literal[3]
+    partitions: list[RulePartition] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_ownership(self) -> Self:
+        filenames = [part.file for part in self.partitions]
+        owners = [owner for part in self.partitions for owner in part.fetching + part.parameterization]
+        if len(filenames) != len(set(filenames)):
+            raise ValueError("Rules partition filenames must be unique")
+        if len(owners) != len(set(owners)):
+            raise ValueError("Every rules module must have exactly one owner partition")
+        return self
+
+
 class DataQuality(MappingModel):
     """Source-owned v4 scores; nulls are review placeholders in the registry."""
 
@@ -94,10 +132,6 @@ class OutputPaths(MappingModel):
         return value
 
 
-class LegacyPaths(MappingModel):
-    root: str
-
-
 class ArtifactRoute(MappingModel):
     """Stable ownership and impact route for one artifact family."""
 
@@ -113,7 +147,6 @@ class ArtifactRoute(MappingModel):
         "database",
         "output_validation",
         "logs",
-        "legacy",
     ]
     owner: str = Field(min_length=1)
     producers: list[str] = Field(min_length=1)
@@ -134,7 +167,6 @@ class PathsConfig(MappingModel):
     config: ConfigPaths
     inputs: InputPaths
     outputs: OutputPaths
-    legacy: LegacyPaths
     artifacts: dict[str, ArtifactRoute] = Field(min_length=1)
 
     @model_validator(mode="after")
@@ -150,7 +182,6 @@ class PathsConfig(MappingModel):
             "database": self.outputs.sqlite,
             "output_validation": self.outputs.validation,
             "logs": self.outputs.logs,
-            "legacy": self.legacy.root,
         }
         duplicate_paths: dict[str, list[str]] = {}
         for name, route in self.artifacts.items():
@@ -281,11 +312,21 @@ class ScenarioPeriods(MappingModel):
             end = vintage
         return list(range(start, min(end, self.base_year) + 1))
 
-    def projection_year(self, period: int, *, legacy_at_end: bool) -> int:
-        """Prospective inputs use period ends; legacy adapters retain their old timing."""
+    def period_end(self, period: int) -> int:
+        """Closing model coordinate, independent of input timing."""
         if period not in self.model:
             raise ValueError(f"Unknown model period: {period}")
-        return period + self.step if self.period_mode == "prospective" or legacy_at_end else period
+        return period + self.step
+
+    def evaluation_year(self, period: int) -> int:
+        """Evaluate opening conditions in legacy mode and closing conditions in prospective mode."""
+        end = self.period_end(period)
+        return end if self.period_mode == "prospective" else period
+
+    def evaluation_window(self, period: int) -> range:
+        """Annual cohort years ending at the evaluation year, with the configured grid width."""
+        end = self.evaluation_year(period)
+        return range(end - self.step + 1, end + 1)
 
     def audit(self) -> dict[str, Any]:
         intervals = {str(vintage): self.historical_years(vintage) for vintage in self.existing}
@@ -295,11 +336,13 @@ class ScenarioPeriods(MappingModel):
             "historical_years_by_vintage": intervals,
             "empty_observation_vintages": [int(vintage) for vintage, years in intervals.items() if not years],
             "latest_observed_vintage": self.latest_observed_vintage,
-            "efficiency_and_demand_years": {
-                str(period): self.projection_year(period, legacy_at_end=True) for period in self.model
-            },
-            "cost_and_charger_years": {
-                str(period): self.projection_year(period, legacy_at_end=False) for period in self.model
+            "evaluation_years": {str(period): self.evaluation_year(period) for period in self.model},
+            "new_road_efficiency_years": {
+                str(period): (
+                    list(self.evaluation_window(period)) if self.period_mode == "legacy"
+                    else [self.evaluation_year(period)]
+                )
+                for period in self.model
             },
             "end_of_horizon": self.end_of_horizon,
         }
@@ -330,7 +373,7 @@ class ScenarioOutputs(MappingModel):
 
 
 class ScenarioComparison(MappingModel):
-    mode: Literal["none", "legacy", "scenario"]
+    mode: Literal["none", "scenario"]
     reference_sqlite: str | None
     absolute_tolerance: float = Field(ge=0, allow_inf_nan=False)
     relative_tolerance: float = Field(ge=0, allow_inf_nan=False)
@@ -338,12 +381,10 @@ class ScenarioComparison(MappingModel):
 
     @model_validator(mode="after")
     def validate_reference(self) -> Self:
-        if self.mode != "none" and not self.reference_sqlite:
+        if self.mode == "scenario" and not self.reference_sqlite:
             raise ValueError(
                 "comparison.reference_sqlite is required when comparison.mode is enabled"
             )
-        if self.mode == "legacy" and self.include_provenance:
-            raise ValueError("Legacy comparison cannot compare v4 provenance")
         return self
 
 
@@ -360,7 +401,7 @@ class ScenarioRowNoteOverrides(MappingModel):
 
 
 class ScenarioExistingCapacity(MappingModel):
-    vehicle_population_year: int = Field(gt=0)
+    vehicle_population_year: int | None = Field(default=None, gt=0, strict=True)
     cleanup_tolerance: float = Field(ge=0, allow_inf_nan=False)
 
 
@@ -383,12 +424,18 @@ class ScenarioCosts(MappingModel):
 
 
 class ScenarioEvChargers(MappingModel):
-    ld_evs_per_port: float = Field(gt=0, allow_inf_nan=False)
-    mhd_evs_per_port: float = Field(gt=0, allow_inf_nan=False)
+    evs_per_port: tuple[
+        Annotated[float, Field(gt=0, allow_inf_nan=False, strict=True)],
+        Annotated[float, Field(gt=0, allow_inf_nan=False, strict=True)],
+        Annotated[float, Field(gt=0, allow_inf_nan=False, strict=True)],
+    ]
+    charger_type_classes: Literal["aggregated", "explicit"]
+    ld_home_utilization: float = Field(gt=0, lt=1, allow_inf_nan=False, strict=True)
 
 
 class ScenarioChargingProfiles(MappingModel):
     travel_behavior_source: Literal["none", "nhts", "tts"]
+    charging_strategy: Literal["uncontrolled", "night", "day"] = "uncontrolled"
     # An explicit mapping can project physical hours onto inherited time slices.
     time_mapping: str | None = Field(min_length=1)
 
@@ -420,22 +467,30 @@ class ScenarioConfig(MappingModel):
     embodied_materials: Literal["conventional", "lightweight"]
     row_note_overrides: ScenarioRowNoteOverrides
     # Explicit review preparation; ordinary production runs have no notebook work.
-    notebook_diagnostics: list[Literal["vehicle_stock", "efficiency", "ceud_calibration"]] = Field(default_factory=list)
+    notebook_diagnostics: list[Literal["vehicle_stock", "efficiency", "ceud_calibration", "ceud_calibration_regions"]] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def resolve_population_year(self) -> Self:
+        """Inherit the scenario anchor unless a source year is explicitly selected."""
+        if self.existing_capacity.vehicle_population_year is None:
+            self.existing_capacity = self.existing_capacity.model_copy(
+                update={"vehicle_population_year": self.periods.base_year},
+            )
+        return self
 
     @model_validator(mode="after")
     def validate_parameter_horizons(self) -> Self:
+        if (self.ev_chargers.charger_type_classes == "explicit"
+                and self.charging_profiles.travel_behavior_source != "none"):
+            raise ValueError("Explicit charger types require charging_profiles.travel_behavior_source: none; type-specific hourly profiles are not registered")
         if len(set(self.notebook_diagnostics)) != len(self.notebook_diagnostics):
             raise ValueError("notebook_diagnostics cannot repeat a notebook")
         if self.efficiencies.ceud_energy_calibration and self.road_utilization.vkt_schedules:
             raise ValueError("CEUD energy calibration requires emitted flat annual utilization")
         if self.efficiencies.ceud_energy_calibration and self.lifetimes.survival_curves:
             raise ValueError("CEUD energy calibration currently requires fixed lifetimes: reference-only curve cohorts lack emitted activity/efficiency coverage")
-        if "ceud_calibration" in self.notebook_diagnostics and not self.efficiencies.ceud_energy_calibration:
+        if {"ceud_calibration", "ceud_calibration_regions"}.intersection(self.notebook_diagnostics) and not self.efficiencies.ceud_energy_calibration:
             raise ValueError("CEUD calibration diagnostics require the optional calibration to be enabled")
-        if (self.road_utilization.vkt_schedules
-                and self.lifetimes.survival_curve_max_age is not None
-                and self.lifetimes.survival_curve_max_age < self.periods.step):
-            raise ValueError("survival_curve_max_age cannot contain a full mileage period")
         return self
 
 
@@ -505,7 +560,7 @@ class SourceUpdatePolicy(MappingModel):
 
     strategy: Literal[
         "nrcan_ratings", "ontario_population", "statcan_tables",
-        "cer_energy_future", "fueleconomy", "tc_dashboard", "tc_izev",
+        "cer_energy_future", "fueleconomy", "tc_izev",
     ]
     metadata_url: str | None = Field(default=None, pattern=r"^https://[^\s]+$")
     download_hosts: list[Annotated[str, StringConstraints(pattern=r"^[a-z0-9.-]+$")]] = Field(default_factory=list)

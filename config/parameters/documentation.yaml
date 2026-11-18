@@ -41,8 +41,12 @@ publication_figures:
   notebooks:
     vehicle_population_diagnosis: [population-11-cars, population-11-light-trucks, population-19, population-20, population-21]
     stock_cohort_diagnosis: [cohort-1, cohort-2, cohort-3, cohort-3-survivors, cohort-4, cohort-5]
-    ldv_efficiency_diagnosis: [ldv-eff-2-gasoline, ldv-eff-2-phev-35-miles, ldv-eff-2-bev-300-miles, ldv-eff-3, ldv-eff-4-light-trucks-gasoline, ldv-eff-7-light-trucks-gasoline, ldv-eff-5-light-trucks-gasoline, ldv-eff-6-light-trucks-gasoline, ldv-eff-6-cars-bev-mj-vkm, ldv-eff-6-light-trucks-phev-mj-vkm, ldv-eff-6-heavy-trucks-diesel-mj-vkm, ldv-eff-6-medium-trucks-]
+    ldv_efficiency_diagnosis: [ldv-eff-2-gasoline, ldv-eff-2-phev-35-miles, ldv-eff-2-bev-300-miles, ldv-eff-3, ldv-eff-4-light-trucks-gasoline, ldv-eff-7-light-trucks-gasoline, ldv-eff-5-light-trucks-gasoline, ldv-eff-6-light-trucks-gasoline, ldv-eff-6-cars-bev-mj-vkm, ldv-eff-6-light-trucks-phev-mj-vkm, ldv-eff-6-heavy-trucks-diesel-mj-vkm, ldv-eff-8-medium-trucks-incumbents-mj-vkm]
+    charger_infrastructure_diagnosis: [charger-explicit-cost, charger-explicit-utilization, charger-capacity-composition-ldv, charger-capacity-composition-mhdv]
   notebook_views:
+    charger_infrastructure_diagnosis:
+      - figure_prefixes: [charger-explicit-utilization, charger-capacity-composition-mhdv]
+        vehicle_class: MHDV
     stock_cohort_diagnosis:
       - figure_prefixes: [cohort-3-survivors]
         lineage_basis: Physical surviving stock
@@ -61,8 +65,6 @@ publication_figures:
     currency: CAD
   calibration:
     region: "ON"
-    road_class: cars
-    powertrain: gasoline
   comparison:
     notebook: transportation_validation_diagnosis
     charts: [charging_chart, activity_energy_chart]

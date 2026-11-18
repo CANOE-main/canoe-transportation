@@ -20,13 +20,57 @@ from validation.sqlite_compare import compare_scenario_databases
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCENARIO = "config/scenarios/legacy_comparison.yaml"
+SCENARIO = "config/scenarios/validation_opening_periods.yaml"
 
 
 def small_database(path, value):
     with closing(sqlite3.connect(path)) as connection, connection:
         connection.execute("CREATE TABLE example (value INTEGER)")
         connection.execute("INSERT INTO example VALUES (?)", (value,))
+
+
+def test_prerequisites_preserve_caller_bundle_from_foreign_cwd(tmp_path, monkeypatch):
+    bundle = load_config_bundle("config/scenarios/default.yaml", repo_root=ROOT)
+    monkeypatch.chdir(tmp_path)
+    calls = []
+
+    def consumer(name):
+        def prepare(selected, **kwargs):
+            assert selected is bundle, name
+            assert not kwargs.get("download", False), name
+            calls.append(name)
+        return prepare
+
+    entries = [
+        "fetching.nrcan_ceud.fetch_and_normalize",
+        "fetching.nrcan_ceud.fetch_and_normalize_ratings",
+        "fetching.statcan_tables.fetch_and_normalize",
+        "fetching.cer_enerfuture.fetch_and_normalize",
+        "fetching.nlr_atb_autonomie.fetch_and_normalize",
+        "fetching.assorted_sources.fetch_and_normalize",
+        "fetching.afdc_charger_stations.fetch_and_normalize",
+        "fetching.dunsky_charger_inputs.fetch_and_normalize",
+        "parameterization.ceud_inputs.prepare_ceud_inputs",
+        "fetching.transport_canada_izev.fetch_izev",
+        "fetching.vehicle_population.fetch_and_normalize",
+        "parameterization.road_aggregation.build_road_aggregation_artifacts",
+    ]
+    for entry in entries:
+        monkeypatch.setattr(entry, consumer(entry))
+    request = object()
+
+    def build_request(selected):
+        assert selected is bundle
+        return request
+
+    def validate_cache(selected):
+        assert selected is request
+        calls.append("class_cache")
+
+    monkeypatch.setattr("fetching.fueleconomy_vehicles.build_request", build_request)
+    monkeypatch.setattr("fetching.fueleconomy_vehicles.validate_cache", validate_cache)
+    build_transport.prepare_scenario_inputs(bundle, download=False)
+    assert set(calls) == {*entries, "class_cache"}
 
 
 @pytest.mark.parametrize("interruption", [KeyboardInterrupt, SystemExit])
@@ -179,9 +223,136 @@ def test_ontario_rejects_invalid_registration_before_io(tmp_path, change, match)
 
 def isolated_repository(destination):
     """Only versioned controls and registered raw inputs; no generated handoffs."""
-    for folder in ("config", "inputs/0_cache", "inputs/0_external_models", "inputs/0_manual_params", "inputs/0_canoe_template", "legacy_backend"):
+    for folder in ("config", "inputs/0_cache", "inputs/0_external_models", "inputs/0_manual_params", "inputs/0_canoe_template"):
         shutil.copytree(ROOT / folder, destination / folder, ignore=shutil.ignore_patterns("__pycache__"))
     shutil.copyfile(ROOT / "pyproject.toml", destination / "pyproject.toml")
+
+
+SUPPORTED_SCENARIOS = tuple(sorted(path.name for path in (ROOT / "config/scenarios").glob("*.yaml")))
+STABLE_ALTERNATIVES = {
+    "explicit_chargers": {
+        "ev_chargers": {"charger_type_classes": "explicit"},
+        "charging_profiles": {"travel_behavior_source": "none"},
+    },
+    "advanced_methods": {
+        "efficiencies": {"atb_trajectory": "Advanced"},
+        "costs": {"atb_trajectory": "Advanced"},
+        "demand": {"future_car_demand": "extrapolated"},
+        "sources": {"nrcan_ceud_beyond_observed": "extrapolated"},
+        "BEV_PHEV_range_representation": {"mode": "none"},
+        "charging_profiles": {"charging_strategy": "night"},
+        "embodied_materials": "lightweight",
+    },
+    "conservative_day": {
+        "efficiencies": {"atb_trajectory": "Conservative"},
+        "costs": {"atb_trajectory": "Conservative"},
+        "charging_profiles": {"charging_strategy": "day"},
+    },
+    "tts_uncontrolled": {
+        "charging_profiles": {"travel_behavior_source": "tts"},
+    },
+    "tts_night": {"charging_profiles": {"travel_behavior_source": "tts", "charging_strategy": "night"}},
+    "tts_day": {"charging_profiles": {"travel_behavior_source": "tts", "charging_strategy": "day"}},
+    "nhtsa_fixed": {
+        "lifetimes": {"survival_curves": False, "road_lifetime_survival_source": "nhtsa_nems"},
+        "charging_profiles": {"travel_behavior_source": "none"},
+    },
+}
+
+
+@pytest.mark.parametrize("processed_only", [False, True])
+def test_native_rejects_experimental_vkt_before_preparation(tmp_path, monkeypatch, processed_only):
+    shutil.copytree(ROOT / "config", tmp_path / "config")
+    shutil.copyfile(ROOT / "pyproject.toml", tmp_path / "pyproject.toml")
+    path = tmp_path / "config/scenarios/default.yaml"
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    payload["road_utilization"]["vkt_schedules"] = True
+    path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(build_transport, "prepare_scenario_inputs",
+                        lambda *_args, **_kwargs: pytest.fail("Experimental VKT reached acquisition"))
+    with pytest.raises(ValueError, match="vkt_schedules requires dual-index LACF insertion"):
+        build_transport.build_from_scenario(path, processed_only=processed_only)
+    assert not (tmp_path / "outputs").exists()
+
+
+def test_caller_preparation_rejects_experimental_vkt_before_template_io(tmp_path):
+    bundle = load_config_bundle("config/scenarios/default.yaml", repo_root=ROOT)
+    bundle = replace(bundle, scenario=bundle.scenario.model_copy(update={
+        "road_utilization": bundle.scenario.road_utilization.model_copy(update={"vkt_schedules": True}),
+    }))
+    with closing(sqlite3.connect(":memory:")) as connection:
+        with pytest.raises(ValueError, match="vkt_schedules requires dual-index LACF insertion"):
+            build_transport.prepare_transport_contribution(connection, bundle=bundle, template_dir=tmp_path / "absent")
+        assert not connection.in_transaction
+        assert connection.execute("SELECT name FROM sqlite_master").fetchall() == []
+
+
+@pytest.mark.skipif(
+    os.environ.get("CANOE_SCENARIO_MATRIX") != "1",
+    reason="Set CANOE_SCENARIO_MATRIX=1 with registered raw/model inputs for serial clean builds",
+)
+@pytest.mark.parametrize("case", [*SUPPORTED_SCENARIOS, *STABLE_ALTERNATIVES])
+def test_supported_scenarios_and_stable_methods_rebuild_without_derived_inputs(tmp_path, monkeypatch, case):
+    """Native builds cover presets and alternate methods, never precomputed ETL outputs.
+
+    Alternative cases cover method selections, not their Cartesian product. Each case
+    owns every mutable route, including caches and external-model inputs. Run serially.
+    """
+    isolated_repository(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    scenario = f"config/scenarios/{case}" if case in SUPPORTED_SCENARIOS else "config/scenarios/default.yaml"
+    if case in STABLE_ALTERNATIVES:
+        path = tmp_path / scenario
+        payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+        payload["geography"]["regions"] = ["ON"]
+        payload["comparison"]["mode"] = "none"
+        for section, value in STABLE_ALTERNATIVES[case].items():
+            if isinstance(value, dict):
+                payload[section].update(value)
+            else:
+                payload[section] = value
+        path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    for relative in ("inputs/1_interim", "inputs/2_processed", "inputs/validation", "outputs"):
+        assert not (tmp_path / relative).exists(), relative
+
+    def no_network(*_args, **_kwargs):
+        pytest.fail("network access during independent registered-input rebuild")
+
+    monkeypatch.setattr(socket.socket, "connect", no_network)
+    monkeypatch.setattr(socket, "create_connection", no_network)
+    report, report_path = build_transport.build_from_scenario(scenario, export_processed=True)
+    assert report_path.is_file()
+    assert report["validation"]["ok"] and report["validation"]["foreign_key_violations"] == 0
+    assert report["parameter_support"]["ok"], report["parameter_support"]
+    assert report["orchestration"] == {"prerequisites": "replayed", "download_sources": False}
+    assert report["processed_tables"]["ok"]
+    with closing(sqlite3.connect(report["database"])) as connection:
+        assert connection.execute("PRAGMA integrity_check").fetchone() == ("ok",)
+        assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
+        assert connection.execute("SELECT COUNT(*) FROM efficiency").fetchone()[0] > 0
+        assert connection.execute("SELECT COUNT(*) FROM data_source").fetchone()[0] > 0
+        configured = load_config_bundle(scenario)
+        mode = configured.scenario.ev_chargers.charger_type_classes
+        expected = ({"T_LDV_CHRG_PUB_L2", "T_LDV_CHRG_PUB_FC", "T_LDV_CHRG_PRIV",
+                     "T_MHDV_CHRG_NIGHT", "T_MHDV_CHRG_FC"} if mode == "explicit" else
+                    {"T_LDV_CHRG_EX", "T_LDV_CHRG_N", "T_MHDV_CHRG_EX", "T_MHDV_CHRG_N"})
+        assert {row[0] for row in connection.execute("SELECT tech FROM technology WHERE category='charger'")} == expected
+        if mode == "explicit":
+            assert connection.execute("SELECT COUNT(*) FROM tech_group WHERE group_name LIKE 'T_%CHRG%'").fetchone()[0] == 8
+            assert connection.execute("SELECT COUNT(*) FROM limit_capacity_share").fetchone()[0] == 6 * len(
+                report["periods"]["model"])
+            assert connection.execute("SELECT COUNT(*) FROM capacity_factor_tech").fetchone()[0] == 0
+            private = connection.execute(
+                "SELECT DISTINCT data_source,dq_cred,dq_geog,dq_struc,dq_tech,dq_time "
+                "FROM limit_annual_capacity_factor WHERE tech_or_group='T_LDV_CHRG_PRIV'"
+            ).fetchall()
+            quality = configured.sources.resolved_data_quality(
+                "jonas_ev_charging_utilization", "residential_l2_utilization",
+            ).row_fields()
+            assert private == [("T41", *(quality[key] for key in (
+                "dq_cred", "dq_geog", "dq_struc", "dq_tech", "dq_time",
+            )))]
 
 
 @pytest.mark.skipif(os.environ.get("CANOE_OFFLINE_INTEGRATION") != "1", reason="Set CANOE_OFFLINE_INTEGRATION=1 with registered caches/external inputs available")

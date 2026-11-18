@@ -67,7 +67,12 @@ def bundle(tmp_path):
         expected_request_date_to="2022-03-14", expected_bytes=len(content), expected_md5=md5(content),
     )
     original.sources_path.write_text(yaml.safe_dump(registry, sort_keys=False, allow_unicode=True), encoding="utf-8")
-    rules_path = tmp_path / "config/parameters/rules.yaml"
+    from utils import harmonization_rule_paths
+
+    rules_path = next(
+        path for path in harmonization_rule_paths(original)
+        if izev.SOURCE in yaml.safe_load(path.read_text(encoding="utf-8")).get("fetching", {})
+    )
     rules = yaml.safe_load(rules_path.read_text(encoding="utf-8"))
     owner = next(section for section in ("fetching", "parameterization") if izev.SOURCE in rules[section])
     rules[owner][izev.SOURCE]["province_map"]["Ontario"] = "ON"
@@ -185,6 +190,7 @@ def test_wrong_publisher_download_never_creates_a_registered_cache(bundle, monke
 class FakeResponse:
     def __init__(self, url, *, payload=None, content=b""):
         self.url, self.payload, self.content = url, payload, content
+        self.headers = {}
 
     def raise_for_status(self):
         return None

@@ -34,7 +34,8 @@ def test_notebook_prerequisites_are_explicit_and_ordered(tmp_path, monkeypatch, 
         "fetching.cer_enerfuture.fetch_and_normalize": "cer",
         "fetching.nlr_atb_autonomie.fetch_and_normalize": "atb",
         "fetching.assorted_sources.fetch_and_normalize": "assorted",
-        "fetching.assorted_sources.fetch_and_normalize_tc_dashboard": "dashboard",
+        "fetching.afdc_charger_stations.fetch_and_normalize": "afdc",
+        "fetching.dunsky_charger_inputs.fetch_and_normalize": "dunsky",
         "parameterization.ceud_inputs.prepare_ceud_inputs": "ceud_parameters",
         "fetching.transport_canada_izev.fetch_izev": "izev",
         "fetching.vehicle_population.fetch_and_normalize": "ontario",
@@ -51,9 +52,9 @@ def test_notebook_prerequisites_are_explicit_and_ordered(tmp_path, monkeypatch, 
     monkeypatch.setattr("fetching.fueleconomy_vehicles.build_request", lambda bundle: None)
     build_transport.prepare_scenario_inputs(bundle, download=False)
     names = [name for name, kwargs in calls]
-    assert names[:9] == [
-        "ceud", "ratings", "statcan", "cer", "atb", "assorted", "dashboard",
-        "ceud_parameters", "izev",
+    assert names[:10] == [
+        "ceud", "ratings", "statcan", "cer", "atb", "assorted", "afdc",
+        "dunsky", "ceud_parameters", "izev",
     ]
     assert ("normalize_fueleconomy" in names) == bool(profiles)
     assert ("statcan_stock_review" in names) == ("efficiency" in profiles)
@@ -67,6 +68,7 @@ def test_notebook_prerequisites_are_explicit_and_ordered(tmp_path, monkeypatch, 
     if "vehicle_stock" in profiles:
         assert "year" not in ontario[0]
         assert names.index("mapping_review") < names.index("retention_review")
+        assert next(kwargs for name, kwargs in calls if name == "mapping_review") == {"include_candidates": False}
 
 
 @pytest.mark.parametrize("publication_fails", [False, True])

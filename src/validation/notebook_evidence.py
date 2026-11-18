@@ -7,7 +7,7 @@ publication. Readers never select a scenario or prepare missing evidence.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from contextlib import contextmanager
 from datetime import UTC, datetime
 import gzip
@@ -22,14 +22,14 @@ from uuid import uuid4
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from utils import (
-    ConfigBundle, file_sha256, find_repo_root, load_config_bundle,
-    load_harmonization_rules, load_yaml, resolve_artifact_path,
-    resolve_parameter_path, resolve_repo_path, write_text_atomic,
+    ConfigBundle, file_sha256, find_repo_root, harmonization_rule_paths, load_config_bundle,
+    load_harmonization_rules, load_rules_config, load_rules_for_owner, load_yaml, resolve_artifact_path,
+    resolve_parameter_path, resolve_repo_path, rule_config_paths, write_text_atomic,
 )
 from validation.config_models import PathsConfig, ScenarioIdentity
 
 
-Profile = Literal["vehicle_stock", "efficiency", "ceud_calibration"]
+Profile = Literal["vehicle_stock", "efficiency", "ceud_calibration", "ceud_calibration_regions"]
 Digest = Annotated[str, StringConstraints(pattern=r"^[0-9a-f]{64}$")]
 # Accept historical captures while all new releases use an informative UTC name.
 BUILD_ID_PATTERN = r"(?:[A-Za-z0-9][A-Za-z0-9_.-]*-\d{8}T\d{6}Z(?:-[1-9]\d*)?|[0-9a-f]{32})"
@@ -87,8 +87,7 @@ def _controls(repo_root: Path | None = None) -> tuple[Path, PathsConfig, dict]:
     paths = PathsConfig.model_validate(load_yaml(paths_path))
     # Only paths and the configured preparation command are needed here. Read rules
     # directly rather than loading a production scenario to locate its own results.
-    rules_path = root / paths.config.parameters / "rules.yaml"
-    rules = load_yaml(rules_path)["parameterization"]["notebook_diagnostics"]
+    rules = load_rules_for_owner(resolve_repo_path(root, paths.config.parameters), "notebook_diagnostics")
     return root, paths, rules
 
 
@@ -168,7 +167,7 @@ def stage_notebook_evidence(bundle: ConfigBundle, report: dict) -> NotebookPubli
             if profile == "vehicle_stock":
                 from validation.vehicle_stock_diagnostic import collect_stock_inputs
                 paths = collect_stock_inputs(bundle)
-            elif profile == "ceud_calibration":
+            elif profile in {"ceud_calibration", "ceud_calibration_regions"}:
                 from validation.ceud_calibration_diagnostic import collect_calibration_inputs
                 paths = collect_calibration_inputs(bundle)
             else:
@@ -189,7 +188,10 @@ def stage_notebook_evidence(bundle: ConfigBundle, report: dict) -> NotebookPubli
                 "paths": bundle.paths_path,
                 "sources": bundle.sources_path,
                 "rules": resolve_parameter_path(bundle, "rules.yaml"),
+                **{f"rules:{path.name}": path for path in harmonization_rule_paths(bundle)
+                   if path.name != "rules.yaml"},
                 "conversion": resolve_parameter_path(bundle, "conversion.yaml"),
+                "dunsky_charger_inputs": resolve_parameter_path(bundle, "dunsky_charger_inputs.yaml"),
                 "vehicle_reference": resolve_parameter_path(bundle, load_harmonization_rules(
                     bundle, "vehicle_reference",
                 )["canonical_file"]),
@@ -198,7 +200,7 @@ def stage_notebook_evidence(bundle: ConfigBundle, report: dict) -> NotebookPubli
                 )["source_links_file"]),
             }
             for key, path in config_sources.items():
-                relative = (f"config/parameters/{path.name}" if key in {"rules", "conversion", "vehicle_reference", "vehicle_source_links"}
+                relative = (f"config/parameters/{path.name}" if key.startswith("rules:") or key in {"rules", "conversion", "dunsky_charger_inputs", "vehicle_reference", "vehicle_source_links"}
                             else f"config/{key}.yaml")
                 config[key] = _copy_evidence(path, profile_dir / relative, bundle.repo_root, relative)
             manifest = NotebookManifest(
@@ -348,12 +350,24 @@ def load_notebook_evidence(profile: Profile, *, repo_root: Path | None = None) -
             "Recorded notebook evidence predates the two authoritative vehicle tables "
             f"({', '.join(sorted(missing))}). Rebuild with: {command}"
         )
+    parameter_dir = resolved["config:rules"].parent
+    rule_keys = {key for key in manifest.config if key == "rules" or key.startswith("rules:")}
+    if any(resolved[f"config:{key}"].parent != parameter_dir
+           for key in required_parameters | rule_keys):
+        raise ValueError("Recorded notebook parameters must share their verified directory")
     try:
+        declared_rules = {"rules" if path.name == "rules.yaml" else f"rules:{path.name}": path
+                          for path in rule_config_paths(parameter_dir)}
+        if set(declared_rules) != rule_keys or any(
+                path != resolved[f"config:{key}"] for key, path in declared_rules.items()):
+            raise ValueError("Recorded notebook rules do not match the complete declared file set")
+        load_rules_config(parameter_dir)
         bundle = load_config_bundle(
             resolved["config:scenario"], repo_root=root,
             paths_path=resolved["config:paths"], sources_path=resolved["config:sources"],
+            parameter_dir=parameter_dir,
         )
-    except ValueError as exc:
+    except (FileNotFoundError, ValueError) as exc:
         # Captured YAML can predate a required backend configuration field even
         # when every stored hash is intact. Refresh through the native build;
         # never patch the capture or substitute mutable live configuration.
@@ -362,16 +376,10 @@ def load_notebook_evidence(profile: Profile, *, repo_root: Path | None = None) -
             f"incompatible with the current backend. Rebuild with: {command}\n"
             f"Run this command from the repository root: {root}\n{exc}"
         ) from exc
-    parameter_dir = resolved["config:rules"].parent
-    if any(resolved[f"config:{key}"].parent != parameter_dir
-           for key in required_parameters):
-        raise ValueError("Recorded notebook parameters must share their verified directory")
-    # Bind reads to verified files here, rather than persisting an absolute release
-    # location. A moved/copied workspace then reads its own captured parameters.
-    recorded_paths = bundle.paths.model_copy(update={
-        "config": bundle.paths.config.model_copy(update={"parameters": str(parameter_dir)}),
-    })
-    bundle = replace(bundle, paths=recorded_paths)
+    # Validation and all later reads use the verified release, including after a move.
+    if any(file_sha256(resolved[f"config:{key}"]) != record.sha256
+           for key, record in manifest.config.items()):
+        raise ValueError(f"Recorded notebook configuration changed while loading. Rebuild with: {command}")
     # Expose only data files to notebook-specific loaders; configuration is carried
     # by the recorded bundle and the manifest retains original source identities.
     metadata = manifest.model_dump(mode="json") | {"manifest": str(manifest_path)}

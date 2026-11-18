@@ -1,4 +1,4 @@
-"""Explicit copy-only Excel generation of the registered GREET vehicle-cycle bank."""
+"""Generate the GREET bank with Windows Excel or validate it on any supported OS."""
 
 import argparse
 from datetime import datetime, timezone
@@ -389,18 +389,24 @@ def publish_generated_results(bundle: ConfigBundle, run: Path) -> None:
     validate_generation_evidence(bundle, frames["results"], frames["exclusions"], frames["cases"], report)
     bank = result_bank_paths(bundle)
     for key, name in files.items():
-        write_text_atomic((run / name).read_text(encoding="utf-8"), bank[key])
+        write_text_atomic((run / name).read_text(encoding="utf-8"), bank[key], newline="\n")
     manifest = ResultManifest(schema_version=1, source_id=SOURCE, component=COMPONENT,
         profile_sha256=report["profile_sha256"], source_hashes=report["source_hashes"],
         files={bank[key].name: file_sha256(bank[key]) for key in files})
-    write_text_atomic(manifest.model_dump_json(indent=2) + "\n", bank["manifest"])
+    write_text_atomic(manifest.model_dump_json(indent=2) + "\n", bank["manifest"], newline="\n")
     LOGGER.info("Published complete GREET result bank: %s", bank["manifest"].parent)
 
 
 def generate_vehicle_cycle_results(bundle: ConfigBundle) -> Path:
     """Supervise a Windows worker; timeout cleanup targets only its fresh Excel PID."""
     if sys.platform != "win32":
-        raise RuntimeError("The GREET automation probe requires Windows desktop Excel")
+        raise RuntimeError(
+            "GREET recalculation requires Windows desktop Excel and this adapter's "
+            "Windows COM interface. Run generation on a Windows Excel workstation, "
+            "then share the complete registered result bank. Normal scenario builds "
+            "replay that bank without Excel on Windows, macOS and Linux; use "
+            "--validate-only to check an existing bank without recalculation."
+        )
     registration, paths = registered_workbooks(bundle)
     settings = registration.automation
     if any(not path.is_file() for path in paths):
@@ -422,6 +428,13 @@ def generate_vehicle_cycle_results(bundle: ConfigBundle) -> Path:
             write_text_atomic(json.dumps({"ok": False, "error": "GREET probe timeout", "timeout_seconds": settings.timeout_seconds}) + "\n",
                               run / settings.files["report"])
             raise
+        except subprocess.CalledProcessError as error:
+            raise RuntimeError(
+                f"GREET Excel worker exited with code {error.returncode}; "
+                f"see {run / 'execution.log'}. Check that Windows desktop Excel "
+                "is installed and the registered GREET workbook VBA functions are available. "
+                "The existing registered result bank was not replaced."
+            ) from error
     report = json.loads((run / settings.files["report"]).read_text())
     if not report["ok"] or not report["source_hashes_unchanged"]:
         raise ValueError(f"GREET probe failed validation: {run}")
@@ -434,12 +447,18 @@ def generate_vehicle_cycle_results(bundle: ConfigBundle) -> Path:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--scenario", default="config/scenarios/default.yaml")
+    parser.add_argument(
+        "--validate-only", action="store_true",
+        help="Validate the registered result bank without Excel, recalculation or file writes",
+    )
     parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--run-dir", type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     bundle = load_config_bundle(args.scenario)
     if args.worker:
+        if args.validate_only:
+            parser.error("--validate-only cannot be combined with --worker")
         if args.run_dir is None:
             parser.error("worker requires --run-dir")
         run = args.run_dir.resolve()
@@ -447,7 +466,14 @@ def main() -> None:
             parser.error("worker run directory must be within its configured validation artifact route")
         _worker(bundle, run)
     else:
-        print(generate_vehicle_cycle_results(bundle))
+        try:
+            if args.validate_only:
+                evidence = normalize_generated_results(bundle, write_interim=False)
+                print(f"Validated GREET result bank: {len(evidence.raw_rows)} gas rows; no files written")
+            else:
+                print(generate_vehicle_cycle_results(bundle))
+        except (OSError, RuntimeError, ValueError, subprocess.SubprocessError) as error:
+            parser.exit(1, f"GREET: {error}\n")
 
 
 if __name__ == "__main__":

@@ -91,8 +91,9 @@ def notebook_evidence(name, definitions):
         metadata = definitions["diagnosis"]["metadata"]
         paths = yaml.safe_load((ROOT / "config/paths.yaml").read_text(encoding="utf-8"))
         parameters = ROOT / paths["config"]["parameters"]
+        from utils import rule_config_paths
         configuration = [ROOT / "config/paths.yaml", ROOT / "config/sources.yaml",
-                         parameters / "rules.yaml", parameters / "conversion.yaml", ROOT / metadata["scenario_path"]]
+                         *rule_config_paths(parameters), parameters / "conversion.yaml", ROOT / metadata["scenario_path"]]
         return {"registered_input_recalculation": metadata,
                 "configuration_fingerprints": {path.resolve().relative_to(ROOT).as_posix(): file_sha256(path) for path in configuration}}
     if name == "vehicle_population_diagnosis":
@@ -100,6 +101,9 @@ def notebook_evidence(name, definitions):
     if name == "ldv_efficiency_diagnosis":
         return {"diagnostic_summary": definitions["diagnostic"].summary,
                 "display_settings": definitions["composition_view"]}
+    if name == "charger_infrastructure_diagnosis":
+        return {"registered_source": definitions["diagnostic"].metadata,
+                "production_representation": definitions["representation"].metadata}
     raise ValueError(f"No explicit evidence identity reader for notebook: {name}")
 
 
@@ -112,6 +116,9 @@ def notebook_module(name):
 
 
 def export(groups):
+    groups = set(groups)
+    if "notebooks" in groups:
+        groups.add("infrastructure")
     paths = yaml.safe_load((ROOT / "config/paths.yaml").read_text(encoding="utf-8"))["artifacts"]
     selections_path = ROOT / "config/parameters/documentation.yaml"
     settings = yaml.safe_load(selections_path.read_text(encoding="utf-8"))["publication_figures"]
@@ -139,7 +146,12 @@ def export(groups):
             raise ValueError(f"Duplicate exported figure identity: {identity}")
         previous = manifest["figures"].get(identity)
         if previous and previous["generator"] != generator:
-            raise ValueError(f"Figure identity belongs to another notebook: {identity}")
+            # The approved notebook merge preserves this one publication identity.
+            if (identity, previous["generator"], generator) != (
+                "charging-profile-1", "docs/insights/charging_profile_diagnosis.py",
+                "docs/insights/ldv_charging_diagnosis.py",
+            ):
+                raise ValueError(f"Figure identity belongs to another notebook: {identity}")
         seen.add(identity)
         file = staging_path / f"{identity}.svg"
         context = chart_context(data)
@@ -166,11 +178,14 @@ def export(groups):
              {"capture": evidence, "chart_owner": {"path": helper.relative_to(ROOT).as_posix(), "sha256": file_sha256(helper)}},
              {"function": function.__name__, "arguments": selections, "selected_figure_ids": selected_ids})
 
-    if "notebooks" in groups:
-        active_group = "notebooks"
+    if "notebooks" in groups or "infrastructure" in groups:
         import marimo as mo
         original = mo.ui.altair_chart
         for name, prefixes in settings["notebooks"].items():
+            is_infrastructure = name == "charger_infrastructure_diagnosis"
+            if "notebooks" not in groups and not is_infrastructure:
+                continue
+            active_group = "infrastructure" if is_infrastructure else "notebooks"
             captured = {}
             captured_controls = {}
             active_prefixes = prefixes
@@ -208,6 +223,9 @@ def export(groups):
                         })
                         overrides = {"class_controls": definitions["class_controls"],
                             "family_controls": families, "bridge_metric": definitions["bridge_metric"]}
+                    elif name == "charger_infrastructure_diagnosis":
+                        overrides = {"vehicle_class": mo.ui.dropdown(
+                            options=["LDV", "MHDV"], value=view["vehicle_class"], label="Vehicle chargers")}
                     else:
                         raise ValueError(f"No publication control override contract for {name}")
                     _, variant = module.app.run(defs=overrides)
@@ -250,8 +268,8 @@ def export(groups):
 
     if "calibration" in groups:
         active_group = "calibration"
-        from validation.ceud_calibration_diagnostic import load_calibration_diagnostic, calibration_charts
-        diagnostic = load_calibration_diagnostic()
+        from validation.ceud_calibration_diagnostic import load_regional_calibration_diagnostic, calibration_charts
+        diagnostic = load_regional_calibration_diagnostic()
         for chart in calibration_charts(diagnostic, **settings["calibration"]).values():
             helper = Path(inspect.getsourcefile(calibration_charts))
             save(chart, "docs/insights/ceud_calibration_diagnosis.py",
@@ -307,7 +325,7 @@ def export(groups):
         from validation.charging_profile_diagnostic import load_diagnostic, profile_chart
         diagnostic = load_diagnostic()
         helper = ROOT / "src/validation/charging_profile_diagnostic.py"
-        save(profile_chart(diagnostic), "docs/insights/charging_profile_diagnosis.py",
+        save(profile_chart(diagnostic), "docs/insights/ldv_charging_diagnosis.py",
              {"source_identity": diagnostic.metadata,
               "chart_owner": {"path": helper.relative_to(ROOT).as_posix(), "sha256": file_sha256(helper)},
               "production_helpers": {path: file_sha256(ROOT / path) for path in (
@@ -315,6 +333,17 @@ def export(groups):
                   "src/parameterization/ev_chargers.py")},
               "annual_checks": diagnostic.annual.to_dict("records")},
              diagnostic.settings.model_dump(mode="json"))
+        from validation.ldv_charging_diagnostic import (
+            load_diagnostic as load_behavior_diagnostic, heatmap_chart, behavior_chart,
+        )
+        behavior = load_behavior_diagnostic()
+        display = behavior.evidence.settings.presentation
+        evidence = {"registered_run_manifest": behavior.evidence.manifest,
+                    "annual_checks": behavior.annual.to_dict("records")}
+        for function in (heatmap_chart, behavior_chart):
+            save_function(function, behavior, "docs/insights/ldv_charging_diagnosis.py",
+                          evidence, ["ldv-charge-4", "ldv-charge-2"],
+                          subset=display.default_subset, width=display.heatmap_width, height=display.panel_height)
 
     # Publish only after every requested group succeeds. Remove only stale files
     # whose previous manifest explicitly assigned them to these notebooks.
@@ -336,8 +365,8 @@ def export(groups):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--groups", nargs="+", choices=["notebooks", "cost", "calibration", "fleet", "nonroad", "comparison", "charging"],
-                        default=["notebooks", "cost", "calibration", "fleet", "nonroad", "comparison", "charging"])
+    parser.add_argument("--groups", nargs="+", choices=["notebooks", "cost", "calibration", "fleet", "nonroad", "comparison", "charging", "infrastructure"],
+                        default=["notebooks", "cost", "calibration", "fleet", "nonroad", "comparison", "charging", "infrastructure"])
     export(parser.parse_args().groups)
 
 

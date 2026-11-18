@@ -21,7 +21,7 @@ from utils import (
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SCENARIO = "config/scenarios/legacy_comparison.yaml"
+SCENARIO = "config/scenarios/validation_opening_periods.yaml"
 SOURCE_COLUMN = "source -> data_source"
 
 
@@ -104,8 +104,10 @@ def test_current_compact_manual_selectors_resolve_to_technology_categories() -> 
     assert len(registry) == 18
     assert "epa_moves4_population_activity_2023" not in set(registry["source_id"])
     assert "epa_moves4_population_activity_2023" not in bundle.sources.sources
-    assert len(resolution) == 27
-    assert resolution["tech"].nunique() == 27
+    # The master catalogue includes all five explicit charger alternatives;
+    # scenario lifetime preparation selects the active representation afterward.
+    assert len(resolution) == 32
+    assert resolution["tech"].nunique() == 32
     assert not resolution.duplicated(
         ["manual_file", "manual_row", "tech", "selector_year"]
     ).any()
@@ -119,7 +121,7 @@ def test_current_compact_manual_selectors_resolve_to_technology_categories() -> 
         resolution["manual_file"].eq("lifetime_process.csv")
     ]
     assert lifetime.groupby("technology_class")["tech"].nunique().to_dict() == {
-        "charger": 4,
+        "charger": 9,
         "freight_air": 3,
         "freight_marine": 5,
         "freight_rail": 4,

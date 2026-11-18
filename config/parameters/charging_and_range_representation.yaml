@@ -1,0 +1,166 @@
+# Charger infrastructure, hourly charging and LDV electric-range representation.
+# Registered by rules.yaml; see AGENTS.md for ownership and edit boundaries.
+
+version: 1
+
+parameterization:
+  ldv_charging_profiles:
+    transformation_version: "4"
+    factor_units: fraction
+    applicability: "Ontario BEV charging shape scaled to reviewed annual utilization on shared LDV chargers in all configured regions; inherited fleet/range composition is not reweighted."
+    technology_category: charger
+    technology_sub_category: ldv
+    target_technologies: [T_LDV_CHRG_EX, T_LDV_CHRG_N]
+    factor_file: "{profile}/{strategy}/capacity_factor_tech.csv"
+    time_season_file: "{profile}/{strategy}/time_season.csv"
+    time_of_day_file: "{profile}/{strategy}/time_of_day.csv"
+    mapping_file: "{profile}/{strategy}/hourly_mapping.csv"
+    calendar_file: "{profile}/{strategy}/hourly_calendar.csv"
+    dataset_file: "{profile}/{strategy}/data_set.csv"
+    source_file: "{profile}/{strategy}/data_source.csv"
+    source_label_file: "{profile}/{strategy}/data_source_label.csv"
+    validation_file: "{profile}/{strategy}/integrity.json"
+    conservation_tolerance: 1.0e-8
+
+  ldv_ev_ranges:
+    range_units: miles
+    share_units: fraction
+    # Recovered from LDV_AER_market_shares.ipynb; also used for NRCan ratings.
+    buckets:
+      BEV:
+        - {sub_category: bev_150_miles, upper: 150, upper_inclusive: true}
+        - {sub_category: bev_200_miles, upper: 250, upper_inclusive: true}
+        - {sub_category: bev_300_miles, upper: 350, upper_inclusive: true}
+        - {sub_category: bev_400_miles, upper: null, upper_inclusive: true}
+      PHEV:
+        - {sub_category: phev_35_miles, upper: 35, upper_inclusive: false}
+        - {sub_category: phev_50_miles, upper: null, upper_inclusive: false}
+    category_to_market: {cars: car, passenger_light_trucks: light_truck, freight_light_trucks: light_truck}
+    existing:
+      weight_applicability: constant_historical_vintages_and_regions
+      ratings_range_mapping: omega_bucket_boundaries
+      phev_baseline: observed_nrcan_cd_cs_atb_bucket_utility
+      families:
+        cars: {BEV: T_LDV_C_BEV_EX, PHEV: T_LDV_C_GSL_PHEV_EX, phev_blend: T_BLND_GSL_ELC_PHEV_C_EX, phev_commodity: T_gsl_elc_phev_c_ex}
+        passenger_light_trucks: {BEV: T_LDV_LTP_BEV_EX, PHEV: T_LDV_LTP_GSL_PHEV_EX, phev_blend: T_BLND_GSL_ELC_PHEV_LTP_EX, phev_commodity: T_gsl_elc_phev_ltp_ex}
+        freight_light_trucks: {BEV: T_LDV_LTF_BEV_EX, PHEV: T_LDV_LTF_GSL_PHEV_EX, phev_blend: T_BLND_GSL_ELC_PHEV_LTF_EX, phev_commodity: T_gsl_elc_phev_ltf_ex}
+    new_suffix: _N
+    constraint_operator: ge  # MinNewCapacityShare!C23:F40; never silently use equality.
+    group_prefix: canoe_transport_range
+    share_sum_tolerance: 1.0e-12
+    representative:
+      families:
+        cars: {BEV: T_LDV_C_BEV_REP_N, PHEV: T_LDV_C_GSL_PHEV_REP_N, phev_blend: T_BLND_GSL_ELC_PHEV_C_REP, phev_commodity: T_gsl_elc_phev_c_rep}
+        passenger_light_trucks: {BEV: T_LDV_LTP_BEV_REP_N, PHEV: T_LDV_LTP_GSL_PHEV_REP_N, phev_blend: T_BLND_GSL_ELC_PHEV_LTP_REP, phev_commodity: T_gsl_elc_phev_ltp_rep}
+        freight_light_trucks: {BEV: T_LDV_LTF_BEV_REP_N, PHEV: T_LDV_LTF_GSL_PHEV_REP_N, phev_blend: T_BLND_GSL_ELC_PHEV_LTF_REP, phev_commodity: T_gsl_elc_phev_ltf_rep}
+      efficiency: sales_weighted_consumption  # Harmonic efficiency; conserves PJ per service.
+      costs: sales_weighted_same_capacity_and_service_units
+      capacity_to_activity: require_identical
+      utilization: require_identical
+      fixed_lifetime: require_identical
+      survival: sales_weighted_surviving_fraction
+      survival_composition: require_identical_range_curves
+      embodied: sales_weighted_lifetime_mass
+      # User accepted a horizon mean, matching the existing NLR endpoint averaging.
+      # Component fuel use by vintage is approximate; total PJ/service is conserved.
+      phev_split: mean_vintage_consumption_weighted_energy_share
+      equality_tolerance: 1.0e-12
+      fuel_commodity: T_gsl
+      electricity_commodity: T_elc_ldv_chrg
+      parameter_file: representative_parameters.json
+      audit_file: representative_conservation.json
+    files:
+      records: sales_range_records.csv
+      unresolved: unresolved_sales.csv
+      buckets: sales_bucket_totals.csv
+      integrity: integrity.json
+      constraints: limit_new_capacity_share.csv
+      groups: tech_group.csv
+      members: tech_group_member.csv
+      decisions: representative_decisions.json
+
+  ev_chargers:
+    transformation_version: "10"
+    production_representation:
+      source_year_policy: linear_between_points_then_hold
+      count_hold_after_year: 2040
+      ldv_scenario: High access to home charging (base case)
+      mhdv_scenario: Policy Reference (primary scenario)
+      workplace_partition: source_public_private_halves
+      capacity_basis: matched_cost_power
+      public_dcfc_utilization_basis: reported_port_utilization
+      public_overnight_cost_policy: linear_per_kw_from_50kw_cost
+      private_l2_cost_policy: public_l2_proxy
+      mhdv_operating_days: 300
+      mhdv_mix_scope: national_mix_each_province
+      negligible_public_l1: true
+      stock_basis: prepared_physical_bev_stock
+      archetypes:
+        ldv_public_l2: T_LDV_CHRG_PUB_L2
+        ldv_public_fast: T_LDV_CHRG_PUB_FC
+        ldv_private: T_LDV_CHRG_PRIV
+        mhdv_overnight: T_MHDV_CHRG_NIGHT
+        mhdv_fast: T_MHDV_CHRG_FC
+      groups:
+        ldv_public: T_LDV_CHRG_PUB
+        ldv_all: T_LDV_CHRG_ALL
+        mhdv_all: T_MHDV_CHRG_ALL
+    electricity_accounting:
+      # NRCan LDV ratings use the interpreted EPA recharge-energy basis; see assumptions.md
+      # for corroboration and PHEV limits. ATB consumption also includes charging losses.
+      vehicle_energy_basis: grid_electricity_including_charging_losses
+      charger_transfer_efficiency: 1.0  # Vehicle consumption owns charging losses; this edge preserves infrastructure capacity and costs.
+    utilization_time_basis: technology_kind
+    utilization:
+      ldv:
+        source_period: {existing: all, new: all}  # Reviewed uniform utilization: 0.20 for every vintage.
+        operator: ge
+        floor_multiplier: 0.98  # Annual floor slack; profile mean retains the full utilization target.
+        without_profile: {operator: e, floor_multiplier: 1.0}  # No hourly ceiling: set exact annual utilization.
+      mhdv:
+        source_period: {existing: all, new: all}  # Reviewed MHDV utilization: 0.30, without an hourly profile.
+        operator: e
+        floor_multiplier: 1.0  # Equality uses the full reviewed utilization.
+    manual_file: charger_parameters.csv
+    capacity_to_activity_file: capacity_to_activity.csv
+    capacity_to_activity_units: PJ/GW
+    capacity_to_activity_output_file: charger_capacity_to_activity.csv
+    capacity_output_file: charger_existing_capacity.csv
+    port_audit_file: charger_port_reconciliation.csv
+    invest_output_file: charger_cost_invest.csv
+    fixed_output_file: charger_cost_fixed.csv
+    utilization_output_file: charger_limit_annual_capacity_factor.csv
+    efficiency_output_file: charger_efficiency.csv
+    capacity_share_output_file: charger_limit_capacity_share.csv
+    group_output_file: charger_tech_group.csv
+    group_member_output_file: charger_tech_group_member.csv
+    source_archetypes_output_file: charger_source_archetypes.csv
+    source_components_output_file: charger_source_components.csv
+    source_composition_output_file: charger_source_composition.csv
+    validation_file: integrity.json
+    technology:
+      ldv: {existing: T_LDV_CHRG_EX, new: T_LDV_CHRG_N, output: T_elc_ldv_chrg}
+      mhdv: {existing: T_MHDV_CHRG_EX, new: T_MHDV_CHRG_N, output: T_elc_mhdv_chrg}
+    input_commodity: T_elc
+    hydrogen_refueling:
+      input_commodity: T_h2_700
+      capacity_units: PJ/year
+      cost_units: "$M 2020CAD / (PJ/year)"
+      fixed_cost_units: "$M 2020CAD / (PJ/year) / year"
+      technology:
+        ldv: {tech: T_H2_LDV_REFUEL, output: T_h2_ldv}
+        mhdv: {tech: T_H2_MHDV_REFUEL, output: T_h2_mhdv}
+    stock_classes:
+      ldv: [cars, passenger_light_trucks, freight_light_trucks, motorcycles]
+      mhdv: [medium_trucks, heavy_trucks]
+    public_charger_region_map:
+      NLLAB: [Newfoundland and Labrador]
+      PEI: [Prince Edward Island]
+      NS: [Nova Scotia]
+      NB: [New Brunswick]
+      QC: [Quebec]
+      "ON": [Ontario]
+      MB: [Manitoba]
+      SK: [Saskatchewan]
+      AB: [Alberta]
+      BCT: [British Columbia, Yukon, Northwest Territories, Nunavut]

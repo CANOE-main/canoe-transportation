@@ -3,7 +3,6 @@ version: 1
 diagnostic_only: true
 scenario: config/scenarios/default.yaml
 snapshot_year: 2026
-legacy_notebook: legacy_backend/model_constraints[deprecated]/growth_rates.ipynb
 source_assets:
   original: '10231865:HATCH_v1.5_Clean.csv'
   extended: '19579793:HATCH_national_1.5.csv'

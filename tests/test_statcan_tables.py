@@ -558,22 +558,64 @@ def test_stream_selection_preserves_trimmed_native_fields_and_source_order(
     actual, actual_member, input_rows = read_selected_table(
         request, regions=["ON"], geography_rules=rules["geography"], chunksize=2,
     )
-    expected_frames = []
+    # An independent, hand-enumerated oracle must not reuse _select_chunk: a
+    # selection defect would otherwise affect both the result and its expectation.
     with ZipFile(request.archive_cache_path) as archive, archive.open(member) as handle:
-        for chunk in pd.read_csv(handle, chunksize=2, low_memory=False):
-            for column in chunk.select_dtypes(include=["object", "string"]):
-                chunk[column] = chunk[column].map(
-                    lambda value: value.strip() if isinstance(value, str) else value
-                )
-            expected_frames.extend(_select_chunk(
-                chunk, request=request, regions=["ON"], geography_rules=rules["geography"],
-            ))
-    expected = pd.concat(expected_frames, ignore_index=True)
+        expected = pd.read_csv(handle, low_memory=False).iloc[[0, 2]].reset_index(drop=True)
+    for column in expected.select_dtypes(include=["object", "string"]):
+        expected[column] = expected[column].str.strip()
+    # The final all-null chunk and prior nullable string chunk concatenate to
+    # object under the pinned pandas version. Preserve that consumer contract.
+    expected["STATUS"] = expected["STATUS"].astype(object)
+    expected["scenario_region"] = "ON"
+    if request.normalizer == "freight":
+        expected["region_match"] = "origin"
     pd.testing.assert_frame_equal(actual, expected, check_exact=True)
     assert actual.VALUE.tolist() == [1.25, 2.5]
     assert actual["Additional native audit"].tolist() == ["audit value", "audit value"]
     assert actual_member == member
     assert input_rows == len(source)
+
+
+def test_freight_stream_overlapping_regions_has_independent_chunk_spanning_oracle(bundle, rules, tmp_path):
+    request = request_for(bundle, "23-10-0142-01").model_copy(update={
+        "archive_cache_path": tmp_path / "overlap.zip", "snapshot": None,
+    })
+    base = dict.fromkeys(request.table_rules["required_columns"], " native value ")
+    base.update({"REF_DATE": 2023, "UOM": " shipments ", "SCALAR_FACTOR": " units ", "STATUS": None})
+    for column, members in request.table_rules["selectors"].items():
+        base[column] = f" {members[0]} "
+    pairs = [
+        ("Toronto, Ontario", "Quebec"), ("Quebec", "Hamilton, Ontario"),
+        ("Ontario", "Ontario"), ("Alberta", "Manitoba"),
+        ("Ontario", "Quebec"), ("Quebec", "Quebec"),
+        (None, "Ontario"), ("Quebec", None), ("Ontario", "Quebec"),
+    ]
+    rows = [dict(base, GEO=origin, VALUE=10.25 + index,
+                 **{"Geography, destination of shipments": destination, "Native audit": f" row {index} "})
+            for index, (origin, destination) in enumerate(pairs)]
+    selector = next(iter(request.table_rules["selectors"]))
+    rows[4][selector] = "not a selected member"
+    member = f"{request.product_id}.csv"
+    with ZipFile(request.archive_cache_path, "w") as archive:
+        archive.writestr(member, pd.DataFrame(rows).to_csv(index=False))
+    actual, actual_member, input_rows = read_selected_table(
+        request, regions=["ON", "QC"], geography_rules=rules["geography"], chunksize=2,
+    )
+    # Source order within each chunk/region, including duplicated bilateral rows.
+    indexes = [0, 1, 0, 1, 2, 5, 6, 7, 8, 8]
+    regions = ["ON", "ON", "QC", "QC", "ON", "QC", "ON", "QC", "ON", "QC"]
+    matches = ["origin", "destination", "destination", "origin", "both", "both",
+               "destination", "origin", "origin", "destination"]
+    with ZipFile(request.archive_cache_path) as archive, archive.open(member) as handle:
+        expected = pd.read_csv(handle, low_memory=False).iloc[indexes].reset_index(drop=True)
+    for column in expected.select_dtypes(include=["object", "string"]):
+        expected[column] = expected[column].str.strip()
+    expected["scenario_region"] = regions
+    expected["region_match"] = matches
+    pd.testing.assert_frame_equal(actual, expected, check_exact=True)
+    assert input_rows == 9 and actual_member == member
+    assert actual.STATUS.isna().all()
 
 
 def test_cached_metadata_shape_can_be_serialized_for_offline_fixture(bundle) -> None:

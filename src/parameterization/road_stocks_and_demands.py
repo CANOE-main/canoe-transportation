@@ -9,6 +9,7 @@ import pandas as pd
 
 from validation.config_models import ScenarioPeriods
 
+LOGGER = logging.getLogger(__name__)
 
 
 def reconcile_road_capacity_to_activity(
@@ -131,6 +132,8 @@ def aggregate_normalized_mileage_profiles(
     weights: pd.DataFrame,
     *,
     mile_to_km: float,
+    max_age: int | None = None,
+    endpoint_policy: str | None = None,
 ) -> pd.DataFrame:
     """Apply an explicitly selected road weight slice to complete ATB age profiles."""
     mileage_columns = {"vehicle_class", "year_index", "vmt_mi", "unit"}
@@ -157,6 +160,26 @@ def aggregate_normalized_mileage_profiles(
         lambda value: not isfinite(value) or value < 0
     ).any():
         raise ValueError("ATB mileage ages or values are invalid")
+    if endpoint_policy not in {None, "hold_last"}:
+        raise ValueError(f"Unsupported mileage endpoint policy: {endpoint_policy}")
+    if max_age is not None and (max_age < 0 or int(max_age) != max_age):
+        raise ValueError("Mileage age ceiling must be a nonnegative integer")
+    if endpoint_policy == "hold_last":
+        if max_age is None:
+            raise ValueError("Mileage endpoint extension requires an age ceiling")
+        extended = []
+        for vehicle_class, group in selected.groupby("vehicle_class", sort=True):
+            group = group.sort_values("year_index")
+            endpoint = int(group.year_index.max())
+            if set(group.year_index) != set(range(endpoint + 1)):
+                raise ValueError(f"ATB mileage profile ages are not contiguous from zero: {vehicle_class}")
+            tail = group.iloc[[-1]].copy()
+            tail = tail.loc[tail.index.repeat(max(0, max_age - endpoint))].copy()
+            tail["year_index"] = range(endpoint + 1, max_age + 1)
+            extended.append(pd.concat([group.loc[group.year_index.le(max_age)], tail], ignore_index=True))
+            if max_age > endpoint:
+                LOGGER.info("Held ATB mileage endpoint for %s from age %s through %s", vehicle_class, endpoint, max_age)
+        selected = pd.concat(extended, ignore_index=True)
     age_sets = [set(group["year_index"]) for _, group in selected.groupby("vehicle_class")]
     if any(ages != age_sets[0] for ages in age_sets[1:]):
         raise ValueError("ATB classes have unequal age coverage; a reviewed treatment is required")
@@ -414,7 +437,6 @@ def distribute_existing_road_capacity(
     report5_age: pd.DataFrame,
     ldv_registrations: pd.DataFrame,
     truck_registrations: pd.DataFrame,
-    dashboard: pd.DataFrame,
     regions: list[str],
     period_config: ScenarioPeriods,
     vehicle_population_year: int,
@@ -430,6 +452,9 @@ def distribute_existing_road_capacity(
 
     The production caller always uses sales_survival for the five sales-supported
     road classes. Motorcycles retain Report 5 stock ages.
+    LDV fuel distributions are new registrations; medium-truck distributions are
+    registered-fleet shares from the configured source weight group, used as a
+    proxy for CEUD's full medium-truck population. Neither replaces CEUD totals.
     The returned annual shares also carry exact grouped-curve retirement summaries
     and annual losses in their attrs for the caller's published audit.
     """
@@ -619,7 +644,6 @@ def distribute_existing_road_capacity(
     excluded_rows: list[dict[str, Any]] = []
     fuel_technologies = rules["fuel_technology"]
     share_proxy = rules["share_region_proxy"]
-    dashboard_by_region = dashboard.set_index("source_region")["ytd_market_share"]
 
     for (region, name, vintage_year, vintage), group in reference_cohorts.groupby(
         ["ceud_region", "road_class", "vintage_year", "vintage"], sort=True
@@ -662,7 +686,10 @@ def distribute_existing_road_capacity(
             counts = {next(iter(fuel_technologies[name])): 1.0}
             source_table_ids = ""
         else:
-            selected = selected.loc[selected["scaled_value"].notna()].copy()
+            # Keep missing medium-truck counts until the chosen source year is
+            # validated: suppression is not evidence of zero battery stock.
+            if name != "medium_trucks":
+                selected = selected.loc[selected["scaled_value"].notna()].copy()
             available = sorted(
                 int(year)
                 for year in selected["reference_year"].unique()
@@ -678,6 +705,26 @@ def distribute_existing_road_capacity(
                 default=available[0],
             )
             selected = selected.loc[selected["reference_year"].eq(source_year)]
+            if name == "medium_trucks":
+                required = {
+                    (vehicle_type, fuel)
+                    for vehicle_type in rules["statcan_medium_source_types"]
+                    for fuel in fuel_technologies[name]
+                }
+                supported_rows = selected.loc[
+                    selected.fuel_type.isin(fuel_technologies[name])
+                ]
+                keys = list(zip(supported_rows.vehicle_type, supported_rows.fuel_type, strict=True))
+                values = pd.to_numeric(supported_rows.scaled_value, errors="coerce")
+                if (set(keys) != required or len(keys) != len(set(keys))
+                        or values.isna().any()
+                        or any(not isfinite(float(value)) or float(value) < 0 for value in values)):
+                    raise ValueError(
+                        "Medium-truck fuel proxy requires complete, unique numeric "
+                        "supported-fuel counts; suppressed or absent values cannot be zero: "
+                        f"{(source_region, source_year)}"
+                    )
+                selected = selected.loc[selected.scaled_value.notna()]
             source_table_ids = (
                 "|".join(sorted(set(selected["source_table_id"])))
                 if "source_table_id" in selected
@@ -694,11 +741,6 @@ def distribute_existing_road_capacity(
         total = sum(counts.values())
         supported = fuel_technologies[name]
         eligible_fuels = set(supported)
-        vintage_excluded_fuels = (
-            set(rules.get("latest_vintage_only_fuels", {}).get(name, []))
-            if vintage != period_config.latest_observed_vintage else set()
-        )
-        eligible_fuels -= vintage_excluded_fuels
         if historical_backfill:
             eligible_fuels &= historical_fuels
         selected_total = sum(
@@ -720,8 +762,6 @@ def distribute_existing_road_capacity(
                         "fuel_type": fuel,
                         "excluded_source_share": value / total,
                         "exclusion_reason": (
-                            "configured_latest_vintage_only_fuel"
-                            if fuel in vintage_excluded_fuels else
                             "pre_evidence_non_combustion"
                             if historical_backfill and fuel in supported else
                             "unsupported_existing_technology"
@@ -733,39 +773,6 @@ def distribute_existing_road_capacity(
             for fuel, value in counts.items()
             if fuel in eligible_fuels
         }
-        if name == "medium_trucks" and vintage == period_config.latest_observed_vintage:
-            dashboard_label = (
-                "British Columbia"
-                if region == "BCT"
-                else (
-                    "Newfoundland and Labrador"
-                    if region == "NL"
-                    else ("Prince Edward Island" if region == "PE" else None)
-                )
-            )
-            if dashboard_label is None:
-                dashboard_label = {
-                    "AB": "Alberta",
-                    "MB": "Manitoba",
-                    "NB": "New Brunswick",
-                    "NS": "Nova Scotia",
-                    "ON": "Ontario",
-                    "QC": "Quebec",
-                    "SK": "Saskatchewan",
-                }[region]
-            if dashboard_label not in dashboard_by_region or pd.isna(
-                dashboard_by_region[dashboard_label]
-            ):
-                raise ValueError(f"No dashboard share for {region}")
-            bev_share = float(dashboard_by_region[dashboard_label])
-            combustion = sum(shares.get(fuel, 0.0) for fuel in ("Gasoline", "Diesel"))
-            if combustion <= 0:
-                raise ValueError(f"No combustion mix for dashboard override: {region}")
-            shares = {
-                fuel: (1 - bev_share) * shares.get(fuel, 0.0) / combustion
-                for fuel in ("Gasoline", "Diesel")
-            }
-            shares["Battery electric"] = bev_share
         if not abs(sum(shares.values()) - 1) < 1e-9:
             raise ValueError(
                 f"Fuel shares do not sum to one for {(region, name, vintage_year)}"
@@ -785,8 +792,6 @@ def distribute_existing_road_capacity(
                     "source_year": source_year,
                     "source_table_ids": source_table_ids,
                     "proxy_geography": source_region != region,
-                    "dashboard_override": name == "medium_trucks"
-                    and vintage == period_config.latest_observed_vintage,
                     "historical_combustion_backfill": historical_backfill,
                     "eligible_first_model_period": bool(
                         group["eligible_first_model_period"].iloc[0]
@@ -921,10 +926,10 @@ def distribute_existing_bus_capacity(
     road_rules: Mapping[str, Any],
     rules: Mapping[str, Any],
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Allocate CEUD bus stocks with annual fuel activity and MTO age shares."""
+    """Allocate CEUD bus stocks with annual VKT shares and MTO age shares."""
     supported = {
-        "activity_share_method": "annual_energy_times_efficiency",
-        "pre_ceud_year_rule": "oldest_available_activity_share",
+        "activity_share_method": "annual_energy_divided_by_vehicle_consumption",
+        "pre_ceud_year_rule": "oldest_available_vkt_share",
         "first_model_period_rule": "positive_surviving_capacity",
         "ineligible_cohort_redistribution": "proportional_to_eligible_capacity",
         "unallocatable_technology_rule": "redistribute_within_class_proportionally",
@@ -932,7 +937,6 @@ def distribute_existing_bus_capacity(
     if any(rules[key] != value for key, value in supported.items()):
         raise ValueError("Unsupported bus capacity allocation policy")
     base_year = period_config.base_year
-    periods = period_config.existing
     first_model_period = period_config.model[0]
     age = report5_age.loc[report5_age["VEHICLE_CLASS"].eq(rules["age_class"])].copy()
     if (
@@ -961,8 +965,8 @@ def distribute_existing_bus_capacity(
     required_members = set(rules["required_fuel_members"])
     if not required_members.issubset(source_to_powertrain):
         raise ValueError("Required bus fuel members lack powertrain mappings")
-    first_year = periods[0]
-    years = set(range(first_year, base_year + 1))
+    first_source_year = int(provincial["year"].min())
+    years = set(range(first_source_year, base_year + 1))
     stock_records = []
     fuel_records = []
     excluded_records = []
@@ -1036,6 +1040,8 @@ def distribute_existing_bus_capacity(
                             "powertrain": source_to_powertrain[member],
                             "fuel_member": member,
                             "energy_pj": float(record.value),
+                            "ceud_energy_observed_year": getattr(record, "ceud_observed_year", record.year),
+                            "ceud_energy_status": getattr(record, "ceud_value_status", "observed"),
                         }
                     )
                 elif member in excluded_members and record.value > 0:
@@ -1058,7 +1064,12 @@ def distribute_existing_bus_capacity(
     fuel["blend_energy_pj"] = fuel["energy_pj"].where(fuel["is_blend"], 0.0)
     energy = fuel.groupby(
         ["ceud_region", "road_class", "year", "powertrain"], as_index=False
-    )[["energy_pj", "blend_energy_pj"]].sum()
+    ).agg(
+        energy_pj=("energy_pj", "sum"),
+        blend_energy_pj=("blend_energy_pj", "sum"),
+        ceud_energy_observed_years=("ceud_energy_observed_year", lambda values: "|".join(map(str, sorted(set(values))))),
+        ceud_energy_status=("ceud_energy_status", lambda values: "|".join(sorted(set(values)))),
+    )
     efficiency = annual_efficiency.loc[
         annual_efficiency["road_class"].isin(rules["classes"])
     ].copy()
@@ -1066,6 +1077,7 @@ def distribute_existing_bus_capacity(
         set(efficiency["tech"]) != expected_owners
         or efficiency.duplicated(["ceud_region", "tech", "year"]).any()
         or set(efficiency["units"]) != {"bn passenger-km/PJ"}
+        or not {"consumption_mj_per_vkm", "load_factor"} <= set(efficiency)
     ):
         raise ValueError("Bus annual efficiency owner, key, or unit mismatch")
     expected_keys = {
@@ -1078,6 +1090,12 @@ def distribute_existing_bus_capacity(
         (r.ceud_region, r.tech, r.year) for r in efficiency.itertuples(index=False)
     } != expected_keys:
         raise ValueError("Bus annual efficiency lacks regional or year coverage")
+    if any(
+        not all(isfinite(value) and value > 0 for value in (row.consumption_mj_per_vkm, row.load_factor, row.efficiency))
+        or not isclose(row.efficiency, row.load_factor / row.consumption_mj_per_vkm, rel_tol=1e-10)
+        for row in efficiency.itertuples(index=False)
+    ):
+        raise ValueError("Bus annual efficiency must agree with vehicle consumption and load")
     shares = efficiency.merge(
         energy,
         on=["ceud_region", "road_class", "year", "powertrain"],
@@ -1087,19 +1105,24 @@ def distribute_existing_bus_capacity(
     shares[["energy_pj", "blend_energy_pj"]] = shares[
         ["energy_pj", "blend_energy_pj"]
     ].fillna(0.0)
-    shares["activity_bn_passenger_km"] = shares["energy_pj"] * shares["efficiency"]
+    # PJ/MJ gives billions of vehicle-kilometres. Keep passenger service as evidence.
+    shares["vehicle_km_bn"] = shares["energy_pj"] / shares["consumption_mj_per_vkm"]
     group_keys = ["ceud_region", "road_class", "year"]
-    totals = shares.groupby(group_keys)["activity_bn_passenger_km"].transform("sum")
-    if totals.le(0).any():
+    vkt_totals = shares.groupby(group_keys)["vehicle_km_bn"].transform("sum")
+    if not vkt_totals.map(lambda total: isfinite(total) and total > 0).all():
         raise ValueError("Bus fuel activity has no supported powertrain in a CEUD year")
-    shares["activity_share"] = shares["activity_bn_passenger_km"] / totals
+    shares["vkt_share"] = shares["vehicle_km_bn"] / vkt_totals
+    shares["activity_bn_passenger_km"] = shares["energy_pj"] * shares["efficiency"]
+    shares["activity_share"] = shares["activity_bn_passenger_km"] / shares.groupby(group_keys)[
+        "activity_bn_passenger_km"
+    ].transform("sum")
     age = age[["AGE", "AGE_DIST"]].rename(
         columns={"AGE": "age", "AGE_DIST": "age_share"}
     )
     cohorts = stocks.merge(age, how="cross")
     cohorts["vintage_year"] = base_year - cohorts["age"].astype(int)
-    cohorts["source_year"] = cohorts["vintage_year"].clip(lower=first_year)
-    cohorts["vintage"] = cohorts["source_year"].map(period_config.existing_vintage)
+    cohorts["source_year"] = cohorts["vintage_year"].clip(lower=first_source_year)
+    cohorts["vintage"] = cohorts["vintage_year"].map(period_config.existing_vintage)
     cohorts = cohorts.merge(
         shares.rename(columns={"year": "source_year"}).drop(columns="region"),
         on=["ceud_region", "road_class", "source_year"],
@@ -1107,7 +1130,7 @@ def distribute_existing_bus_capacity(
         validate="many_to_many",
     )
     if cohorts["tech"].isna().any():
-        raise ValueError("MTO bus cohort lacks a CEUD/efficiency activity share")
+        raise ValueError("MTO bus cohort lacks a CEUD/efficiency VKT share")
     life = pd.DataFrame(
         [
             {"region": region, "tech": tech, "lifetime_years": value}
@@ -1125,7 +1148,7 @@ def distribute_existing_bus_capacity(
         raise ValueError("StatCan bus lifetimes lack complete native owner coverage")
     cohorts = cohorts.merge(life, on=["region", "tech"], validate="many_to_one")
     cohorts["raw_cohort_k_vehicles"] = (
-        cohorts["stock_k_vehicles"] * cohorts["age_share"] * cohorts["activity_share"]
+        cohorts["stock_k_vehicles"] * cohorts["age_share"] * cohorts["vkt_share"]
     )
     cohorts["annual_cohort_eligible"] = (
         cohorts["vintage_year"] + cohorts["lifetime_years"] > first_model_period
@@ -1246,8 +1269,7 @@ def extrapolate_passenger_ldv_demand(
     *,
     regions: list[str],
     base_year: int,
-    periods: list[int],
-    step: int,
+    evaluation_years: Mapping[int, int],
     gdp_indices: Mapping[int, float],
     rules: Mapping[str, Any],
 ) -> tuple[dict[tuple[str, int, str], float], list[dict[str, Any]]]:
@@ -1296,10 +1318,9 @@ def extrapolate_passenger_ldv_demand(
         truck_base = float(truck_rows.iloc[0]["baseline_demand"])
         if abs(car_base - activity[-1]) > 1e-9:
             raise ValueError(f"CEUD car history does not match baseline for {ceud_region}")
-        for period in periods:
-            end_year = period + step
+        for period, evaluation_year in evaluation_years.items():
             total = (car_base + truck_base) * float(gdp_indices[period])
-            car = car_base * (1.0 + annual_cagr) ** (end_year - base_year)
+            car = car_base * (1.0 + annual_cagr) ** (evaluation_year - base_year)
             if not isfinite(total) or total <= 0 or not isfinite(car) or car <= 0:
                 raise ValueError(
                     f"Invalid passenger LDV projection for {(ceud_region, period)}"
@@ -1315,7 +1336,7 @@ def extrapolate_passenger_ldv_demand(
                 "ceud_region": ceud_region,
                 "region": native_region,
                 "period": period,
-                "projection_year": end_year,
+                "projection_year": evaluation_year,
                 "history_start_year": start_year,
                 "annual_car_cagr": annual_cagr,
                 "growth_intervals": "|".join(map(str, growth_intervals)),

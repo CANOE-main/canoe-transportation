@@ -1,6 +1,7 @@
 """Saved GREET extraction, road aggregation and shared insertion contracts."""
 
 from dataclasses import replace
+import hashlib
 from pathlib import Path
 import shutil
 import json
@@ -26,6 +27,7 @@ from validation.config_models import ScenarioConfig
 from validation.database_bootstrap import validate_database
 from validation.insertion import insert_models, validate_transport_parameter_support
 from validation.schema_contract import create_v4_schema
+from greet_fixtures import isolated_greet_config
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -92,17 +94,19 @@ def make_workbooks(directory: Path, ldv: str, truck: str) -> None:
 
 
 @pytest.fixture
-def bundle(tmp_path):
+def bundle(tmp_path, isolated_legacy_bundle):
     shutil.copytree(ROOT / "config", tmp_path / "config")
     shutil.copytree(ROOT / "inputs/0_canoe_template", tmp_path / "inputs/0_canoe_template")
-    original = load_config_bundle(SCENARIO, repo_root=ROOT)
+    # Rebuild the selected fleet inputs privately once; a preceding scenario may
+    # legitimately leave a different population edition in the shared interim tree.
+    original = isolated_legacy_bundle
     fleet = load_fleet_aggregation_evidence(original)
     for path in fleet.paths:
-        target = tmp_path / path.relative_to(ROOT)
+        target = tmp_path / path.relative_to(original.repo_root)
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(path, target)
     scenario = tmp_path / SCENARIO
-    payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
+    payload = original.scenario.model_dump(mode="json", by_alias=True)
     payload["embodied_emissions"] = True
     # This fixture supplies GREET/fleet evidence for the isolated embodied layer.
     payload["BEV_PHEV_range_representation"]["mode"] = "none"
@@ -110,7 +114,7 @@ def bundle(tmp_path):
     payload["geography"]["regions"] = ["ON", "QC", "BCT", "NL", "PE"]
     scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
     # Preserve the explicit exclusion test; production includes approved CNG=ICEV.
-    rules_path = tmp_path / "config/parameters/rules.yaml"
+    rules_path = tmp_path / "config/parameters/vehicle_efficiency_and_emissions.yaml"
     payload = yaml.safe_load(rules_path.read_text(encoding="utf-8"))
     payload["parameterization"]["road_embodied_emissions"]["excluded_powertrains"] = ["cng"]
     rules_path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
@@ -118,7 +122,22 @@ def bundle(tmp_path):
     atb_rules = load_harmonization_rules(config, "nlr_atb_autonomie")
     atb_relative = Path(config.paths.inputs.interim) / atb_rules["interim_subdir"] / atb_rules["components"]["vehicles"]["output_file"]
     (tmp_path / atb_relative).parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(ROOT / atb_relative, tmp_path / atb_relative)
+    shutil.copyfile(original.repo_root / atb_relative, tmp_path / atb_relative)
+    registration, _ = registered_workbooks(config)
+    make_workbooks(tmp_path / config.paths.inputs.external / registration.directory, "Car", "Class 6 PnD Trucks")
+    write_fixture_bank(config)
+    return config
+
+
+@pytest.fixture
+def greet_bundle(tmp_path):
+    """A complete model handoff without unrelated fleet/production prerequisites."""
+    isolated_greet_config(tmp_path)
+    scenario = tmp_path / SCENARIO
+    payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
+    payload["embodied_emissions"] = True
+    scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    config = load_config_bundle(SCENARIO, repo_root=tmp_path)
     registration, _ = registered_workbooks(config)
     make_workbooks(tmp_path / config.paths.inputs.external / registration.directory, "Car", "Class 6 PnD Trucks")
     write_fixture_bank(config)
@@ -195,6 +214,53 @@ def test_extraction_retains_exact_individual_gases_and_all_blocks(bundle):
     assert (selected.worksheet, selected.cell, selected.source_value) == ("Vehi_Sum", "F13", 1e6)
     last = result.rows.query("vehicle_class=='Car' and powertrain=='fcev' and materials=='lightweight' and gas_label=='N2O'").iloc[0]
     assert last.cell == "F295"
+
+
+@pytest.mark.parametrize("retained_newline", [b"\n", b"\r\n"])
+@pytest.mark.parametrize("checkout_newline", [b"\n", b"\r\n"])
+def test_complete_bank_checkout_line_endings_preserve_values_and_registered_evidence(
+    greet_bundle, retained_newline, checkout_newline,
+):
+    bank = result_bank_paths(greet_bundle)
+    baseline = normalize_generated_results(greet_bundle, write_interim=False)
+    manifest = json.loads(bank["manifest"].read_text(encoding="utf-8"))
+    for key, path in bank.items():
+        if key == "manifest":
+            continue
+        content = path.read_bytes().replace(b"\r\n", b"\n")
+        retained = content.replace(b"\n", retained_newline)
+        manifest["files"][path.name] = hashlib.sha256(retained).hexdigest()
+        path.write_bytes(content.replace(b"\n", checkout_newline))
+    bank["manifest"].write_bytes(json.dumps(manifest).encode("utf-8"))
+    protected = {path: path.read_bytes() for path in baseline.paths}
+    translated = normalize_generated_results(greet_bundle, write_interim=False)
+    for field in ("rows", "raw_rows", "exclusions", "models"):
+        pd.testing.assert_frame_equal(getattr(translated, field), getattr(baseline, field))
+    assert all(path.read_bytes() == content for path, content in protected.items())
+    by_name = {path.name: path for path in bank.values()}
+    for name, entry in translated.audit["result_bank_replay"].items():
+        assert entry["current_sha256"] == file_sha256(by_name[name])
+        assert entry["retained_sha256"] == manifest["files"][name]
+        assert entry["line_endings_only"] == (entry["current_sha256"] != entry["retained_sha256"])
+
+
+def test_validate_only_preserves_sources_and_does_not_create_or_replace_interim(greet_bundle, monkeypatch):
+    paths = (*registered_workbooks(greet_bundle)[1], *result_bank_paths(greet_bundle).values())
+    protected = {path: path.read_bytes() for path in paths}
+    interim = resolve_artifact_path(greet_bundle, "greet_vehicle_cycle_interim")
+    assert not interim.exists()
+    monkeypatch.setattr("fetching.greet_vehicle_cycle.write_dataframe_atomic", lambda *_: pytest.fail("validation wrote an interim file"))
+    first = normalize_generated_results(greet_bundle, write_interim=False)
+    assert len(first.rows) == 198
+    assert not interim.exists()
+    interim.mkdir(parents=True)
+    sentinel = interim / "existing_evidence.csv"
+    sentinel.write_bytes(b"preserve existing evidence\n")
+    second = normalize_generated_results(greet_bundle, write_interim=False)
+    pd.testing.assert_frame_equal(first.rows, second.rows)
+    assert sentinel.read_bytes() == b"preserve existing evidence\n"
+    assert list(interim.iterdir()) == [sentinel]
+    assert all(path.read_bytes() == content for path, content in protected.items())
 
 
 @pytest.mark.parametrize(("family", "cell", "value"), [
@@ -465,7 +531,7 @@ def test_invalid_harmonization_or_owner_contract_is_rejected(bundle, problem):
         frame.to_csv(path, index=False)
         expected = "emission commodity"
     else:
-        path = bundle.repo_root / "config/parameters/rules.yaml"
+        path = bundle.repo_root / "config/parameters/vehicle_efficiency_and_emissions.yaml"
         payload = yaml.safe_load(path.read_text(encoding="utf-8"))
         rules = payload["parameterization"]["road_embodied_emissions"]
         if problem == "parameter_units":
@@ -485,7 +551,7 @@ def test_invalid_harmonization_or_owner_contract_is_rejected(bundle, problem):
 
 
 def test_approved_cng_uses_icev_and_existing_vehicles_receive_no_rows(bundle):
-    path = bundle.repo_root / "config/parameters/rules.yaml"
+    path = bundle.repo_root / "config/parameters/vehicle_efficiency_and_emissions.yaml"
     payload = yaml.safe_load(path.read_text(encoding="utf-8"))
     payload["parameterization"]["road_embodied_emissions"].pop("excluded_powertrains")
     path.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
@@ -506,18 +572,3 @@ def test_invalid_material_selection_and_missing_controls_are_rejected(bundle):
     payload.pop("embodied_materials")
     with pytest.raises(ValidationError, match="embodied_materials"):
         ScenarioConfig.model_validate(payload)
-
-
-def test_empty_legacy_embodied_baseline_is_reported_without_accepting_new_rows(tmp_path):
-    from validation.legacy_compare import compare_legacy_emission_embodied
-
-    candidate, reference = tmp_path / "candidate.sqlite", tmp_path / "reference.sqlite"
-    with sqlite3.connect(candidate) as connection:
-        connection.execute("CREATE TABLE emission_embodied (region, tech, emis_comm, vintage, value, units)")
-        connection.execute("INSERT INTO emission_embodied VALUES ('ON', 'T_NEW', 'co2', 2025, 5, 'kt/k vehicles')")
-    with sqlite3.connect(reference) as connection:
-        connection.execute("CREATE TABLE EmissionEmbodied (region, tech, emis_comm, vintage, value, units)")
-    report = compare_legacy_emission_embodied(candidate, reference, absolute_tolerance=1e-9, relative_tolerance=1e-6)
-    assert report["candidate_rows"] == report["candidate_only_keys"] == 1
-    assert report["reference_rows"] == report["shared_keys"] == 0
-    assert "diagnostic only" in report["status"]

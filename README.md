@@ -5,8 +5,10 @@ reviewed assumptions and external-model results. YAML selects the scenario; Pyth
 prepares inputs, calculates parameters, validates their source lineage and publishes
 the database.
 
-Read the current [model documentation](docs/index.md)
-for the methods, figures and assumptions, or start with the commands below.
+The model represents road fleets, passenger and freight service by air, rail and
+marine, direct off-road energy demand, and charging and hydrogen refueling.
+Use the [Executive Summary](docs/executive_summary.md) for the research context
+and integration overview, or follow the commands below to build a scenario.
 
 ## Install and check
 
@@ -28,9 +30,6 @@ reviewed tables in `inputs/0_manual_params/`, and external-model results in
 identity, access and required coverage. Installation and downloads do not create
 reviewed mappings or external-model results. New GREET simulations require Windows
 and desktop Excel; replay uses the registered result bank.
-
-On Windows, use a short clone path or enable repository-local long paths with
-`git config core.longpaths true` if a legacy filename is too long.
 
 ## Build a scenario
 
@@ -72,24 +71,24 @@ choose distinct output names and follow the [scenario guide](config/scenarios/RE
 | --- | --- |
 | `config/scenarios/*.yaml` | Regions, periods, source editions, model options and outputs. |
 | `config/sources.yaml` | Registered source files, access, citations and data-quality evidence. |
-| `config/parameters/*.yaml` | Mappings, aggregation rules, conversions and parameter metadata. |
+| [Parameter contract instructions](config/parameters/AGENTS.md) | Routing, lineage and ownership for the rule partitions and specialized contracts. |
 | `config/paths.yaml` | Artifact locations and their owners. |
 
 ## Current model support
 
-- Sales-derived road cohorts support fixed lifetimes or annual survival curves.
-  Car and truck utilization matches projected `base_year` demand using the selected
-  demand method, including the optional car/light-truck split.
-- Light-duty vehicle (LDV) powertrain shares use new registrations. Ontario MTO and Transport Canada iZEV composition
-  evidence informs consumption, with explicit coverage and fallback checks.
-- Optional CEUD energy calibration matches reported gasoline/diesel energy for
-  cars and trucks. Heavy-truck aggregate energy is treated as entirely diesel, as
-  confirmed in the reviewed source interpretation. The option remains off by default;
-  the same class adjustment applies to its powertrains and vintages.
-- Charger costs divide total port expenditure by matched rated power. Registered
-  charging profiles preserve their timing and rescale to the reviewed annual utilization of 20%.
-- Diagnostics and the website/PDF show mapping results, cohort alternatives,
-  consumption matching, regional calibration changes and charging normalization.
+- Historical sales and survival reconstruct car and truck cohorts. Choose fixed
+  retirement ages or annual survival curves. Flat utilization for each road
+  class matches its base-year activity using prepared physical stock.
+- Configure road technology trajectories and plug-in vehicle range detail.
+  Optional vehicle-cycle emissions trace materials, manufacturing and decommissioning
+  to the registered GREET results.
+- Choose aggregated or explicit charger types. Aggregated LDV chargers can
+  use six registered survey/strategy profiles scaled to the reviewed 20% annual
+  utilization target. Explicit chargers use annual utilization and
+  rated-power share constraints.
+- The default uses prospective periods, MOVES survival curves, new-capacity
+  range shares, and aggregated chargers with the NHTS uncontrolled profile.
+  See the [scenario guide](config/scenarios/README.md) for supported combinations.
 
 ## Backend at a glance
 
@@ -149,45 +148,47 @@ The overview is conceptual: scenario labels illustrate configuration ownership.
 
 | Reference | Use it for |
 | --- | --- |
+| [Model documentation](docs/index.md) | Research overview, scenario walkthroughs and scientific methods. |
+| [Getting started](docs/getting_started.md) | Installation, build controls, validation reports and diagnostic preparation. |
 | [Backend architecture](docs/backend_architecture.md) | Ownership, artifact paths, build lifecycle and extension points. |
 | [Parameter flowcharts](docs/etl_flowcharts.md) | Source-to-row transformations, equations and conditional branches. |
 | [Assumptions](docs/assumptions.md) | Reviewed treatments, source limitations and unresolved modeling choices. |
 | [Source inventory](docs/source_inventory.md) | Source families and their recorded scope; the registry owns current identities. |
-| [Publication guide](docs/publication.md) | Complete evidence preparation, figure export and rendering commands. |
+| [Publication guide](docs/publication.md) | Figure evidence, MkDocs and the printable report. |
 
 ## Open diagnostic notebooks
 
-Prepare the shared population/efficiency evidence, then open an app:
+Prepare the shared Ontario population and LDV efficiency captures, then open an app:
 
 ```sh
 uv run --offline python src/build_transport.py --scenario config/scenarios/notebook_diagnostics.yaml --overwrite
 uv run --offline marimo run docs/insights/vehicle_population_diagnosis.py
 ```
 
-Use the same `marimo run` command with a notebook below. Each starts a local server;
-use separate terminals or stop it with `Ctrl+C` before opening another.
+Use the same `marimo run` command with another notebook after preparing its
+evidence. Stop the local server with `Ctrl+C`.
 
 | Notebook under `docs/insights/` | Purpose and prerequisite |
 | --- | --- |
-| [vehicle_population_diagnosis.py](docs/insights/vehicle_population_diagnosis.py), [ldv_efficiency_diagnosis.py](docs/insights/ldv_efficiency_diagnosis.py) | Mapping, composition and consumption; use the shared preset above. |
-| [stock_cohort_diagnosis.py](docs/insights/stock_cohort_diagnosis.py) | Sales/stock cohort alternatives and retirement; recalculates from prepared registered evidence. |
-| [transportation_validation_diagnosis.py](docs/insights/transportation_validation_diagnosis.py) | Activity, energy and charger comparisons; use the [comparison and calibration workflow](#compare-methods-and-calibrate-energy). |
-| [vehicle_cost_diagnosis.py](docs/insights/vehicle_cost_diagnosis.py), [ceud_calibration_diagnosis.py](docs/insights/ceud_calibration_diagnosis.py) | Cost or energy-calibration reports from the [comparison workflow](#compare-methods-and-calibrate-energy). |
-| [charging_profile_diagnosis.py](docs/insights/charging_profile_diagnosis.py) | Annual utilization rescaling; reads registered charging simulations. |
-| [documentation_support.py](docs/insights/documentation_support.py) | Fleet illustrations and non-road parameters; use the [publication evidence preparation](docs/publication.md#prepare-model-evidence-explicitly). |
-| [legacy_comparison_diagnosis.py](docs/insights/legacy_comparison_diagnosis.py) | Parameter differences; use the [legacy comparison commands](#compare-methods-and-calibrate-energy). |
-| [growth_constraint_diagnosis.py](docs/insights/growth_constraint_diagnosis.py) | Exploratory adoption evidence; its preparation remains separate from production. |
+| [Vehicle population](docs/insights/vehicle_population_diagnosis.py) | Reviewed mapping, unresolved coverage, composition and Ontario retention. Shared capture above. |
+| [LDV efficiency](docs/insights/ldv_efficiency_diagnosis.py) | Canadian ratings, ranges, class weights and future efficiency. Shared capture above. |
+| [Stock cohorts](docs/insights/stock_cohort_diagnosis.py) | Compare historical acquisitions, reference-year stock and survival. Uses separately prepared registered inputs. |
+| [Vehicle costs](docs/insights/vehicle_cost_diagnosis.py) | Price bases, range weighting and maintenance per unit of service. Uses a matched build and cost report. |
+| [Transportation validation](docs/insights/transportation_validation_diagnosis.py) | Checks stock, activity, energy and chargers against current and curated historical evidence. |
+| [Charger infrastructure](docs/insights/charger_infrastructure_diagnosis.py) | Compare port costs, rated GW and utilization across charger representations. Uses registered evidence and charger reports. |
+| [LDV charging](docs/insights/ldv_charging_diagnosis.py) | Compare timing and annual utilization across the six registered Ontario simulations. |
+| [Travel survey](docs/insights/travel_survey_diagnosis.py) | Examine NHTS inclusion rules, trip timing and inputs to RAMP. Uses explicit survey preparation. |
+| [Documentation support](docs/insights/documentation_support.py) | Fleet and non-road publication figures. Uses dedicated figure evidence. |
+| [Growth constraints](docs/insights/growth_constraint_diagnosis.py) | Research on technology adoption and deployment seeds. Uses separately prepared growth evidence. |
+| [CEUD energy calibration](docs/insights/ceud_calibration_diagnosis.py) | Optional fitted energy comparison that preserves travel activity. Uses matched control and calibration reports. |
 
-These apps do not run ETL. Missing or stale captured evidence gives its preparation
-instruction. The [publication guide](docs/publication.md) provides the complete serial
-sequence for all published figures, including documentation-support evidence.
+Use the [diagnostic preparation guide](docs/getting_started.md#prepare-diagnostics-explicitly)
+and the prerequisites in each notebook. Run preparation serially and rebuild
+stale evidence through its producer.
 
 ## Compare methods and calibrate energy
 
-These comparison presets require their configured legacy SQLite and supplied CSV/
-notebook evidence under `legacy_backend/`. Builds do not create that historical evidence.
-
-Build the Ontario control, then capture its fleet, charger and vehicle-cost reports:
+Build the Ontario control and capture its current fleet, charger and cost reports:
 
 ```sh
 uv run --offline python src/build_transport.py --scenario config/scenarios/validation_baseline.yaml --overwrite
@@ -196,32 +197,15 @@ uv run --offline python -m validation.charging_cost_comparison --scenario config
 uv run --offline python -m validation.vehicle_cost_diagnostic --scenario config/scenarios/validation_baseline.yaml --write-report
 ```
 
-Build the matched calibration-on case and compare final rows:
+For a database regression check, build a matching reference first and use
+[`comparison.mode: scenario`](config/scenarios/README.md#sqlite-comparisons)
+in the candidate YAML. Use the reports with the transportation validation
+notebook to interpret differences alongside curated historical evidence.
 
-```sh
-uv run --offline python src/build_transport.py --scenario config/scenarios/validation_energy_calibration.yaml --overwrite
-uv run --offline python -m validation.ceud_calibration_diagnostic --baseline outputs/sqlite/validation_baseline.sqlite --baseline-report outputs/validation/validation_baseline.json --calibrated outputs/sqlite/validation_energy_calibration.sqlite
-```
-
-The switch is `efficiencies.ceud_energy_calibration`. It requires fixed road lifetimes
-and flat annual utilization. The comparison holds fleet,
-activity and source selections fixed while checking energy closure and parameter
-changes. Closure is a calibration check, not independent validation of each vehicle.
-For regional anchor heatmaps, run the following **after** the matched Ontario audit:
-
-```sh
-uv run --offline python src/build_transport.py --scenario config/scenarios/validation_energy_calibration_regions.yaml --overwrite
-```
-
-For the separate parameter-by-parameter legacy comparison:
-
-```sh
-uv run --offline python src/build_transport.py --scenario config/scenarios/legacy_comparison.yaml --overwrite
-uv run --offline python -m validation.transport_comparison --write-report
-```
-
-Reports live under `outputs/validation/`. Keep their build fingerprints intact;
-rebuild and recapture stale evidence rather than editing its recorded identity.
+The optional [CEUD comparison](docs/model/energy.md#optional-ceud-energy-calibration)
+fits reported gasoline and diesel energy with fixed road lifetimes and flat
+utilization. The [publication workflow](docs/publication.md#prepare-model-evidence-explicitly)
+gives the matched Ontario and regional diagnostic commands.
 
 ## Update source snapshots
 
@@ -245,7 +229,7 @@ Run focused checks for the changed owner, for example:
 ```sh
 uv run --offline pytest tests/test_road_utilization.py tests/test_ceud_energy_calibration.py
 uv run --offline ruff check src/parameterization/road_utilization.py
-uv run --offline marimo check docs/insights/ldv_efficiency_diagnosis.py
+uv run --offline marimo check --strict docs/insights/ldv_efficiency_diagnosis.py
 uv run --offline python src/build_transport.py --help
 ```
 

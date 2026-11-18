@@ -46,13 +46,25 @@ def _assert_live_interface(reference: str) -> None:
 def test_impact_routes_have_live_owners_producers_and_validation_surfaces(monkeypatch) -> None:
     monkeypatch.syspath_prepend(str(REPO_ROOT))
     bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    historical_inputs = REPO_ROOT / "inputs/validation/transportation_reference"
+    researcher_routes = {
+        "transportation_validation_researcher_inputs": ("input_validation", historical_inputs),
+        "transportation_validation_charging_inputs": ("input_validation", historical_inputs),
+        "omega_ldv_range_source": ("external", REPO_ROOT / "inputs/0_external_models"),
+    }
 
     for family, route in bundle.paths.artifacts.items():
-        assert resolve_artifact_path(bundle, family).is_relative_to(REPO_ROOT)
+        path = resolve_artifact_path(bundle, family)
+        assert path.is_relative_to(REPO_ROOT)
         importlib.import_module(route.owner)
         for producer in route.producers:
-            if producer == "researcher":
-                assert route.layer == "legacy"
+            if producer == "external.RAMP_mobility":
+                # This producer is an external model, not an importable backend API.
+                assert family == "ramp_mobility_external" and route.layer == "external"
+            elif producer == "researcher":
+                expected_layer, expected_root = researcher_routes[family]
+                assert route.layer == expected_layer
+                assert path.is_relative_to(expected_root)
             elif producer == "reviewers":
                 assert route.layer == "documentation"
             else:
@@ -61,7 +73,7 @@ def test_impact_routes_have_live_owners_producers_and_validation_surfaces(monkey
             if consumer.startswith("docs."):
                 # Notebook routes are document files, not installed runtime packages.
                 assert (REPO_ROOT / Path(*consumer.split("."))).with_suffix(".py").is_file()
-            elif consumer not in {"reviewers", "publication_reviewers", "temoa", "readers", "github_pages", "publication"}:
+            elif consumer not in {"reviewers", "publication_reviewers", "temoa", "readers", "modelers", "github_pages", "publication"}:
                 _resolve_dotted_object(consumer)
         for surface in route.validation_surfaces:
             _assert_live_interface(surface)
@@ -88,7 +100,6 @@ def test_important_artifact_families_cover_each_declared_layer() -> None:
         "cache",
         "documentation",
         "publication",
-        "legacy",
         "logs",
     }
 
