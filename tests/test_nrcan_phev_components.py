@@ -99,26 +99,40 @@ def test_classifier_preserves_all_models_after_source_concatenation(rules, bundl
     source = pd.DataFrame([
         {"source_row": index, "component": "conventional", "Model year": 2023,
          "Make": "Fixture", "Model": model, "Vehicle class": "Compact",
-         "Fuel type": "X", "Combined (L/100 km)": consumption, "Engine size (L)": 12}
+         "Fuel type": "X", "Combined (L/100 km)": consumption, "Engine size (L)": 12,
+         "Cylinders": 12, "Transmission": "A9"}
         for index, model, consumption in [(2, "A", 2), (3, "B", 10), (4, "C", 11),
                                           (5, "D", 12), (6, "E", 13), (7, "F", 14),
                                           (8, "G", 40), (9, "G", 50)]
     ])
-    def classify(frames):
+    # Source concatenation must preserve eligible models, with eligibility grounded
+    # in explicit EPA propulsion/configuration evidence rather than a gasoline guess.
+    evidence = pd.DataFrame([
+        {"year": 2023, "make": "Fixture", "model": model, "atvType": "",
+         "displ": 12., "cylinders": 12, "fuelType1": "Regular Gasoline",
+         "drive": "Rear-Wheel Drive", "trany": "Automatic 9-spd"}
+        for model in source.Model.unique()
+    ])
+
+    def classify(frames, epa):
         return classify_ratings(
-            frames, pd.DataFrame(columns=rules["ratings"]["evidence_columns"]),
+            frames, epa,
             rules=rules, conversions=load_conversion_factors(bundle), range_rules=range_module_rules(bundle),
         )
-    result = classify([source])
-    partitioned = classify([source.iloc[:4].copy(), source.iloc[4:].copy()])
+    result = classify([source], evidence)
+    partitioned = classify([source.iloc[:4].copy(), source.iloc[4:].copy()], evidence)
     pd.testing.assert_frame_equal(result, partitioned)
     assert len(result) == 8
     assert result.included.sum() == 8
+    assert result.epa_classification_method.eq("exact_epa_conventional").all()
     assert result["Engine size (L)"].eq(12).all()
     assert not {"engine_litres", "motor_kw", "cylinders", "performance_excluded"} & set(result)
     models = distinct_rating_models(result, rules=rules)
     assert models.Model.tolist() == ["A", "B", "C", "D", "E", "F", "G"]
     assert models.native_consumption.tolist() == [2, 10, 11, 12, 13, 14, 45]
+    unresolved = classify([source], evidence.iloc[:0].copy())
+    assert len(unresolved) == 8 and not unresolved.included.any()
+    assert unresolved.epa_classification_method.eq("unverified_source_fuel").all()
 
 
 def _classify_phev(rules, bundle, contract, utility_factors):

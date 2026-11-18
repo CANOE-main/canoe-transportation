@@ -1,0 +1,908 @@
+# Source-native layouts, selectors, normalization and audit outputs.
+# Registered by rules.yaml; see AGENTS.md for ownership and edit boundaries.
+
+version: 1
+
+fetching:
+  legacy_charging_profiles:
+    value_column: Charging Profile
+    hourly_operation: mean
+    normalization: annual_hourly_peak
+    label_basis: elapsed_hours_from_local_year_start
+    precision: 10
+    hourly_file: "{profile}_{strategy}_hourly.csv"
+    manifest_file: "{profile}_{strategy}_manifest.json"
+
+  epa_omega_baseline:
+    # Exact baseline source read by LDV_AER_market_shares.ipynb; no model rerun.
+    model_year: 2022
+    powertrains: [BEV, PHEV]
+    columns: ["Unnamed: 0", manufacturer_id, vehicle_name, model_year, context_size_class, reg_class_id, powertrain_type, onroad_charge_depleting_range_mi, battery_kwh, sales]
+    rename: {"Unnamed: 0": source_row_id}
+    regulatory_class_map: {car: car, truck: light_truck}
+    normalized_file: omega_baseline_plug_in.csv
+    manifest_file: omega_baseline_manifest.json
+
+  greet_vehicle_cycle:
+    files:
+      normalized: greet_vehicle_cycle_gases.csv
+      excluded: greet_vehicle_cycle_exclusions.csv
+      models: greet_solved_model_evidence.csv
+    inputs_sheet: Inputs
+    imports_sheet: GREET1_Import_Export
+    simulation_year: {label_cell: B8, label: '1.1) Target Year for Simulation'}
+    cohort_year: {label_cell: A20, label: Vehicle Model Year, cells: [B20, C20, D20]}
+    ldv_selectors: {Car: 1, SUV: 2, Pickup: 3}
+    mhdv_selectors: {Class 6 PnD Trucks: 1, Class 8 Day-Cab Trucks: 2, Class 8 Sleeper-Cab Trucks: 3}
+    block_interval: 31
+    source_unit_label: mmBtu or grams per vehicle lifetime
+    source_units: g/vehicle-lifetime
+    gas_rows: [CO2, 'CO2 (VOC, CO, CO2)', CH4, N2O]
+    excluded_gas: CO2 (VOC, CO, CO2)
+    summary_layout:
+      scope_cell: A1
+      label_column: A
+      unit_column: B
+      block_label_offset: -9
+      unit_offset: -8
+      total_offset: -7
+      total_label: Total (No Credits)
+    ldv:
+      worksheet: Vehi_Sum
+      identity_sheet: Vehi_Inputs
+      identity_header_cell: A2
+      selector_cell: B3
+      identity_label_cells: {Car: C3, SUV: C4, Pickup: C5}
+      identity_header: 1. Selection of Vehicle Types for Simulation
+      identity_labels: {Car: '1 -- Passenger Cars', SUV: '2 -- Sport Utility Vehicles', Pickup: '3 -- Pick-Up Trucks'}
+      scope_label: Energy Use and Emissions of Vehicle Cycle
+      column: F
+      blocks:
+        - {first_row: 13, label: '1.1) ICEV: Conventional Material', powertrain: icev, materials: conventional}
+        - {first_row: 44, label: '1.2) ICEV: Lightweight Material', powertrain: icev, materials: lightweight}
+        - {first_row: 75, label: '1.3) HEV: Conventional Material', powertrain: hev, materials: conventional}
+        - {first_row: 106, label: '1.4) HEV: Lightweight Material', powertrain: hev, materials: lightweight}
+        - {first_row: 137, label: '1.5) PHEV: Conventional Material', powertrain: phev, materials: conventional}
+        - {first_row: 168, label: '1.6) PHEV: Lightweight Material', powertrain: phev, materials: lightweight}
+        - {first_row: 199, label: '1.7) EV: Conventional Material', powertrain: bev, materials: conventional}
+        - {first_row: 230, label: '1.8) EV: Lightweight Material', powertrain: bev, materials: lightweight}
+        - {first_row: 261, label: '1.9) FCV: Conventional Material', powertrain: fcev, materials: conventional}
+        - {first_row: 292, label: '1.10) FCV: Lightweight Material', powertrain: fcev, materials: lightweight}
+    mhdv:
+      worksheet: MHDV_Sum
+      identity_sheet: MHDV_Inputs
+      identity_header_cell: A2
+      selector_cell: B3
+      identity_label_cells: {Class 6 PnD Trucks: C3, Class 8 Day-Cab Trucks: C4, Class 8 Sleeper-Cab Trucks: C5}
+      identity_header: 1. Selection of Truck Types for Simulation
+      identity_labels: {Class 6 PnD Trucks: '1 -- Class 6 PnD Trucks', Class 8 Day-Cab Trucks: '2 -- Class 8 Day-Cab Trucks', Class 8 Sleeper-Cab Trucks: '3 -- Class 8 Sleeper-Cab Trucks'}
+      scope_label: 'Energy Use and Emissions of Vehicle Cycle: Trucks'
+      column: G
+      blocks:
+        - {first_row: 13, label: '1.1) ICEV', powertrain: icev}
+        - {first_row: 44, label: '1.2) HEV', powertrain: hev}
+        - {first_row: 75, label: '1.3) EV', powertrain: bev}
+        - {first_row: 106, label: '1.4) FCV', powertrain: fcev}
+
+  nrcan_ceud:
+    interim_subdir: fetched_nrcan_ceud_inputs
+    manifest_file: manifest.csv
+    warnings_file: warnings.log
+    empty_output_file: nrcan_ceud_transport_empty.csv
+    region_output_template: nrcan_ceud_transport_{region}.csv
+    raw_excel_skiprows: 10
+    label_column_fallback_index: 1
+    drop_columns_if_present: ["Unnamed: 0"]
+    null_labels: ["nan", "n.a.", "na"]
+    remove_label_characters: "Â¹Â²Â³¹²³"
+    allowed_label_characters: "- /()|%"
+    drop_raw_series_pattern: "Shares|GHG"
+    group_header_value_rows:
+      7: ["Total Energy Use (PJ)"]
+    table_label_prefix_markers:
+      - Activity
+      - Energy Intensity
+      - Energy Use by Energy Source
+
+  transport_canada_izev:
+    interim_subdir: fetched_transport_canada_izev
+    output_file: izev_incentive_records.csv
+    manifest_file: izev_normalization_manifest.json
+    encoding: utf-8-sig
+    province_map:
+      "Alberta": AB
+      "British Columbia": BC
+      "Manitoba": MB
+      "New Brunswick": NB
+      "Newfoundland and Labrador": NL
+      "Nova Scotia": NS
+      "Northwest Territories": NT
+      "Nunavut": NU
+      "Ontario": 'ON'
+      "Prince Edward Island": PE
+      "Quebec": QC
+      "Saskatchewan": SK
+      "Yukon": YT
+
+  nrcan_fuel_consumption_ratings:
+    interim_subdir: fetched_nrcan_fuel_consumption_ratings
+    manifest_file: manifest.csv
+    warnings_file: warnings.log
+    encoding_candidates: [utf-8-sig, cp1252]
+    outputs:
+      battery_electric_2012_2026: nrcan_battery_electric_vehicles_2012_2026.csv
+      plug_in_hybrid_2012_2026: nrcan_plug_in_hybrid_electric_vehicles_2012_2026.csv
+      fuel_consumption_1995_2014: nrcan_fuel_consumption_ratings_1995_2014.csv
+      fuel_consumption_2015_2024: nrcan_fuel_consumption_ratings_2015_2024.csv
+      fuel_consumption_2025: nrcan_fuel_consumption_ratings_2025.csv
+      fuel_consumption_2026: nrcan_fuel_consumption_ratings_2026.csv
+    vehicle_class_harmonization:
+      target_to_nrcan:
+        Compact: [Minicompact, Subcompact, Compact]
+        Midsize: [Mid-size, Full-size, Two-seater, "Station wagon: Small", "Station wagon: Mid-size"]
+        Small SUV: ["Sport utility vehicle: Small"]
+        Midsize SUV: ["Sport utility vehicle: Standard", Minivan]
+        Pickup: ["Pickup truck: Small", "Pickup truck: Standard", "Van: Cargo", "Van: Passenger"]
+      unresolved_nrcan_classes: [Special purpose vehicle, "Sport utility vehicle"]
+      unmapped_policy: error
+      target_to_ceud:
+        Compact: Car
+        Midsize: Car
+        Small SUV: Light Truck
+        Midsize SUV: Light Truck
+        Pickup: Light Truck
+      # The 1995-2014 ratings use the unsplit Sport utility vehicle label and retain
+      # Van: Cargo. The generic SUV label does not distinguish the established Small
+      # versus Midsize SUV targets, so retain it only in source-normalized efficiency
+      # evidence and exclude it from NLR mapping inference. Treat cargo/passenger vans
+      # with pickups while retaining the source-native NRCan label in normalized evidence.
+
+  fueleconomy_vehicle_data:
+    interim_subdir: fetched_fueleconomy_vehicle_data
+    output_file: fueleconomy_vehicle_class_evidence.csv
+    manifest_file: manifest.csv
+    warnings_file: warnings.log
+    range_output_file: fueleconomy_my2024_range_evidence.csv
+    range_manifest_file: range_manifest.csv
+    range_model_year: 2024
+    range_powertrain_map: {EV: BEV, Plug-in Hybrid: PHEV}
+    bev_range_column: range
+    phev_range_column: rangeA
+    electricity_label: Electricity
+    selected_columns: [year, make, model, VClass]
+    output_columns:
+      year: Model year
+      make: Make
+      model: Model
+      VClass: Source vehicle class
+    vclass_to_nrcan:
+      Compact Cars: Compact
+      Large Cars: Full-size
+      Midsize Cars: Mid-size
+      Minicompact Cars: Minicompact
+      Subcompact Cars: Subcompact
+      Two Seaters: Two-seater
+      Small Station Wagons: "Station wagon: Small"
+      Midsize Station Wagons: "Station wagon: Mid-size"
+      Midsize-Large Station Wagons: "Station wagon: Mid-size"
+      Minivan - 2WD: Minivan
+      Minivan - 4WD: Minivan
+      Small Pickup Trucks: "Pickup truck: Small"
+      Small Pickup Trucks 2WD: "Pickup truck: Small"
+      Small Pickup Trucks 4WD: "Pickup truck: Small"
+      Standard Pickup Trucks: "Pickup truck: Standard"
+      Standard Pickup Trucks 2WD: "Pickup truck: Standard"
+      Standard Pickup Trucks 4WD: "Pickup truck: Standard"
+      Standard Pickup Trucks/2wd: "Pickup truck: Standard"
+      Small Sport Utility Vehicle 2WD: "Sport utility vehicle: Small"
+      Small Sport Utility Vehicle 4WD: "Sport utility vehicle: Small"
+      Standard Sport Utility Vehicle 2WD: "Sport utility vehicle: Standard"
+      Standard Sport Utility Vehicle 4WD: "Sport utility vehicle: Standard"
+      Sport Utility Vehicle - 2WD: "Sport utility vehicle"
+      Sport Utility Vehicle - 4WD: "Sport utility vehicle"
+      Special Purpose Vehicle: "Special purpose vehicle"
+      Special Purpose Vehicle 2WD: "Special purpose vehicle"
+      Special Purpose Vehicle 4WD: "Special purpose vehicle"
+      Special Purpose Vehicles: "Special purpose vehicle"
+      Special Purpose Vehicles/2wd: "Special purpose vehicle"
+      Special Purpose Vehicles/4wd: "Special purpose vehicle"
+      Vans Passenger: "Van: Passenger"
+      "Vans, Cargo Type": "Van: Cargo"
+      "Vans, Passenger Type": "Van: Passenger"
+    unresolved_vclasses:
+      Vans: "Historical EPA class does not distinguish cargo from passenger vans and ends before the modeled 2000 vintage floor."
+
+  ontario_vehicle_population:
+    interim_subdir: fetched_ontario_vehicle_population
+    manifest_file: manifest.csv
+    # Single-year production replay must not replace all-edition diagnostic evidence.
+    edition_audit_subdir_template: "editions/{year}"
+    warnings_file: warnings.log
+    long_status_file: ontario_vehicle_population_report_a_status_long.csv
+    reconciliation_file: ontario_vehicle_population_report_a_reconciliation.csv
+    findings_file: ontario_vehicle_population_report_a_data_quality_findings.csv
+    current_stock_file: ontario_vehicle_population_report_a_current_fit_active.csv
+    all_edition_make_model_keys_file: ontario_vehicle_population_all_edition_make_model_keys.csv
+    reports:
+      A:
+        report_label: "Report A"
+        excluded_years: [2015]
+        kept_vehicle_classes: [PASSENGER, COMMERCIAL]
+        normalized_output_template: ontario_vehicle_population_report_a_normalized_{year}.csv
+        required_columns:
+          - VEHICLE_CLASS
+          - MAKE
+          - MODEL
+          - MODEL_YEAR
+          - FIT_ACTIVE
+          - FIT_INACTIVE
+          - UNFIT
+          - WRECKED
+          - OUT_OF_PROV
+          - SOLD
+          - SUSPENDED
+          - TEMPORARY
+          - TOTAL
+        header_aliases:
+          VEHICLE-CLASS: VEHICLE_CLASS
+          VEHICLE_CLASS: VEHICLE_CLASS
+          MODEL-YEAR: MODEL_YEAR
+          MODEL_YEAR: MODEL_YEAR
+          FIT-ACTIVE: FIT_ACTIVE
+          FIT-INACTIVE: FIT_INACTIVE
+          OUT-OF-PROV: OUT_OF_PROV
+        vehicle_class_column: VEHICLE_CLASS
+        make_column: MAKE
+        model_column: MODEL
+        model_year_column: MODEL_YEAR
+        status_columns:
+          - FIT_ACTIVE
+          - FIT_INACTIVE
+          - UNFIT
+          - WRECKED
+          - OUT_OF_PROV
+          - SOLD
+          - SUSPENDED
+          - TEMPORARY
+        total_column: TOTAL
+        passenger_class: PASSENGER
+        commercial_class: COMMERCIAL
+        suppressed_code_patterns: ['^\*+$']
+        unknown_code_labels: [UNKNOWN, UNK, N/A]
+      4:
+        report_label: "Report 4"
+        cleaned_output_template: ontario_vehicle_population_report4_cleaned_{year}.csv
+        distribution_output_template: ontario_vehicle_population_report4_epa_gvwr_distribution_{year}.csv
+        required_columns: [WEIGHT_CLASS, KG_FROM, KG_TO, FIT-ACTIVE]
+        weight_class_column: WEIGHT_CLASS
+        kept_weight_class: COMMERCIAL
+        kg_from_column: KG_FROM
+        kg_to_column: KG_TO
+        count_column: FIT-ACTIVE
+        output_count_column: NATIVE_COUNT
+        epa_gvwr_column: EPA_GVWR
+        share_column: SHARE
+        epa_gvwr_labels: [LDT1-2, LDT3-4, MDV2b, MDV3, MDV4, MDV5, MDV6, MDV7, MDV8]
+        epa_gvwr_bin_edges_lb: [-.inf, 6000, 8500, 10000, 14000, 16000, 19500, 26000, 33000, .inf]
+      5:
+        report_label: "Report 5"
+        cleaned_output_template: ontario_vehicle_population_report5_cleaned_{year}.csv
+        distribution_output_template: ontario_vehicle_population_report5_age_distribution_{year}.csv
+        required_columns: [VEHICLE_CLASS, DESCRIPTOR, VALUE, FIT-ACTIVE]
+        vehicle_class_column: VEHICLE_CLASS
+        descriptor_column: DESCRIPTOR
+        kept_descriptor: YEAR
+        kept_vehicle_classes: [PASSENGER, COMMERCIAL, MOTORCYCLE, BUS]
+        model_year_column: VALUE
+        count_column: FIT-ACTIVE
+        output_count_column: NATIVE_COUNT
+        age_column: AGE
+        age_distribution_column: AGE_DIST
+        max_age: 35
+
+  statcan_tables:
+    interim_subdir: fetched_statcan_transport
+    manifest_file: manifest.csv
+    warnings_file: warnings.log
+    read_chunksize: 100000
+    provenance_columns:
+      - REF_DATE
+      - GEO
+      - DGUID
+      - UOM
+      - UOM_ID
+      - SCALAR_FACTOR
+      - SCALAR_ID
+      - VECTOR
+      - COORDINATE
+      - VALUE
+      - STATUS
+      - SYMBOL
+      - TERMINATED
+      - DECIMALS
+    geography:
+      Canada: {label: Canada, freight_contains: [Canada]}
+      AB: {label: Alberta, freight_contains: [Alberta]}
+      BC: {label: British Columbia, freight_contains: [British Columbia]}
+      BCT:
+        label: British Columbia and the Territories
+        freight_contains:
+        - British Columbia
+        - Yukon
+        - Northwest Territories
+        - Nunavut
+      MB: {label: Manitoba, freight_contains: [Manitoba]}
+      NB: {label: New Brunswick, freight_contains: [New Brunswick]}
+      NL: {label: Newfoundland and Labrador, freight_contains: [Newfoundland and Labrador]}
+      NLLAB: {label: Newfoundland and Labrador, freight_contains: [Newfoundland and Labrador]}
+      NS: {label: Nova Scotia, freight_contains: [Nova Scotia]}
+      NT: {label: Northwest Territories, freight_contains: [Northwest Territories]}
+      NU: {label: Nunavut, freight_contains: [Nunavut]}
+      "ON": {label: Ontario, freight_contains: [Ontario]}
+      PE: {label: Prince Edward Island, freight_contains: [Prince Edward Island]}
+      PEI: {label: Prince Edward Island, freight_contains: [Prince Edward Island]}
+      QC: {label: Quebec, freight_contains: [Quebec, Québec]}
+      SK: {label: Saskatchewan, freight_contains: [Saskatchewan]}
+      YT: {label: Yukon, freight_contains: [Yukon]}
+    tables:
+      "20-10-0021-01":
+        normalizer: ldv_archived
+        include_bc_for_bct: true
+        output_file: statcan_20100021_ldv_registrations_archived.csv
+        metadata_dimensions: [Geography, Fuel type, Vehicle type, Statistics]
+        required_columns: [REF_DATE, GEO, DGUID, Fuel type, Vehicle type, Statistics, UOM, SCALAR_FACTOR, VALUE]
+        selectors:
+          Fuel type: [Gasoline, Diesel, Battery electric, Hybrid electric, Plug-in hybrid electric, Other fuel types]
+          Vehicle type: [Passenger cars, Pickup trucks, Multi-purpose vehicles, Vans]
+          Statistics: [Number of vehicles]
+      "20-10-0025-01":
+        normalizer: ldv_current
+        include_bc_for_bct: true
+        output_file: statcan_20100025_ldv_registrations_quarterly.csv
+        metadata_dimensions: [Geography, Fuel type, Vehicle type, Statistics]
+        required_columns: [REF_DATE, GEO, DGUID, Fuel type, Vehicle type, Statistics, UOM, SCALAR_FACTOR, VALUE]
+        selectors:
+          Fuel type: [Gasoline, Diesel, Battery electric, Hybrid electric, Plug-in hybrid electric, Other fuel types]
+          Vehicle type: [Passenger cars, Pickup trucks, Multi-purpose vehicles, Vans]
+          Statistics: [Number of vehicles]
+      "23-10-0308-01":
+        normalizer: medium_truck_fuels
+        ldv_benchmark_output_file: statcan_23100308_ldv_stock.csv
+        ldv_benchmark_selectors:
+          Vehicle Type: ['Passenger cars, weighing 4,536 kilograms or less', 'Pickup trucks, weighing 4,536 kilograms or less', 'Multi-purpose vehicles, weighing 4,536 kilograms or less', 'Vans, weighing 4,536 kilograms or less']
+          Fuel Type: [All fuel types, Gasoline, Diesel, Battery electric, Hybrid electric, Plug-in hybrid electric, Other fuel types]
+          Statistics: [Number of vehicles]
+        include_bc_for_bct: true
+        output_file: statcan_23100308_medium_truck_fuels.csv
+        metadata_dimensions: [Geography, Vehicle Type, Fuel Type, Statistics]
+        required_columns: [REF_DATE, GEO, DGUID, Vehicle Type, Fuel Type, Statistics, UOM, SCALAR_FACTOR, VALUE]
+        selectors:
+          Vehicle Type: ["Total, vehicles weighing 4,536 to 11,793 kilograms", "Class 7 vehicles, weighing 11,794 to 14,969 kilograms", "Class 8 vehicles, weighing 14,969 kilograms or more"]
+          Fuel Type: [Gasoline, Diesel, Battery electric, Hybrid electric, Plug-in hybrid electric, Other fuel types]
+          Statistics: [Number of vehicles]
+      "34-10-0254-01":
+        include_bc_for_bct: true
+        normalizer: bus_lifetimes
+        include_canada: true
+        output_file: statcan_34100254_bus_expected_life.csv
+        metadata_dimensions: [Geography, "Public transit assets, average expected useful life"]
+        required_columns: [REF_DATE, GEO, DGUID, "Public transit assets, average expected useful life", UOM, SCALAR_FACTOR, VALUE]
+        selectors:
+          Public transit assets, average expected useful life:
+            - Diesel buses, average expected useful life
+            - Bio-diesel buses, average expected useful life
+            - Electric buses, average expected useful life
+            - Natural gas buses, average expected useful life
+            - Hybrid buses (includes diesel, biodiesel and natural gas), average expected useful life
+            - Other buses, average expected useful life
+      "23-10-0142-01":
+        normalizer: freight
+        include_bc_for_bct: true
+        output_file: statcan_23100142_freight_selected_long.csv
+        metadata_dimensions: ["Geography, origin of shipments", "Geography, destination of shipments", "Mode of transportation", "Commodity group", Characteristics]
+        required_columns: [REF_DATE, GEO, "Geography, destination of shipments", "Mode of transportation", "Commodity group", Characteristics, UOM, SCALAR_FACTOR, VALUE]
+        selectors:
+          Mode of transportation: [Truck (for-hire)]
+          Characteristics: [Shipments, Weight, Distance, Tonne-kilometres]
+    ldv_history:
+      canada_proxy_regions: [AB, NL]
+      archived_table: "20-10-0021-01"
+      current_table: "20-10-0025-01"
+      output_file: statcan_ldv_registrations_historical.csv
+      overlap_file: statcan_ldv_registrations_overlap.csv
+      policy: current_preferred_archived_precoverage_only
+      current_period_aggregation: sum_quarters
+      complete_periods_per_year: 4
+      incomplete_year_policy: exclude_and_warn
+      overlap_absolute_tolerance: 0.0
+    freight:
+      output_file: statcan_23100142_freight_heavy_truck_candidates.csv
+      shipments_characteristic: Shipments
+      weight_characteristic: Weight
+      distance_characteristic: Distance
+      tonne_km_characteristic: Tonne-kilometres
+      haul_distribution:
+        category_column: haul_class
+        weight_column: tonne_kilometres
+        aggregation: sum
+        normalization: share_of_total_tonne_kilometres
+      regional_long_haul_threshold_miles: 350.0                           # middle point of the regional (250-mile) and long-haul (500-mile) driving ranges from Autonomie TEA (Islam et al. 2023)
+      exact_boundary_assignment: regional
+      assumed_truck_curb_weight_kg: 13000.0                               # average curb weight of class 8 trucks, except refuse and urban transit, from Autonomie TEA (Islam et al. 2023)
+      class8_gross_vehicle_weight_threshold_kg: 14970.0
+      gross_weight_boundary: greater_than_or_equal
+
+  cer_enerfuture:
+    interim_subdir_template: "fetched_cer_energy_future/{edition}"
+    manifest_file: manifest.csv
+    warnings_file: warnings.log
+    geography:
+      AB: Alberta
+      BC: British Columbia
+      BCT: [British Columbia, Yukon, Northwest Territories, Nunavut]
+      MB: Manitoba
+      NB: New Brunswick
+      NL: Newfoundland and Labrador
+      NLLAB: Newfoundland and Labrador
+      NS: Nova Scotia
+      NT: Northwest Territories
+      NU: Nunavut
+      "ON": Ontario
+      PE: Prince Edward Island
+      PEI: Prince Edward Island
+      QC: Quebec
+      SK: Saskatchewan
+      YT: Yukon
+    components:
+      macro-indicators:
+        output_file: cer_macro_indicators.csv
+        required_columns: [Scenario, Region, Variable, Year, Value]
+        region: Canada
+        variables:
+          real_gdp: "Real Gross Domestic Product ("
+          gdp_deflator: "Gross Domestic Product Deflator ("
+          cad_per_usd: "Canada-US Exchange Rate (C$/US$)"
+      end-use-demand:
+        output_file: cer_transport_end_use_demand.csv
+        required_columns: [Scenario, Region, Variable, Year, Value, Sector]
+        sector: Transportation
+        include_canada_total: true
+        unit: PJ
+      end-use-prices:
+        output_file: cer_transport_end_use_prices.csv
+        required_columns: [Scenario, Region, Variable, Year, Value, Sector]
+        sector: Transportation
+        variables: [Gasoline, Diesel]
+        unit: 2022 CAD/GJ
+
+  nlr_atb_autonomie:
+    interim_subdir: fetched_nlr_atb_autonomie
+    manifest_file: manifest.csv
+    warnings_file: warnings.log
+    components:
+      vehicles:
+        output_file: atb_vehicles.csv
+        # Publisher-defined Conservative coverage for the three vocational exceptions.
+        trajectory_aliases:
+          - source_trajectory: Constant
+            trajectory: Conservative
+            vehicle_classes: [Class 7 Medium Vocational, Class 8 Refuse Heavy, Class 8 Vocational Heavy]
+            references:
+              - https://atb.nlr.gov/transportation/2024/battery_electric_mdhd
+              - https://atb.nlr.gov/transportation/2024/diesel_mdhd
+        phev_powertrain: Plug-in Hybrid
+        phev_reconciliation_metrics:
+          gge: "Fuel Economy (mi/gge)"
+          dge: "Fuel Economy (mi/dge)"
+        metric_keys:
+          "Fuel Economy (mi/dge)": fuel_economy_mi_per_dge
+          "Fuel Economy (mi/gge)": fuel_economy_mi_per_gge
+          "Modeled Vehicle Price (2022$)": modeled_vehicle_price
+          "Range (mi)": range_mi
+          "Useable Energy (kWh)": usable_battery_capacity_kwh
+        metric_units:
+          "Fuel Economy (mi/dge)": mi/dge
+          "Fuel Economy (mi/gge)": mi/gge
+          "Modeled Vehicle Price (2022$)": 2022 USD/vehicle
+          "Range (mi)": mi
+          "Useable Energy (kWh)": kWh
+      phev_efficiency:
+        output_file: atb_phev_utility_weighted_efficiency.csv
+        source_powertrain: Plug-in Hybrid
+        light_duty_weight_category: Light Duty
+        medium_heavy_weight_category: Medium/Heavy Duty
+        source_fields:
+          year: year
+          source_scenario: scenario
+          primary_fuel: fuel_category
+          secondary_fuel: fuel2_category
+          vehicle_weight_category: vehicle_weight_category
+          vehicle_class: vehicle_class
+          vehicle_powertrain: vehicle_powertrain
+          vehicle_detail: vehicle_detail
+          electric_range_mi: "range(mi)"
+          source_combined_cs_fuel_economy_mi_per_gge: "CS(mi/gge)"
+          source_combined_cd_electricity_consumption_wh_per_mi: "CD(Wh/mi)"
+          vehicle_input_reference: reference
+        source_key_fields: [year, scenario, fuel_category, fuel2_category, vehicle_weight_category, vehicle_class, vehicle_powertrain, vehicle_detail]
+        fuel_equivalent_basis:
+          Gasoline: gge
+          Diesel: dge
+        cycle_aggregation:
+          cycles:
+            ARB:
+              contribution: ARB_contribution
+              cs_fuel_economy: "ARB_CS(mpgde)"
+              cd_electricity_consumption: "ARB_CD(Wh/mi)"
+            EPA55:
+              contribution: EPA55_contribution
+              cs_fuel_economy: "EPA55_CS(mpgde)"
+              cd_electricity_consumption: "EPA55_CD(Wh/mi)"
+            EPA65:
+              contribution: EPA65_contribution
+              cs_fuel_economy: "EPA65_CS(mpgde)"
+              cd_electricity_consumption: "EPA65_CD(Wh/mi)"
+        utility_factor_matching:
+          utility_factor_column: phev_uf
+          reference_column: reference
+          notes_column: notes
+          ldv:
+            source_family: phev_uf_ldv
+            exact_key_fields: [vehicle_weight_category, "range(mi)"]
+            interpolation_dimension: "range(mi)"
+            interpolation_method: linear
+            allow_extrapolation: false
+          mdhd:
+            source_family: phev_uf_mdhd
+            exact_key_fields: [vehicle_weight_category, vehicle_class]
+        reconciliation:
+          output_key_fields: [year, scenario, fuel_category, fuel2_category, vehicle_weight_category, vehicle_class, vehicle_powertrain, vehicle_detail]
+          derived_to_output_key_fields:
+            year: year
+            scenario: trajectory
+            fuel_category: primary_fuel
+            fuel2_category: secondary_fuel
+            vehicle_weight_category: vehicle_weight_category
+            vehicle_class: vehicle_class
+            vehicle_powertrain: vehicle_powertrain
+            vehicle_detail: vehicle_detail
+          scenario_aliases:
+            Constant: Conservative
+          metric_by_basis:
+            gge: "Fuel Economy (mi/gge)"
+            dge: "Fuel Economy (mi/dge)"
+          absolute_tolerance_mi_per_gallon_equivalent: 1.0e-9
+          relative_tolerance: 1.0e-6
+          policy: report_only
+        tolerances:
+          cycle_contribution_sum: 1.0e-9
+          utility_factor_bounds: 1.0e-12
+          input_share_sum: 1.0e-12
+        conversion_keys:
+          mile_to_km: [length, mile_to_km]
+          us_gallon_to_litre: [volume, us_gallon_to_litre]
+          wh_to_kwh: [energy, wh_to_kwh]
+          wh_per_gge: [energy, wh_per_gge]
+          wh_per_dge: [energy, wh_per_dge]
+          gal_equivalent_per_mile_to_litre_equivalent_per_100_km: [derived, us_gallon_equivalent_per_mile_to_litre_equivalent_per_100_km]
+          wh_per_mile_to_kwh_per_100_km: [derived, wh_per_mile_to_kwh_per_100_km]
+        units:
+          combined_cs:
+            gge: mi/gge
+            dge: mi/dge
+          utility_weighted_fuel_source:
+            gge: gge/mi
+            dge: dge/mi
+          utility_weighted_fuel_canadian:
+            gge: Lge/100 km
+            dge: Lde/100 km
+          utility_weighted_electricity_source: Wh/mi
+          utility_weighted_electricity_canadian: kWh/100 km
+        future_nrcan_phev_contract:
+          combined_cd_raw_column: "Combined Le/100 km"
+          combined_cd_output_raw_field: combined_cd_consumption_Le_100_km_raw
+          combined_cd_output_numeric_field: combined_cd_consumption_Le_100_km
+          combined_cd_parse: leading_and_explicit_components
+          combined_cd_leading_numeric_pattern: '^\s*([0-9]+(?:\.[0-9]+)?)'
+          combined_cd_components_pattern: '\s*[0-9]+(?:\.[0-9]+)?\s*\((?P<cd_bracket>\[)?(?P<cd_electricity_kwh_per_100km>[0-9]+(?:\.[0-9]+)?)\s+kWh(?(cd_bracket)\s*\+\s*(?P<cd_fuel_l_per_100km>[0-9]+(?:\.[0-9]+)?)\s+L\])\s*/100\s+km\)\s*'
+          combined_cs_output_numeric_field: combined_cs_consumption_L_100_km
+          # Preserve the displayed CD equivalent, explicit CD components and CS fuel separately.
+      maintenance_ldv:
+        outputs:
+          class_multipliers: atb_maintenance_ldv_class_multipliers.csv
+          powertrain_multipliers: atb_maintenance_ldv_powertrain_multipliers.csv
+          baseline_repair_cost: atb_maintenance_ldv_baseline_repair_cost.csv
+          maintenance_cost: atb_maintenance_ldv_maintenance_cost.csv
+      vmt:
+        output_file: atb_age_vmt.csv
+        value_column: vmt_mi
+        unit: mi/vehicle-year
+      anl_bean:
+        output_file: anl_bean_mhdv_maintenance_coefficients.csv
+        workbook_sheet: "TCO Assumpt."
+        workbook_range: "A33:H54"
+        expected_columns: [A, B, C, D, E, F, G, H]
+        table_layout:
+          header_row: 33
+          label_column: A
+          powertrain_column: B
+          vehicle_class_columns:
+            C: "LonghaulSleeper 8"
+            D: "BoxMedium 6"
+            E: "BoxMedium 4"
+            F: "DrayageDayCab 8"
+            G: "RegionalDayCab 8"
+            H: "TransitHeavy 8"
+          expected_powertrains: [Conv, SeriesPHEV, BEV, ParHEV, FCHEV, ISG, FCEV]
+          blocks:
+            maintenance_powertrain_multiplier:
+              rows: [34, 40]
+              source_label: "Maintenance Powertain Multplier"
+            coefficient_a:
+              rows: [41, 47]
+              source_label: "Coef A"
+            coefficient_b:
+              rows: [48, 54]
+              source_label: "Coef B"
+
+  afdc:
+    province_output_file: afdc_public_chargers_by_province.csv
+    type_output_file: afdc_public_chargers_by_type.csv
+    stations_output_file: afdc_public_electric_stations.csv
+    manifest_file: manifest.json
+    geography: {NL: Newfoundland and Labrador, PE: Prince Edward Island, NS: Nova Scotia, NB: New Brunswick, QC: Quebec, "ON": Ontario, MB: Manitoba, SK: Saskatchewan, AB: Alberta, BC: British Columbia, YT: Yukon, NT: Northwest Territories, NU: Nunavut}
+    port_fields: {L1: ev_level1_evse_num, L2: ev_level2_evse_num, DCFC: ev_dc_fast_num}
+    null_port_counts: zero
+    query: {country: CA, fuel_type: ELEC, access: public, status: E, limit: all}
+
+    diagnostic_components:
+      mhdv_accessible_2025:
+        stations_output_file: afdc_mhdv_accessible_2025.csv
+        manifest_file: afdc_mhdv_accessible_2025.json
+      mhdv_accessible_2026:
+        stations_output_file: afdc_mhdv_accessible_2026.csv
+        manifest_file: afdc_mhdv_accessible_2026.json
+
+  assorted_sources:
+    interim_subdir: fetched_assorted_sources
+    manifest_file: manifest.csv
+    warnings_file: warnings.jsonl
+    nhtsa_cafe:
+      source_id: nhtsa_cafe_ldv_survival
+      component_id: ldv_survival_rates
+      output_file: nhtsa_cafe_ldv_survival_rates.csv
+      workbook_member: parameters_ref.xlsx
+      worksheet: "Vehicle Age Data"
+      source_range: "A3:E45"
+      title_headers:
+        A3: "Vehicle Age"
+        B3: "Survival Rates"
+      class_header_row: 4
+      spacer_row: 5
+      data_start_row: 6
+      age_column: A
+      class_columns:
+        B: Cars
+        C: Vans/SUVs
+        D: Pickups
+        E: "2b/3 Trucks"
+      expected_ages: {start: 0, end: 39}
+      value_bounds: {minimum: 0.0, maximum: 1.0}
+      unit: dimensionless
+    eia_nems:
+      source_id: eia_nems_hd_truck_scrappage
+      component_id: truck_scrappage_rates
+      output_file: eia_nems_truck_scrappage_rates.csv
+      workbook: trnhdvx.xlsx
+      worksheet: trnhdv
+      # Historical national conditional rates; this table is marked unused upstream.
+      source_range: "A86:D120"
+      age_header: "SCRAP(IAGE,ICLS)"
+      class_columns:
+        B: "Cls 3"
+        C: "Cls 4-6"
+        D: "Cls 7-8"
+      expected_ages: {start: 1, end: 34}
+      value_bounds: {minimum: 0.0, maximum: 1.0}
+      unit: annual scrappage-rate fraction
+    epa_moves5:
+      # Internal adapter key retained for existing callers; the pinned release is MOVES6.
+      source_id: epa_moves_heavy_truck_survival
+      component_id: heavy_truck_survival_rates
+      output_file: epa_moves6_survival_rates.csv
+      document_title: Population and Activity of Onroad Vehicles in MOVES6
+      document_id: EPA-420-R-26-010
+      pdf_page: 189
+      source_page: 187
+      source_table: Table C-1
+      table_title: Table C-1 Vehicle survival rate by age
+      source_vehicle_class_label: Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)
+      class_header_fragments: [Heavy-duty Vehicles, '(Buses, Single Unit Trucks', 'and Combination Trucks)']
+      expected_rate_columns: 4
+      selected_rate_column: 4
+      class_columns:
+        cars: Passenger Cars
+        light_trucks: Light-duty Trucks (Passenger and Light Commercial)
+        heavy_trucks: Heavy-duty Vehicles (Buses, Single Unit Trucks and Combination Trucks)
+      selected_rate_columns:
+        cars: 2
+        light_trucks: 3
+        heavy_trucks: 4
+      component_ids:
+        cars: car_survival_rates
+        light_trucks: light_truck_survival_rates
+        heavy_trucks: heavy_truck_survival_rates
+      expected_ages: {start: 0, end: 40}
+      value_bounds: {minimum: 0.0, maximum: 1.0}
+      unit: annual survival-rate fraction
+    jgcri_gcam:
+      source_id: jgcri_gcam_motorcycle_inputs
+      component_id: canada_motorcycle_inputs
+      output_file: jgcri_gcam_canada_motorcycle_inputs.csv
+      comment_prefix: "#"
+      required_columns: [UCD_region, UCD_sector, mode, size.class, UCD_technology, UCD_fuel, variable, unit]
+      filters:
+        UCD_region: Canada
+        UCD_sector: Passenger
+        mode: LDV_2W
+        size.class: "Motorcycle (>250cc)"
+      variables: [intensity, "Capital costs (purchase)", "Operating costs (maintenance)"]
+      expected_technologies: [BEV, Liquids]
+      variable_units:
+        intensity: MJ/vkm
+        "Capital costs (purchase)": "2005$/veh"
+        "Operating costs (maintenance)": "2005$/veh/yr"
+      expected_years: [2005, 2010, 2015, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060, 2065, 2070, 2075, 2080, 2085, 2090, 2095, 2100]
+      duplicate_key: [UCD_technology, UCD_fuel, variable, source_year]
+    epri_us_regen:
+      source_id: epri_us_regen_transportation
+      component_id: intercity_bus_charts
+      page_title: "Transportation | US-REGEN Documentation"
+      payload_asset:
+        rel: modulepreload
+        href: "/assets/transportation.html-YK_JCUYx.js"
+      output_file: epri_us_regen_v2025_intercity_bus.csv
+      measure_title: "Intercity Bus"
+      dimension_field: tech
+      category_field: vintage
+      charts:
+        "3":
+          element_id: chart3
+          title: "Chart 3: Medium-Duty and Heavy-Duty Vehicle Purchase Cost Assumptions"
+          measure_key: bus_int
+          expected_technologies:
+            icev: ICEV
+            cngv: CNGV
+            bev: BEV
+            hfcv: HFCV
+          expected_years: [2020, 2025, 2030, 2035, 2040, 2045, 2050]
+          expected_unit: "$"
+          metric: purchase_cost
+          currency: null
+          currency_year: null
+        "4":
+          element_id: chart4
+          title: "Chart 4: Medium-Duty and Heavy-Duty Vehicle Efficiency Assumptions"
+          measure_key: bus_int
+          expected_technologies:
+            icev-mgs: "ICEV (mgs)"
+            icev-dsl: "ICEV (dsl)"
+            cngv: CNGV
+            bev: BEV
+            hfcv: HFCV
+          excluded_empty_series:
+            icev-mgs:
+              source_label: "ICEV (mgs)"
+              reason: "The pinned US-REGEN v2025 payload contains this Intercity Bus series at every expected year, but all values are null."
+          expected_years: [1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030, 2035, 2040, 2045, 2050]
+          expected_unit: mpg-e
+          metric: efficiency
+          currency: null
+          currency_year: null
+    faa:
+      source_id: faa_economic_values
+      minimum_extracted_text_characters: 1000
+      capacity_component_id: section_3_capacity
+      costs_component_id: section_4_operating_costs
+      capacity_output_file: faa_aircraft_capacity_load_speed.csv
+      maintenance_output_file: faa_aircraft_maintenance_costs.csv
+      data_period: "YE June 2023"
+      currency: USD
+      currency_year: null
+      documents:
+        section_3_capacity:
+          document_title: "SECTION 3: AIRCRAFT CAPACITY AND UTILIZATION FACTORS"
+        section_4_operating_costs:
+          document_title: "SECTION 4: AIRCRAFT OPERATING COSTS"
+      tables:
+        "3-6":
+          operating_group: passenger
+          aircraft_category: "All Aircraft"
+          title: "Table 3-6: Part 121 Passenger Air Carriers Capacity and Utilization Factors"
+          required_header_labels: ["Aircraft Category", Passenger, Capacity, Load, Factor, Average, Block, Speed, "(MPH)"]
+          ordered_columns: [block_hours, departures, passenger_capacity, passenger_load_factor, cargo_capacity, cargo_load_factor, crew_size, average_block_speed]
+          selected_metrics:
+            passenger_capacity: {metric: passenger_capacity, unit: seats, parse: numeric}
+            passenger_load_factor: {metric: passenger_load_factor, unit: percent, parse: percent}
+            average_block_speed: {metric: average_block_speed, unit: miles per hour, parse: numeric}
+        "3-7":
+          operating_group: passenger
+          aircraft_category: "All Aircraft"
+          title: "Table 3-7: Part 121 Passenger Air Carriers Fleet Size and Daily Utilization"
+          required_header_labels: ["Aircraft Category", "Block Hours", "Number of", Aircraft, Daily, Utilization, "(hours)"]
+          ordered_columns: [block_hours_for_number, number_of_aircraft, block_hours_for_daily_utilization, average_daily_utilization]
+          selected_metrics:
+            average_daily_utilization:
+              metric: average_daily_utilization
+              unit: block hours per aircraft-day
+              parse: numeric
+        "3-9":
+          operating_group: cargo
+          aircraft_category: "All Aircraft"
+          title: "Table 3-9: Part 121 All-Cargo Air Carriers Capacity and Utilization Factors"
+          required_header_labels: ["Aircraft Category", Cargo, Capacity, Load, Factor, Average, Block, Speed, "(MPH)"]
+          ordered_columns: [block_hours, departures, cargo_capacity, cargo_load_factor, crew_size, average_block_speed]
+          selected_metrics:
+            cargo_capacity: {metric: cargo_capacity, unit: source-labelled tons, parse: numeric}
+            cargo_load_factor: {metric: cargo_load_factor, unit: percent, parse: percent}
+            average_block_speed: {metric: average_block_speed, unit: miles per hour, parse: numeric}
+        "3-10":
+          operating_group: cargo
+          aircraft_category: "All Aircraft"
+          title: "Table 3-10: Part 121 All-Cargo Air Carriers Fleet Size and Daily Utilization"
+          required_header_labels: ["Aircraft Category", "Block Hours", "Number of", Aircraft, Daily, Utilization, "(hours)"]
+          ordered_columns: [block_hours_for_number, number_of_aircraft, block_hours_for_daily_utilization, average_daily_utilization]
+          selected_metrics:
+            average_daily_utilization:
+              metric: average_daily_utilization
+              unit: block hours per aircraft-day
+              parse: numeric
+        "4-7":
+          operating_group: passenger
+          aircraft_category: "All Aircraft"
+          title: "Table 4-7: YE June 2023 Part 121 Passenger Air Carriers Direct Operating and Fixed Costs per Block Hour"
+          required_header_labels: ["Aircraft Category", "Cost per Block Hour", Maintenance, Total, Variable, Block, Hours]
+          ordered_columns: [fuel_and_oil, maintenance, crew, total_variable, depreciation, rentals, insurance, other, total_fixed, total, block_hours]
+          selected_metrics:
+            maintenance: {metric: maintenance_cost_per_block_hour, unit: USD per block hour, parse: currency}
+        "4-8":
+          operating_group: cargo
+          aircraft_category: "All Aircraft"
+          title: "Table 4-8: YE June 2023 Part 121 All-Cargo Air Carriers Direct Operating and Fixed Costs per Block Hour"
+          required_header_labels: ["Aircraft Category", "Cost per Block Hour", Maintenance, Total, Variable, Block, Hours]
+          ordered_columns: [fuel_and_oil, maintenance, crew, total_variable, depreciation, rentals, insurance, other, total_fixed, total, block_hours]
+          selected_metrics:
+            maintenance: {metric: maintenance_cost_per_block_hour, unit: USD per block hour, parse: currency}
+
+  vpic_vehicle_types:
+    eligible_request_file: ontario_vehicle_population_vpic_eligible_requests.csv
+    interim_subdir: fetched_vpic_vehicle_types
+    output_file: vpic_vehicle_type_evidence.csv
+    manifest_file: manifest.csv
+    warnings_file: warnings.csv
+    truck_vehicle_types: [Truck, Incomplete Vehicle]
+    vehicle_types_to_probe:
+      - Bus
+      - Incomplete Vehicle
+      - Low Speed Vehicle (LSV)
+      - Motorcycle
+      - Multipurpose Passenger Vehicle (MPV)
+      - Off Road Vehicle
+      - Passenger Car
+      - Trailer
+      - Truck
+    request_timeout_seconds: 60
+    request_delay_seconds: 0.25
+    maximum_requests: 1000
+
+  vpic_model_years:
+    eligible_request_file: ontario_vehicle_population_vpic_temporal_requests.csv
+    interim_subdir: fetched_vpic_model_years
+    output_file: vpic_model_year_evidence.csv
+    manifest_file: manifest.csv
+    warnings_file: warnings.csv
+    models_endpoint_minimum_year: 1996
+    canadian_specifications_minimum_year: 1990
+    request_timeout_seconds: 60
+    request_delay_seconds: 0.25
+    maximum_requests: 2500

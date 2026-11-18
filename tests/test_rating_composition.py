@@ -7,7 +7,6 @@ from types import SimpleNamespace
 import numpy as np
 import pandas as pd
 import pytest
-import yaml
 
 from parameterization.rating_composition import (
     aggregate_empirical_ratings,
@@ -16,6 +15,7 @@ from parameterization.rating_composition import (
     catalogue_family, catalogue_family_labels, median_support_weights,
 )
 from parameterization.vehicle_reference import load_vehicle_reference_frames
+from utils import load_rules_config
 
 
 @pytest.fixture
@@ -52,8 +52,8 @@ def policy():
 @pytest.fixture(scope="module")
 def auxiliary_family_policy():
     """Exercise auxiliary descriptor parsing independently of reviewed source links."""
-    path = Path(__file__).resolve().parents[1] / "config" / "parameters" / "rules.yaml"
-    rules = yaml.safe_load(path.read_text(encoding="utf-8"))
+    directory = Path(__file__).resolve().parents[1] / "config" / "parameters"
+    rules = load_rules_config(directory)
     policy = rules["parameterization"]["efficiencies"]["ratings"]["composition"]
     normalization = rules["parameterization"]["efficiencies"]["ratings"]["hybrid_configuration_evidence"]["family_normalization"]
     policy["aliases"] = normalization.get("aliases", [])

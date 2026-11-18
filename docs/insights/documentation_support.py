@@ -31,21 +31,31 @@ def _(load_evidence, mo):
 @app.cell
 def _(evidence, mo):
     mo.md(f"""
-    # What would separate samples of 100 Ontario vehicles show?
+    # How should the documentation illustrate fleet structure and non-road efficiency?
+
+    Two illustrations clarify what the backend represents: separate views of Ontario
+    vehicle composition, followed by non-road efficiency parameters with different
+    service units. Both read recorded evidence; they introduce no new model assumptions.
+
+    ## What would separate samples of 100 Ontario vehicles show?
 
     The reference is **{evidence.settings.reference_year}**. [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) supplies mapped FIT_ACTIVE vehicle size and canonical
     make/model counts; [*StatCan*](https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010002501) table **20-10-0025-01 supplies new registrations**, with **20-10-0021-01** retained for older years before current-table coverage.
     The latest captured [*StatCan*](https://www.statcan.gc.ca/en/developers/wds) observation at or before the reference is displayed with its own year and any carry-forward.
 
-    Each panel has its own denominator. There is **no inferred joint distribution** linking a size class, model and powertrain.
+    Each panel is a separate distribution with its own denominator. It does **not**
+    link a size class, model and powertrain into a single vehicle description.
     Unresolved [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) classifications cannot be assigned to Cars or Light trucks; their coverage remains inspectable in the vehicle-population notebook.
-    Powertrain panels include only represented fuels and normalize their new-registration counts. They describe an acquisition-year snapshot, not total registrations across vintages.
+    Powertrain panels use new registrations for represented fuels. They describe
+    vehicles acquired in one year, rather than the stock remaining from many years.
 
     Counts remain exact in the table. Largest-remainder rounding assigns {evidence.settings.icons_per_panel} symbols to each panel;
-    small positive categories can receive zero symbols without disappearing from the table or legend. **n = # of symbols**.
+    small positive categories can receive zero symbols while remaining in the table
+    and legend. **n is the number of displayed symbols**, not the source sample size.
 
-    Captured stock build: `{evidence.metadata['stock_build']}`. Captured efficiency/[*StatCan*](https://www.statcan.gc.ca/en/developers/wds) build:
-    `{evidence.metadata['efficiency_build']}`. This notebook only reads recorded evidence.
+    The vehicle documentation should keep these populations separate. The panels
+    cannot identify the most common size–model–powertrain combination or fill gaps
+    in the unresolved fleet. Build identities and selections remain in the audit.
     """)
     return
 
@@ -61,7 +71,7 @@ def _(evidence, fleet_100_chart, mo):
 def _(evidence, mo, source_markdown):
     mo.vstack([
         mo.ui.table(evidence.shares[["vehicle_group", "dimension", "category", "count", "denominator", "share", "icons", "source_year", "reference_year", "carried_forward_years", "denominator_label"]],
-                    selection=None, label="Exact marginal shares, including categories receiving zero symbols", page_size=15,
+                    selection=None, label="Separate population shares, including categories receiving zero symbols", page_size=15,
                     format_mapping={"share": "{:.4%}", "count": "{:,.0f}", "denominator": "{:,.0f}"},
                     show_column_summaries=False, show_data_types=False),
         mo.md(source_markdown("\n".join(f"- {item}" for item in evidence.metadata["limitations"]))),
@@ -98,13 +108,15 @@ def _(mo, nonroad, nonroad_efficiency_chart, source_markdown):
     nonroad_figure = nonroad_efficiency_chart(nonroad)
     mo.vstack([
         mo.md("""
-        # What do final non-road efficiency parameters represent?
+        ## What do final non-road efficiency parameters represent?
 
-        These separate panels show the recorded scenario's final efficiency rows for model vintages.
+        Each panel shows the recorded scenario's final efficiency values by model vintage.
         Passenger air/rail retain passenger-km, freight air/rail/marine retain tonne-km, and off-road equipment
         retains energy-service PJ. Their numerical levels therefore do not rank all modes on a common basis.
         Off-road's unity value is an accounting representation, not a measured engine efficiency.
-        The horizontal axis is a model-vintage label, not a source observation year.
+        The horizontal axis identifies the model vintage, which can represent several
+        source years. Use this figure to explain parameter units and accounting
+        boundaries; a comparison of modal performance would require a common service basis.
         """),
         mo.ui.altair_chart(nonroad_figure, chart_selection=False, legend_selection=False),
         mo.ui.table(nonroad.rows, selection=None, page_size=12, label="Exact final non-road parameter rows, units and provenance IDs",

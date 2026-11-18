@@ -2,6 +2,8 @@
 
 from copy import deepcopy
 from dataclasses import replace
+from pathlib import Path
+import socket
 
 import pandas as pd
 import pytest
@@ -15,13 +17,60 @@ from parameterization.road_fleet_weights import (
     medium_vocation_weights, report4_gvwr_shares, wards_gvwr_shares,
 )
 from parameterization.road_utilization import prepare_age_profiles
-from utils import load_config_bundle, load_harmonization_rules, load_yaml, resolve_input_path, validate_config_bundle
+from utils import (load_config_bundle, load_harmonization_rules, load_yaml,
+                   resolve_artifact_path, resolve_input_path, validate_config_bundle)
 from validation.config_models import AggregationSources, ScenarioConfig, SourcesConfig
 
 
-@pytest.fixture
-def bundle():
-    return load_config_bundle("config/scenarios/default.yaml")
+@pytest.fixture(scope="module")
+def bundle(tmp_path_factory):
+    from fetching import nlr_atb_autonomie, statcan_tables, vehicle_population
+    from parameterization.road_aggregation import build_road_aggregation_artifacts
+
+    original = load_config_bundle("config/scenarios/default.yaml")
+    directory = tmp_path_factory.mktemp("regional_fleet_evidence")
+    derived_inputs = {"interim", "processed", "validation"}
+    inputs = original.paths.inputs.model_copy(update={
+        key: str(directory / path) for key, path in original.paths.inputs.model_dump().items()
+        if key in derived_inputs
+    })
+    outputs = original.paths.outputs.model_copy(update={
+        key: str(directory / path) for key, path in original.paths.outputs.model_dump().items()
+    })
+    artifacts = {}
+    for key, route in original.paths.artifacts.items():
+        path = Path(route.path)
+        generated = path.parts[0] == "outputs" or path.parts[:2] in {
+            ("inputs", "1_interim"), ("inputs", "2_processed"), ("inputs", "validation"),
+        }
+        artifacts[key] = route.model_copy(update={"path": str(directory / path)}) if generated else route
+    paths = original.paths.model_copy(update={"inputs": inputs, "outputs": outputs, "artifacts": artifacts})
+    # These cases compare regional weighting over ATB's common native age window.
+    # Full horizon endpoint extension has a separate database-bootstrap contract.
+    scenario = original.scenario.model_copy(update={
+        "lifetimes": original.scenario.lifetimes.model_copy(update={"survival_curve_max_age": 25}),
+    })
+    scenario_path, paths_path = directory / "scenario.yaml", directory / "paths.yaml"
+    scenario_path.write_text(yaml.safe_dump(scenario.model_dump(mode="json", by_alias=True)), encoding="utf-8")
+    paths_path.write_text(yaml.safe_dump(paths.model_dump(mode="json")), encoding="utf-8")
+    selected = replace(original, scenario=scenario, paths=paths, scenario_path=scenario_path, paths_path=paths_path)
+
+    def reject_network(*_args, **_kwargs):
+        pytest.fail("Regional fleet tests must replay registered offline inputs")
+
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(socket.socket, "connect", reject_network)
+        patch.setattr(socket, "create_connection", reject_network)
+        # Rebuild only this module's source dependencies, with every generated
+        # route private and the registered raw caches remaining read-only.
+        nlr_atb_autonomie.fetch_and_normalize(selected, download=False)
+        statcan_tables.fetch_and_normalize(selected, download=False)
+        vehicle_population.fetch_and_normalize(
+            selected, year=scenario.existing_capacity.vehicle_population_year,
+            download=False, registered_only=True,
+        )
+        build_road_aggregation_artifacts(selected)
+        yield selected
 
 
 def test_regional_precedence_and_bc_model_alias(bundle):
@@ -139,13 +188,13 @@ def test_cost_utilization_and_efficiency_use_the_same_regional_fleet_evidence(bu
         assert ((MTO, 4) in components) == (region == "ON")
         historical = efficiency_components(
             bundle, "medium_trucks", efficiency, road, offroad, region=region,
-            **(component_inputs | {"year": bundle.scenario.periods.base_year}),
+            **(component_inputs | {"year": min(bundle.scenario.periods.base_year, efficiency["projection_reference_year"])}),
         )
         assert expected not in historical
         assert ("argonne_rd_greet", "fuel_heating_values") in historical
         assert not any(source == "nlr_atb_transportation" for source, _ in historical)
     profiles = prepare_age_profiles(
-        bundle, output_regions={"ON": "ON", "QC": "QC"}, fleet=fleet,
+        bundle, output_regions={"ON": "ON", "QC": "QC"}, fleet=fleet, max_age=25,
     )
     sources = profiles.loc[profiles.nrcan_ceud_class.eq("Medium Trucks")].groupby("region").weight_source.first()
     assert sources.to_dict() == {"ON": MTO, "QC": WARDS}
@@ -207,7 +256,7 @@ def test_two_scenarios_share_registry_with_independent_aggregation_choices(bundl
     prices = pd.DataFrame({"family": "mhdv", "vehicle_class": classes})
     for scenario, fleet, expected in zip((first, second), fleets, weights, strict=True):
         assert _region_weights(scenario, prices, [], efficiency)["QC", "medium_trucks"] == expected
-        profiles = prepare_age_profiles(scenario, output_regions={"QC": "QC"}, fleet=fleet)
+        profiles = prepare_age_profiles(scenario, output_regions={"QC": "QC"}, fleet=fleet, max_age=25)
         actual = profiles.loc[profiles.nrcan_ceud_class.eq("Medium Trucks")]
         assert set(actual.weight_source) == {scenario.scenario.aggregation_sources.source_for("medium_trucks", "QC")}
     assert fleets[0].medium_weights("ON", classes) == fleets[1].medium_weights("ON", classes)
@@ -266,3 +315,102 @@ def test_wards_citation_is_validated_before_aggregation(bundle, tmp_path):
     changed = replace(bundle, paths=bundle.paths.model_copy(update={"inputs": inputs}))
     with pytest.raises(ManualParameterError):
         load_fleet_aggregation_evidence(changed)
+
+
+@pytest.fixture
+def selective_fleet_inputs(tmp_path):
+    """Small native-dimension files exercise selection without source replay."""
+    original = load_config_bundle("config/scenarios/validation_baseline.yaml")
+    inputs = original.paths.inputs.model_copy(update={"interim": str(tmp_path / "interim")})
+    artifacts = dict(original.paths.artifacts)
+    artifacts["road_aggregation"] = artifacts["road_aggregation"].model_copy(
+        update={"path": str(tmp_path / "aggregation")},
+    )
+    selected = replace(original, paths=original.paths.model_copy(
+        update={"inputs": inputs, "artifacts": artifacts},
+    ))
+    rules = load_harmonization_rules(selected, "road_aggregation")
+    ontario = load_harmonization_rules(selected, "ontario_vehicle_population")
+    statcan = load_harmonization_rules(selected, "statcan_tables")
+    year = selected.scenario.existing_capacity.vehicle_population_year
+    paths = {
+        "ldv": resolve_artifact_path(selected, "road_aggregation", rules["nlr_weights_file"]),
+        "medium": resolve_input_path(selected, "interim", ontario["interim_subdir"],
+                                     ontario["reports"][4]["distribution_output_template"].format(year=year)),
+        "freight": resolve_input_path(selected, "interim", statcan["interim_subdir"],
+                                      statcan["freight"]["output_file"]),
+    }
+    frames = {
+        "ldv": pd.DataFrame({"report_year": [year, year], "weight_basis": [rules["ldv_weight_basis"]] * 2,
+                             "nrcan_ceud_class": ["Car", "Light Truck"], "nlr_atb_class": ["Car", "Truck"],
+                             "aggregation_weight": [1., 1.]}),
+        "medium": pd.DataFrame([
+            {"year": year, "source_id": MTO, "EPA_GVWR": label, "NATIVE_COUNT": value}
+            for value, label in enumerate(rules["medium_trucks"]["report4_gvwr"], 1)
+        ]),
+        "freight": pd.DataFrame({"table_id": ["23-10-0142-01"] * 2, "scenario_region": ["ON"] * 2,
+                                 "haul_class": ["regional", "long_haul"], "tonne_kilometres": [1., 3.]}),
+    }
+    for key, path in paths.items():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        frames[key].to_csv(path, index=False)
+    return selected, paths
+
+
+def test_truck_only_selection_preserves_weights_and_consumed_paths(selective_fleet_inputs):
+    selected, paths = selective_fleet_inputs
+    complete = load_fleet_aggregation_evidence(selected)
+    trucks = load_fleet_aggregation_evidence(selected, include_ldv=False)
+    classes = [f"Class {gvwr} Freight" for gvwr in range(2, 8)]
+
+    assert not complete.ldv.empty
+    assert trucks.ldv.empty
+    assert trucks.medium_weights("ON", classes) == complete.medium_weights("ON", classes)
+    assert trucks.heavy_weights("ON") == complete.heavy_weights("ON")
+    assert set(complete.paths) == set(paths.values())
+    assert set(trucks.paths) == {paths["medium"], paths["freight"]}
+
+
+@pytest.mark.parametrize("ldv_state", ["missing", "different_year"])
+def test_truck_only_selection_does_not_read_or_repair_unconsumed_ldv(
+        selective_fleet_inputs, ldv_state):
+    selected, paths = selective_fleet_inputs
+    if ldv_state == "missing":
+        paths["ldv"].unlink()
+        error, message = FileNotFoundError, None
+    else:
+        pd.read_csv(paths["ldv"]).assign(report_year=2023).to_csv(paths["ldv"], index=False)
+        error, message = ValueError, "selected population year"
+    before = {path: path.read_bytes() for path in paths.values() if path.exists()}
+
+    trucks = load_fleet_aggregation_evidence(selected, include_ldv=False)
+
+    assert trucks.heavy_weights("ON")["Class 8 Longhaul Sleeper"] == .75
+    assert set(trucks.paths) == {paths["medium"], paths["freight"]}
+    assert {path: path.read_bytes() for path in paths.values() if path.exists()} == before
+    with pytest.raises(error, match=message):
+        load_fleet_aggregation_evidence(selected)
+
+
+@pytest.mark.parametrize("change,match", [
+    ("report_year", "Report 4 year/source"), ("report_source", "Report 4 year/source"),
+    ("report_coverage", "Incomplete MTO medium"), ("freight_table", "registered haul table"),
+    ("freight_coverage", "Incomplete freight haul"),
+])
+def test_truck_only_selection_retains_consumed_source_guards(selective_fleet_inputs, change, match):
+    selected, paths = selective_fleet_inputs
+    key = "medium" if change.startswith("report") else "freight"
+    frame = pd.read_csv(paths[key])
+    if change == "report_year":
+        frame["year"] = 2023
+    elif change == "report_source":
+        frame["source_id"] = "unregistered"
+    elif change == "freight_table":
+        frame["table_id"] = "unregistered"
+    else:
+        frame = frame.iloc[:-1]
+    frame.to_csv(paths[key], index=False)
+
+    with pytest.raises(ValueError, match=match):
+        trucks = load_fleet_aggregation_evidence(selected, include_ldv=False)
+        trucks.heavy_weights("ON")

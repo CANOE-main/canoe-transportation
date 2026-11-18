@@ -7,6 +7,7 @@ from dataclasses import replace
 from pathlib import Path
 
 import pytest
+import pandas as pd
 from canoe_schema.v4_0 import Region, TimePeriod
 
 from build_transport import (
@@ -15,14 +16,15 @@ from build_transport import (
     insert_transport_contribution,
     prepare_transport_contribution,
 )
-from utils import resolve_artifact_path, resolve_input_path
+from parameterization.charger_representation import select_charger_technologies
+from utils import load_config_bundle, resolve_artifact_path, resolve_input_path
 from validation.database_bootstrap import validate_database
 from validation.insertion import insert_models
 from validation.schema_contract import create_v4_schema, packaged_ddl
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SCENARIO = "config/scenarios/legacy_comparison.yaml"
+SCENARIO = "config/scenarios/validation_opening_periods.yaml"
 TEMPLATES = REPO_ROOT / "inputs" / "0_canoe_template"
 
 
@@ -35,10 +37,35 @@ def csv_row_count(path: Path) -> int:
             return sum(1 for _ in csv.DictReader(handle))
 
 
-def modeled_technologies(template_dir: Path) -> set[str]:
+def selected_template_technologies(bundle, template_dir: Path) -> pd.DataFrame:
     with (template_dir / "technology.csv").open(encoding="utf-8-sig", newline="") as handle:
-        return {row["tech"] for row in csv.DictReader(handle)
-                if row["category"].strip() and row["tech"] != "T_OFF"}
+        return select_charger_technologies(bundle, pd.DataFrame(csv.DictReader(handle)))
+
+
+def modeled_technologies(bundle, template_dir: Path) -> set[str]:
+    selected = selected_template_technologies(bundle, template_dir)
+    return set(selected.loc[selected.category.ne("") & selected.tech.ne("T_OFF"), "tech"])
+
+
+@pytest.mark.parametrize("mode,expected_chargers", [
+    ("aggregated", {"T_LDV_CHRG_EX", "T_LDV_CHRG_N", "T_MHDV_CHRG_EX", "T_MHDV_CHRG_N"}),
+    ("explicit", {"T_LDV_CHRG_PUB_L2", "T_LDV_CHRG_PUB_FC", "T_LDV_CHRG_PRIV",
+                  "T_MHDV_CHRG_NIGHT", "T_MHDV_CHRG_FC"}),
+])
+def test_template_selection_preserves_every_noncharger_owner(mode, expected_chargers):
+    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    bundle = replace(bundle, scenario=bundle.scenario.model_copy(update={
+        "ev_chargers": bundle.scenario.ev_chargers.model_copy(update={"charger_type_classes": mode}),
+    }))
+    template = resolve_input_path(bundle, "template")
+    master = pd.read_csv(template / "technology.csv", keep_default_na=False)
+    nonchargers = set(master.loc[master.category.ne("charger"), "tech"])
+    selected = selected_template_technologies(bundle, template)
+    assert set(selected.tech) == nonchargers | expected_chargers
+    assert len(selected) == len(nonchargers) + len(expected_chargers)
+    assert modeled_technologies(bundle, template) == set(selected.loc[
+        selected.category.ne("") & selected.tech.ne("T_OFF"), "tech",
+    ])
 
 
 @pytest.fixture
@@ -61,16 +88,18 @@ def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(
         database_path=database,
     )
 
+    templates = resolve_input_path(bundle, "template")
+    expected_technologies = set(selected_template_technologies(bundle, templates).tech)
     expected_counts = {
-        "technology": csv_row_count(TEMPLATES / "technology.csv"),
-        "commodity": csv_row_count(TEMPLATES / "commodity.csv"),
-        "region": csv_row_count(TEMPLATES / "region.csv"),
-        "time_period": csv_row_count(TEMPLATES / "time_period.csv"),
+        "technology": len(expected_technologies),
+        "commodity": csv_row_count(templates / "commodity.csv"),
+        "region": csv_row_count(templates / "region.csv"),
+        "time_period": len(bundle.scenario.periods.all_years()) + 1,
     }
     assert database.is_file()
     assert report["ok"] is True
     regions = len(bundle.scenario.geography.regions)
-    expected_lifetime_owners = modeled_technologies(resolve_input_path(bundle, "template"))
+    expected_lifetime_owners = modeled_technologies(bundle, templates)
     assert report["lifetimes"]["fixed_rows"] == len(expected_lifetime_owners) * regions
     assert report["lifetimes"]["curve_rows"] == 0
     assert report["costs"]["cost_invest_rows"] == 405 * regions
@@ -117,7 +146,8 @@ def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(
         "fueleconomy_gov_vehicle_data": "T21",
         "nhtsa_vpic_vehicle_models": "T23",
         "dunsky_ev_charging_infrastructure": "T24",
-        "transport_canada_ev_dashboard": "T25",
+        "afdc_alternative_fueling_stations": "T38",
+        "nhts_household_travel": "T37",
         "pollution_probe_ev_charging_survey": "T26",
         "nlr_alternative_fueling_infrastructure": "T27",
         "icct_ev_charge": "T28",
@@ -130,6 +160,8 @@ def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(
         "eafo_norway_growth_evidence": "T36",
         "epa_moves_heavy_truck_survival": "T39",
         "transport_canada_izev": "T40",
+        "jonas_ev_charging_utilization": "T41",
+        "bea_us_gdp_deflator": "T42",
     }
     assert report["template"]["kind"] == "backend_internal_reference"
     assert report["template"]["data_id"].startswith("canoe-transport-template:")
@@ -137,6 +169,8 @@ def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(
     assert report["validation"]["foreign_key_violations"] == 0
     assert report["validation"]["foreign_keys_enabled"] is True
     with sqlite3.connect(database) as connection:
+        assert set(row[0] for row in connection.execute("SELECT tech FROM technology")) == expected_technologies
+        assert set(row[0] for row in connection.execute("SELECT tech FROM technology_label")) == expected_technologies
         for table, expected_count in expected_counts.items():
             actual_count = connection.execute(
                 f'SELECT COUNT(*) FROM "{table}"'
@@ -157,8 +191,19 @@ def test_bootstrap_uses_packaged_v4_and_loads_validated_templates(
         assert connection.execute(
             "SELECT flag FROM time_period WHERE period = 2023"
         ).fetchone() == ("e",)
+        assert connection.execute("SELECT season, sequence, segment_fraction FROM time_season").fetchall() == [
+            ("YEAR", 1, 1.0),
+        ]
+        assert connection.execute("SELECT tod, sequence, hours FROM time_of_day").fetchall() == [("ALL", 1, 24.0)]
+        assert connection.execute("SELECT COUNT(*) FROM capacity_factor_tech").fetchone()[0] == 0
         assert connection.execute("SELECT COUNT(*) FROM existing_capacity").fetchone()[0] == report["existing_capacity"]["parameter_rows"] + report["ev_chargers"]["capacity_rows"]
-        assert connection.execute("SELECT MIN(capacity) FROM existing_capacity").fetchone()[0] >= bundle.scenario.existing_capacity.cleanup_tolerance
+        assert connection.execute("SELECT MIN(capacity) FROM existing_capacity").fetchone()[0] >= 0
+        # The vehicle/offroad owner applies its cleanup threshold before the
+        # separate charger owner contributes capacities in GW.
+        assert connection.execute(
+            "SELECT MIN(e.capacity) FROM existing_capacity e "
+            "JOIN technology t USING (tech) WHERE t.category <> 'charger'"
+        ).fetchone()[0] >= bundle.scenario.existing_capacity.cleanup_tolerance
         assert connection.execute("SELECT COUNT(*) FROM demand").fetchone()[0] == report["demand"]["parameter_rows"]
         assert connection.execute("SELECT COUNT(DISTINCT region) FROM demand").fetchone()[0] == len(bundle.scenario.geography.regions)
         assert connection.execute("SELECT COUNT(DISTINCT period) FROM demand").fetchone()[0] == len(bundle.scenario.periods.model)
@@ -186,7 +231,7 @@ def test_fixed_lifetime_mode_inserts_one_row_per_modeled_technology(bundle, tmp_
         template_dir=resolve_input_path(bundle, "template"),
         database_path=database,
     )
-    expected_rows = len(modeled_technologies(resolve_input_path(bundle, "template"))) * len(bundle.scenario.geography.regions)
+    expected_rows = len(modeled_technologies(bundle, resolve_input_path(bundle, "template"))) * len(bundle.scenario.geography.regions)
     assert report["lifetimes"]["fixed_rows"] == expected_rows
     assert report["lifetimes"]["curve_rows"] == 0
     with sqlite3.connect(database) as connection:
@@ -198,7 +243,6 @@ def test_fixed_lifetime_mode_inserts_one_row_per_modeled_technology(bundle, tmp_
 def test_invalid_tail_method_fails_before_capacity_publication_or_prerequisite_io(tmp_path, monkeypatch):
     from build_transport import prepare_scenario_inputs
     from parameterization import build_existing_capacity as capacity
-    from utils import load_config_bundle
 
     original = load_config_bundle("config/scenarios/default.yaml", repo_root=REPO_ROOT)
     scenario = original.scenario.model_copy(update={
@@ -253,39 +297,35 @@ def test_curve_mode_inserts_complete_annual_curves_with_process_endpoints(bundle
         assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
 
 
-def test_age_mode_inserts_only_supported_flat_road_factors(bundle, tmp_path: Path) -> None:
-    # All registered ATB VMT classes cover 0..25; their later native endpoints
-    # differ. Use one explicit common lifetime/VKT horizon for this schema test.
+def test_age_evidence_cannot_publish_a_database_missing_road_factors(bundle, tmp_path: Path) -> None:
+    # Complete source support still cannot supply the missing v4 period dimension.
     payload = bundle.scenario.model_dump(mode="python")
     payload["lifetimes"]["survival_curve_max_age"] = 25
     payload["road_utilization"].update(vkt_schedules=True)
     scenario = type(bundle.scenario).model_validate(payload)
     database = tmp_path / "age-mode.sqlite"
-    report = bootstrap_database(
-        bundle=replace(bundle, scenario=scenario),
-        template_dir=resolve_input_path(bundle, "template"),
-        database_path=database,
-    )
-    assert report["road_utilization"]["sqlite_insertion"] == "blocked_upstream_vintage_plus_period_schema_gap"
-    assert report["road_utilization"]["age_factor_rows"] > 0
-    with sqlite3.connect(database) as connection:
-        assert connection.execute("SELECT COUNT(*) FROM capacity_to_activity").fetchone()[0] == report["road_utilization"]["capacity_to_activity_rows"] + report["ev_chargers"]["capacity_to_activity_rows"]
-        assert connection.execute("SELECT COUNT(*) FROM limit_annual_capacity_factor").fetchone()[0] == report["road_utilization"]["flat_factor_rows"] + report["ev_chargers"]["utilization_rows"]
-        assert "period" not in {
-            row[1] for row in connection.execute("PRAGMA table_info(limit_annual_capacity_factor)")
-        }
+    with pytest.raises(ValueError, match="vkt_schedules requires dual-index LACF insertion"):
+        bootstrap_database(
+            bundle=replace(bundle, scenario=scenario),
+            template_dir=resolve_input_path(bundle, "template"),
+            database_path=database,
+        )
+    assert not database.exists()
 
 
-def test_full_survival_horizon_does_not_invent_missing_vkt_tails(bundle):
+def test_full_survival_horizon_holds_registered_vkt_endpoints(bundle):
     from parameterization.road_utilization import _survival_age_limit, prepare_age_profiles
 
-    # The production MOVES lifetime horizon extends past the shortest ATB
-    # mileage profile. Preserve the explicit data-support failure until a
-    # treatment is reviewed; never give VKT an independently shortened ceiling.
+    # The configured endpoint policy extends the production MOVES horizon;
+    # unchanged registered source observations remain the physical evidence.
     assert bundle.scenario.lifetimes.survival_curve_max_age is None
-    assert _survival_age_limit(bundle) > 25
-    with pytest.raises(ValueError, match="unequal age coverage; a reviewed treatment is required"):
-        prepare_age_profiles(bundle, output_regions={"ON": "ON"})
+    ceiling = _survival_age_limit(bundle)
+    assert ceiling > 33
+    profiles = prepare_age_profiles(bundle, output_regions={"ON": "ON"})
+    assert set(profiles.endpoint_policy) == {"hold_last"}
+    for _, group in profiles.groupby("nrcan_ceud_class"):
+        assert group.age.tolist() == list(range(ceiling + 1))
+        assert group.loc[group.age.ge(34), "normalized_utilization"].nunique() == 1
 
 
 def test_transport_contribution_uses_a_caller_owned_transaction(
@@ -334,6 +374,8 @@ def test_transport_contribution_uses_a_caller_owned_transaction(
     }
     assert connection.execute("SELECT COUNT(*) FROM region").fetchone()[0] == 0
     assert connection.execute("SELECT COUNT(*) FROM time_period").fetchone()[0] == 0
+    assert connection.execute("SELECT COUNT(*) FROM time_season").fetchone()[0] == 0
+    assert connection.execute("SELECT COUNT(*) FROM time_of_day").fetchone()[0] == 0
     connection.rollback()
     assert connection.execute("SELECT COUNT(*) FROM technology").fetchone()[0] == 0
     connection.close()

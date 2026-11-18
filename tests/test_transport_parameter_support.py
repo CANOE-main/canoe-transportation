@@ -171,6 +171,18 @@ def test_insertion_rechecks_mutable_rows_before_any_database_write() -> None:
         assert connection.execute("SELECT name FROM sqlite_master").fetchall() == []
 
 
+def test_insertion_rejects_uninsertable_age_evidence_before_any_database_write() -> None:
+    contribution = TransportContribution(
+        dataset=DataSet(data_id="fixture", label="fixture"),
+        labels_by_table={}, rows_by_table={}, load_results=[],
+        road_utilization_audit={"vkt_schedules": True},
+    )
+    with sqlite3.connect(":memory:") as connection:
+        with pytest.raises(ValueError, match="vkt_schedules requires dual-index LACF insertion"):
+            insert_transport_contribution(connection, contribution)
+        assert connection.execute("SELECT name FROM sqlite_master").fetchall() == []
+
+
 def _curve_batches():
     return {
         "lifetime_tech": [],
@@ -235,6 +247,17 @@ def test_explicit_lifetime_coverage_catches_removed_process_and_curve_pair():
     assert report["checks"]["prepared_survival_curve_coverage"]["unsupported_keys"] == 1
 
 
+def test_historical_curves_and_process_lifetimes_require_published_capacity_when_prepared():
+    batches = _curve_batches()
+    batches["existing_capacity"] = []
+    report = validate_transport_parameter_support(batches, existing_vintages=[2020])
+    assert not report["ok"]
+    for table in ("lifetime_process", "lifetime_survival_curve"):
+        assert report["checks"][f"{table}_historical_capacity"]["examples"] == [("ON", "T_EX", 2020)]
+    batches["existing_capacity"] = [row(vintage=2020)]
+    assert validate_transport_parameter_support(batches, existing_vintages=[2020])["ok"]
+
+
 def test_lifetime_scope_excludes_unlimited_blending_without_exempting_vehicles():
     batches = {"efficiency": [row(tech="vehicle"), row(tech="unlimited_blend")],
                "lifetime_tech": [SimpleNamespace(region="ON", tech="vehicle", lifetime=16)]}
@@ -246,3 +269,78 @@ def test_lifetime_scope_excludes_unlimited_blending_without_exempting_vehicles()
         batches, existing_vintages=[2023], lifetime_technologies=["vehicle"],
     )
     assert report["checks"]["active_process_lifetime_coverage"]["unsupported_keys"] == 1
+
+
+def test_fixed_lifetime_needs_a_regional_technology_in_complete_contribution():
+    fixed = SimpleNamespace(region="ON", tech="T_EX", lifetime=16)
+    batches = {"lifetime_tech": [fixed], "existing_capacity": [], "efficiency": []}
+    report = validate_transport_parameter_support(batches, existing_vintages=[2020])
+    assert not report["ok"]
+    assert report["checks"]["fixed_lifetime_regional_support"]["examples"] == [("ON", "T_EX")]
+    batches["efficiency"] = [row(vintage=2025)]
+    assert validate_transport_parameter_support(batches, existing_vintages=[2020])["ok"]
+
+
+def _charger_group_contribution(singleton_group="charger_group"):
+    from canoe_schema.v4_0 import LimitCapacityShare, TechGroup, TechGroupMember
+    from build_transport import _charger_contract_fingerprint
+
+    groups = [TechGroup(group_name=name, data_id="charger-structure") for name in (singleton_group, "pool")]
+    members = [TechGroupMember(group_name=name, tech="charger", data_id="charger-structure")
+               for name in (singleton_group, "pool")]
+    shares = [LimitCapacityShare(region="ON", period=2025, sub_group=singleton_group, super_group="pool",
+                                 operator="e", share=1, data_id="charger-structure")]
+    return TransportContribution(
+        dataset=DataSet(data_id="fixture", label="fixture"), scenario_name="charger-groups",
+        charger_assumption_dataset=DataSet(data_id="charger-structure", label="single-member group identity"),
+        labels_by_table={"technology_label": [TechnologyLabel(tech="charger")]}, load_results=[],
+        rows_by_table={"technology": [Technology(tech="charger", category="charger", flag="p", data_id="fixture")]},
+        charger_group_rows=groups, charger_group_member_rows=members, charger_capacity_share_rows=shares,
+        charger_contract_fingerprint=_charger_contract_fingerprint(groups, members, shares),
+    )
+
+
+@pytest.mark.parametrize("batch", ["charger_group_rows", "charger_group_member_rows", "charger_capacity_share_rows"])
+def test_mutated_charger_mix_is_rejected_before_any_caller_write(batch):
+    contribution = _charger_group_contribution()
+    getattr(contribution, batch).pop()
+    with sqlite3.connect(":memory:") as connection:
+        with pytest.raises(ValueError, match="charger groups or capacity shares changed"):
+            insert_transport_contribution(connection, contribution)
+        assert connection.execute("SELECT name FROM sqlite_master").fetchall() == []
+
+
+def test_charger_groups_and_period_shares_register_in_caller_transaction():
+    from canoe_schema.v4_0 import TimePeriod
+
+    with sqlite3.connect(":memory:", isolation_level=None) as connection:
+        create_v4_schema(connection)
+        connection.execute("BEGIN IMMEDIATE")
+        connection.execute(*Region(region="ON").to_insert_sql(parameterized=True))
+        connection.execute(*TimePeriod(period=2025, flag="f").to_insert_sql(parameterized=True))
+        inserted = insert_transport_contribution(connection, _charger_group_contribution())
+        assert len(inserted["tech_group"]) == len(inserted["tech_group_member"]) == 2
+        assert connection.execute(
+            "SELECT region,period,sub_group,super_group,operator,share FROM limit_capacity_share"
+        ).fetchall() == [("ON", 2025, "charger_group", "pool", "e", 1)]
+        assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
+        assert connection.in_transaction
+        connection.rollback()
+        assert connection.execute("SELECT COUNT(*) FROM tech_group").fetchone() == (0,)
+
+
+def test_charger_group_name_conflicts_are_rejected_at_insertion():
+    with sqlite3.connect(":memory:") as connection:
+        with pytest.raises(ValueError, match="group names conflict"):
+            insert_transport_contribution(connection, _charger_group_contribution(singleton_group="charger"))
+        assert connection.execute("SELECT name FROM sqlite_master").fetchall() == []
+
+
+def test_charger_mix_cannot_drop_its_preparation_fingerprint():
+    from dataclasses import replace
+
+    contribution = replace(_charger_group_contribution(), charger_contract_fingerprint=None)
+    with sqlite3.connect(":memory:") as connection:
+        with pytest.raises(ValueError, match="lacks its contract fingerprint"):
+            insert_transport_contribution(connection, contribution)
+        assert connection.execute("SELECT name FROM sqlite_master").fetchall() == []

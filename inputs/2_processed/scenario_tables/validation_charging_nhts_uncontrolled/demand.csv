@@ -1,0 +1,126 @@
+region,period,commodity,demand,units,notes,data_source,dq_cred,dq_geog,dq_struc,dq_tech,dq_time,data_id
+ON,2025,T_D_pkm_ldv_c,93.64133663017184,bn passenger-km,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 20: Provincial passenger-car service activity in passenger-kilometres.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",T01,2,1,2,2,1,demand-road-cars:ON:T01:validation_charging_nhts_uncontrolled
+ON,2030,T_D_pkm_ldv_c,102.43351385717187,bn passenger-km,,T01,2,1,2,2,1,demand-road-cars:ON:T01:validation_charging_nhts_uncontrolled
+ON,2035,T_D_pkm_ldv_c,110.90505065828263,bn passenger-km,,T01,2,1,2,2,1,demand-road-cars:ON:T01:validation_charging_nhts_uncontrolled
+ON,2040,T_D_pkm_ldv_c,118.62495518503083,bn passenger-km,,T01,2,1,2,2,1,demand-road-cars:ON:T01:validation_charging_nhts_uncontrolled
+ON,2045,T_D_pkm_ldv_c,127.88158975909963,bn passenger-km,,T01,2,1,2,2,1,demand-road-cars:ON:T01:validation_charging_nhts_uncontrolled
+ON,2025,T_D_pkm_ldv_t,135.5185829981731,bn passenger-km,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 34: Provincial passenger-light-truck service activity in passenger-kilometres.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",T01,2,1,2,2,1,demand-road-passenger-light-trucks:ON:T01:validation_charging_nhts_uncontrolled
+ON,2030,T_D_pkm_ldv_t,148.24270080928025,bn passenger-km,,T01,2,1,2,2,1,demand-road-passenger-light-trucks:ON:T01:validation_charging_nhts_uncontrolled
+ON,2035,T_D_pkm_ldv_t,160.50278491762154,bn passenger-km,,T01,2,1,2,2,1,demand-road-passenger-light-trucks:ON:T01:validation_charging_nhts_uncontrolled
+ON,2040,T_D_pkm_ldv_t,171.67510005103247,bn passenger-km,,T01,2,1,2,2,1,demand-road-passenger-light-trucks:ON:T01:validation_charging_nhts_uncontrolled
+ON,2045,T_D_pkm_ldv_t,185.07138470429436,bn passenger-km,,T01,2,1,2,2,1,demand-road-passenger-light-trucks:ON:T01:validation_charging_nhts_uncontrolled
+ON,2025,T_D_tkm_ldv_t,14.71622618299524,bn tonne-km,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 35: Provincial freight-light-truck service activity in tonne-kilometres.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",T01,2,1,2,2,1,demand-road-freight-light-trucks:ON:T01:validation_charging_nhts_uncontrolled
+ON,2030,T_D_tkm_ldv_t,16.097962853676453,bn tonne-km,,T01,2,1,2,2,1,demand-road-freight-light-trucks:ON:T01:validation_charging_nhts_uncontrolled
+ON,2035,T_D_tkm_ldv_t,17.42930920315332,bn tonne-km,,T01,2,1,2,2,1,demand-road-freight-light-trucks:ON:T01:validation_charging_nhts_uncontrolled
+ON,2040,T_D_tkm_ldv_t,18.642532606567986,bn tonne-km,,T01,2,1,2,2,1,demand-road-freight-light-trucks:ON:T01:validation_charging_nhts_uncontrolled
+ON,2045,T_D_tkm_ldv_t,20.097261180374336,bn tonne-km,,T01,2,1,2,2,1,demand-road-freight-light-trucks:ON:T01:validation_charging_nhts_uncontrolled
+ON,2025,T_D_tkm_mdv_t,12.120442855129422,bn tonne-km,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 36: Provincial medium- and heavy-truck freight activity in tonne-kilometres.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",T01,2,1,2,2,1,demand-road-medium-trucks:ON:T01:validation_charging_nhts_uncontrolled
+ON,2030,T_D_tkm_mdv_t,13.25845610319842,bn tonne-km,,T01,2,1,2,2,1,demand-road-medium-trucks:ON:T01:validation_charging_nhts_uncontrolled
+ON,2035,T_D_tkm_mdv_t,14.354967338386246,bn tonne-km,,T01,2,1,2,2,1,demand-road-medium-trucks:ON:T01:validation_charging_nhts_uncontrolled
+ON,2040,T_D_tkm_mdv_t,15.3541912391839,bn tonne-km,,T01,2,1,2,2,1,demand-road-medium-trucks:ON:T01:validation_charging_nhts_uncontrolled
+ON,2045,T_D_tkm_mdv_t,16.55232140715575,bn tonne-km,,T01,2,1,2,2,1,demand-road-medium-trucks:ON:T01:validation_charging_nhts_uncontrolled
+ON,2025,T_D_tkm_hdv_t,103.19632643574776,bn tonne-km,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 36: Provincial medium- and heavy-truck freight activity in tonne-kilometres.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",T01,2,1,2,2,1,demand-road-heavy-trucks:ON:T01:validation_charging_nhts_uncontrolled
+ON,2030,T_D_tkm_hdv_t,112.88564126026617,bn tonne-km,,T01,2,1,2,2,1,demand-road-heavy-trucks:ON:T01:validation_charging_nhts_uncontrolled
+ON,2035,T_D_tkm_hdv_t,122.22159809941913,bn tonne-km,,T01,2,1,2,2,1,demand-road-heavy-trucks:ON:T01:validation_charging_nhts_uncontrolled
+ON,2040,T_D_tkm_hdv_t,130.7292274890067,bn tonne-km,,T01,2,1,2,2,1,demand-road-heavy-trucks:ON:T01:validation_charging_nhts_uncontrolled
+ON,2045,T_D_tkm_hdv_t,140.9303920342621,bn tonne-km,,T01,2,1,2,2,1,demand-road-heavy-trucks:ON:T01:validation_charging_nhts_uncontrolled
+ON,2025,T_D_pkm_ldv_m,1.0715808879140378,bn passenger-km,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 32: Provincial motorcycle stock, distance travelled and passenger activity.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",T01,2,1,2,2,1,demand-road-motorcycles:ON:T01:validation_charging_nhts_uncontrolled
+ON,2030,T_D_pkm_ldv_m,1.1721938161213292,bn passenger-km,,T01,2,1,2,2,1,demand-road-motorcycles:ON:T01:validation_charging_nhts_uncontrolled
+ON,2035,T_D_pkm_ldv_m,1.2691375084479692,bn passenger-km,,T01,2,1,2,2,1,demand-road-motorcycles:ON:T01:validation_charging_nhts_uncontrolled
+ON,2040,T_D_pkm_ldv_m,1.357479926925569,bn passenger-km,,T01,2,1,2,2,1,demand-road-motorcycles:ON:T01:validation_charging_nhts_uncontrolled
+ON,2045,T_D_pkm_ldv_m,1.463407854195035,bn passenger-km,,T01,2,1,2,2,1,demand-road-motorcycles:ON:T01:validation_charging_nhts_uncontrolled
+ON,2025,T_D_pkm_hdv_bs,5.522040455699198,bn passenger-km,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 28: Provincial school-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",T01,2,1,2,2,1,demand-road-school-buses:ON:T01:validation_charging_nhts_uncontrolled
+ON,2030,T_D_pkm_hdv_bs,6.040516164059901,bn passenger-km,,T01,2,1,2,2,1,demand-road-school-buses:ON:T01:validation_charging_nhts_uncontrolled
+ON,2035,T_D_pkm_hdv_bs,6.540083669406736,bn passenger-km,,T01,2,1,2,2,1,demand-road-school-buses:ON:T01:validation_charging_nhts_uncontrolled
+ON,2040,T_D_pkm_hdv_bs,6.995327332568027,bn passenger-km,,T01,2,1,2,2,1,demand-road-school-buses:ON:T01:validation_charging_nhts_uncontrolled
+ON,2045,T_D_pkm_hdv_bs,7.541192144424654,bn passenger-km,,T01,2,1,2,2,1,demand-road-school-buses:ON:T01:validation_charging_nhts_uncontrolled
+ON,2025,T_D_pkm_hdv_bt,4.454941745827403,bn passenger-km,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 29: Provincial urban-transit passenger activity and energy use by fuel; fuel activity shares are inferred separately.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",T01,2,1,2,2,1,demand-road-urban-transit:ON:T01:validation_charging_nhts_uncontrolled
+ON,2030,T_D_pkm_hdv_bt,4.873225366873614,bn passenger-km,,T01,2,1,2,2,1,demand-road-urban-transit:ON:T01:validation_charging_nhts_uncontrolled
+ON,2035,T_D_pkm_hdv_bt,5.276254673211189,bn passenger-km,,T01,2,1,2,2,1,demand-road-urban-transit:ON:T01:validation_charging_nhts_uncontrolled
+ON,2040,T_D_pkm_hdv_bt,5.643525434048783,bn passenger-km,,T01,2,1,2,2,1,demand-road-urban-transit:ON:T01:validation_charging_nhts_uncontrolled
+ON,2045,T_D_pkm_hdv_bt,6.083905390955563,bn passenger-km,,T01,2,1,2,2,1,demand-road-urban-transit:ON:T01:validation_charging_nhts_uncontrolled
+ON,2025,T_D_pkm_hdv_bic,0.819704110801976,bn passenger-km,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 30: Provincial inter-city-bus passenger activity and energy use by fuel; fuel activity shares are inferred separately.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",T01,2,1,2,2,1,demand-road-inter-city-buses:ON:T01:validation_charging_nhts_uncontrolled
+ON,2030,T_D_pkm_hdv_bic,0.8966678116121726,bn passenger-km,,T01,2,1,2,2,1,demand-road-inter-city-buses:ON:T01:validation_charging_nhts_uncontrolled
+ON,2035,T_D_pkm_hdv_bic,0.9708247362202229,bn passenger-km,,T01,2,1,2,2,1,demand-road-inter-city-buses:ON:T01:validation_charging_nhts_uncontrolled
+ON,2040,T_D_pkm_hdv_bic,1.0384021299578443,bn passenger-km,,T01,2,1,2,2,1,demand-road-inter-city-buses:ON:T01:validation_charging_nhts_uncontrolled
+ON,2045,T_D_pkm_hdv_bic,1.119431530921255,bn passenger-km,,T01,2,1,2,2,1,demand-road-inter-city-buses:ON:T01:validation_charging_nhts_uncontrolled
+ON,2025,T_D_pkm_hdv_aj,82.69772409009096,bn passenger-km,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 14: Provincial passenger-air energy use by fuel; aircraft counts and provincial passenger activity are not reported.
+nrcan_ceud_transport_national: Canadian air, rail and marine activity and energy intensities; national averages provide intensity proxies for provincial service activity.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",T02,2,2,3,2,1,demand-offroad-passenger-air:ON:T01:validation_charging_nhts_uncontrolled
+ON,2030,T_D_pkm_hdv_aj,90.4623830818909,bn passenger-km,,T02,2,2,3,2,1,demand-offroad-passenger-air:ON:T01:validation_charging_nhts_uncontrolled
+ON,2035,T_D_pkm_hdv_aj,97.94387403672611,bn passenger-km,,T02,2,2,3,2,1,demand-offroad-passenger-air:ON:T01:validation_charging_nhts_uncontrolled
+ON,2040,T_D_pkm_hdv_aj,104.76157397063719,bn passenger-km,,T02,2,2,3,2,1,demand-offroad-passenger-air:ON:T01:validation_charging_nhts_uncontrolled
+ON,2045,T_D_pkm_hdv_aj,112.93641042168468,bn passenger-km,,T02,2,2,3,2,1,demand-offroad-passenger-air:ON:T01:validation_charging_nhts_uncontrolled
+ON,2025,T_D_tkm_hdv_aj,0.9987621675969142,bn tonne-km,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 15: Provincial freight-air energy use by fuel; aircraft counts and provincial freight activity are not reported.
+nrcan_ceud_transport_national: Canadian air, rail and marine activity and energy intensities; national averages provide intensity proxies for provincial service activity.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",T02,2,2,3,2,1,demand-offroad-freight-air:ON:T01:validation_charging_nhts_uncontrolled
+ON,2030,T_D_tkm_hdv_aj,1.0925379967461255,bn tonne-km,,T02,2,2,3,2,1,demand-offroad-freight-air:ON:T01:validation_charging_nhts_uncontrolled
+ON,2035,T_D_tkm_hdv_aj,1.182893931025135,bn tonne-km,,T02,2,2,3,2,1,demand-offroad-freight-air:ON:T01:validation_charging_nhts_uncontrolled
+ON,2040,T_D_tkm_hdv_aj,1.2652330865332158,bn tonne-km,,T02,2,2,3,2,1,demand-offroad-freight-air:ON:T01:validation_charging_nhts_uncontrolled
+ON,2045,T_D_tkm_hdv_aj,1.3639627367555582,bn tonne-km,,T02,2,2,3,2,1,demand-offroad-freight-air:ON:T01:validation_charging_nhts_uncontrolled
+ON,2025,T_D_pkm_hdv_r,0.33895373073149704,bn passenger-km,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 17: Provincial passenger-rail energy use; fleet capacity and passenger activity require separate intensity evidence.
+nrcan_ceud_transport_national: Canadian air, rail and marine activity and energy intensities; national averages provide intensity proxies for provincial service activity.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",T02,2,2,3,2,1,demand-offroad-passenger-rail:ON:T01:validation_charging_nhts_uncontrolled
+ON,2030,T_D_pkm_hdv_r,0.37077879196608804,bn passenger-km,,T02,2,2,3,2,1,demand-offroad-passenger-rail:ON:T01:validation_charging_nhts_uncontrolled
+ON,2035,T_D_pkm_hdv_r,0.40144323041922797,bn passenger-km,,T02,2,2,3,2,1,demand-offroad-passenger-rail:ON:T01:validation_charging_nhts_uncontrolled
+ON,2040,T_D_pkm_hdv_r,0.429386984047678,bn passenger-km,,T02,2,2,3,2,1,demand-offroad-passenger-rail:ON:T01:validation_charging_nhts_uncontrolled
+ON,2045,T_D_pkm_hdv_r,0.4628932424567217,bn passenger-km,,T02,2,2,3,2,1,demand-offroad-passenger-rail:ON:T01:validation_charging_nhts_uncontrolled
+ON,2025,T_D_tkm_hdv_r,99.36364000549037,bn tonne-km,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 18: Provincial freight-rail energy use; fleet capacity and freight activity require separate intensity evidence.
+nrcan_ceud_transport_national: Canadian air, rail and marine activity and energy intensities; national averages provide intensity proxies for provincial service activity.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",T02,2,2,3,2,1,demand-offroad-freight-rail:ON:T01:validation_charging_nhts_uncontrolled
+ON,2030,T_D_tkm_hdv_r,108.69309603726828,bn tonne-km,,T02,2,2,3,2,1,demand-offroad-freight-rail:ON:T01:validation_charging_nhts_uncontrolled
+ON,2035,T_D_tkm_hdv_r,117.6823177131965,bn tonne-km,,T02,2,2,3,2,1,demand-offroad-freight-rail:ON:T01:validation_charging_nhts_uncontrolled
+ON,2040,T_D_tkm_hdv_r,125.87397581929626,bn tonne-km,,T02,2,2,3,2,1,demand-offroad-freight-rail:ON:T01:validation_charging_nhts_uncontrolled
+ON,2045,T_D_tkm_hdv_r,135.69627159784446,bn tonne-km,,T02,2,2,3,2,1,demand-offroad-freight-rail:ON:T01:validation_charging_nhts_uncontrolled
+ON,2025,T_D_tkm_hdv_wt,8.639266635416043,bn tonne-km,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 19: Provincial marine-freight energy use by fuel; vessel capacity and freight activity require separate intensity evidence.
+nrcan_ceud_transport_national: Canadian air, rail and marine activity and energy intensities; national averages provide intensity proxies for provincial service activity.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",T02,2,2,3,2,1,demand-offroad-freight-marine:ON:T01:validation_charging_nhts_uncontrolled
+ON,2030,T_D_tkm_hdv_wt,9.450425105631771,bn tonne-km,,T02,2,2,3,2,1,demand-offroad-freight-marine:ON:T01:validation_charging_nhts_uncontrolled
+ON,2035,T_D_tkm_hdv_wt,10.232001574639089,bn tonne-km,,T02,2,2,3,2,1,demand-offroad-freight-marine:ON:T01:validation_charging_nhts_uncontrolled
+ON,2040,T_D_tkm_hdv_wt,10.944233116889881,bn tonne-km,,T02,2,2,3,2,1,demand-offroad-freight-marine:ON:T01:validation_charging_nhts_uncontrolled
+ON,2045,T_D_tkm_hdv_wt,11.798242009862307,bn tonne-km,,T02,2,2,3,2,1,demand-offroad-freight-marine:ON:T01:validation_charging_nhts_uncontrolled
+ON,2025,T_D_pj_off,55.25589208377647,PJ,"nrcan_ceud_transport_provincial: Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies.
+  - 7: Provincial off-road energy totals and fuel breakdown; aggregate PJ supplies the energy-only demand without inferring equipment stocks or transport service.
+cer_canadas_energy_future: Canadian energy and macroeconomic projections conditional on the selected report edition and policy scenario.
+  - macro-indicators: Canada-level real GDP, deflator and exchange-rate series; macroeconomic paths provide provincial transport-demand growth proxies and currency-conversion inputs.",T01,2,1,2,2,1,demand-offroad-energy-off-road:ON:T01:validation_charging_nhts_uncontrolled
+ON,2030,T_D_pj_off,60.443981164085656,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:ON:T01:validation_charging_nhts_uncontrolled
+ON,2035,T_D_pj_off,65.44286670023136,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:ON:T01:validation_charging_nhts_uncontrolled
+ON,2040,T_D_pj_off,69.99822896627586,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:ON:T01:validation_charging_nhts_uncontrolled
+ON,2045,T_D_pj_off,75.46038509828153,PJ,,T01,2,1,2,2,1,demand-offroad-energy-off-road:ON:T01:validation_charging_nhts_uncontrolled

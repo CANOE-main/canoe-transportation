@@ -4,16 +4,16 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-import yaml
 
 from parameterization.offroad_efficiencies import derive_offroad_consumption, manual_ratio
 from parameterization.road_efficiencies import RoadEfficiencyEvidence, observed_value, require_observed_value, source_point
+from utils import load_rules_config
 
 
 @pytest.fixture
 def rules():
-    path = Path(__file__).resolve().parents[1] / "config/parameters/rules.yaml"
-    return yaml.safe_load(path.read_text(encoding="utf-8"))["parameterization"]["efficiencies"]
+    directory = Path(__file__).resolve().parents[1] / "config/parameters"
+    return load_rules_config(directory)["parameterization"]["efficiencies"]
 
 
 def evidence(rules, ratings=(), atb=(), *, modes=("cars",), ceud=None, gcam=None, regen=None):
@@ -183,6 +183,56 @@ def test_mhdv_and_bus_history_remain_consumption_with_separate_loads(rules):
     assert result["native_intensity"] == 8
     assert result["load_factor"] == 5
     assert result["native_unit"] == "MJ/vkm"
+    assert result["atb_target_year"] == 2023
+    assert result["ceud_intensity_target_year"] == 2000
+    assert result["ceud_intensity_reference_year"] == 2023
+    assert result["ceud_intensity_ratio"] == 2
+    assert result["ceud_load_ratio"] == .5
+
+
+def test_existing_transit_bev_backcast_uses_own_atb_anchor_and_annual_ceud_ratios(rules):
+    spec = rules["road_classes"]["urban_transit"]
+    ceud = pd.DataFrame([
+        {"region": "ON", "table_id": spec["intensity_table"], "raw_series": spec["intensity"],
+         "unit": "MJ/Pkm", "year": year, "value": value}
+        for year, value in [(2012, 1.5), (2023, 1.0)]
+    ])
+    inputs = evidence(rules, modes=("urban_transit",), ceud=ceud, atb=[
+        ("urban_transit", "bev", 2023, 5.0),
+        ("urban_transit", "diesel", 2023, 10.0),
+    ])
+    bev = inputs.derive_consumption("ON", "urban_transit", "bev", 2012)
+    assert bev["native_unit"] == "MJ/vkm"
+    assert bev["native_intensity"] == pytest.approx(6.0)  # 5 × 1.5 × (8 / 10)
+    assert bev["load_factor"] == 8
+    assert bev["atb_powertrain"] == "bev"
+    assert bev["atb_target_year"] == 2023
+    assert bev["projection_atb_source_years"] == [2023]
+    assert bev["ceud_intensity_target_year"] == 2012
+    assert bev["ceud_intensity_reference_year"] == 2023
+    assert bev["ceud_intensity_ratio"] == 1.5
+    assert bev["ceud_load_ratio"] == .8
+    assert bev["treatment"] == "ATB_bus_CEUD_service_intensity_backcast"
+    assert inputs.derive_consumption("ON", "urban_transit", "diesel", 2012)["native_intensity"] == pytest.approx(12)
+
+
+def test_new_bus_cohort_uses_reverse_index_then_atb_consumption_interpolation(rules):
+    spec = rules["road_classes"]["urban_transit"]
+    ceud = pd.DataFrame([
+        {"region": "ON", "table_id": spec["intensity_table"], "raw_series": spec["intensity"],
+         "unit": "MJ/Pkm", "year": year, "value": value}
+        for year, value in [(2012, 1.5), (2023, 1.)]
+    ])
+    inputs = evidence(rules, modes=("urban_transit",), ceud=ceud,
+                      atb=[("urban_transit", "bev", 2023, 4), ("urban_transit", "bev", 2025, 2)])
+    observations = inputs.period_observations("ON", "urban_transit", "bev", [2012, 2023, 2024, 2025],
+                                               new_cohort=True)
+    assert [row["native_intensity"] for row in observations.values()] == pytest.approx([4 * 1.5 * .8, 4, 3, 2])
+    assert observations[2012]["treatment"] == "ATB_bus_CEUD_service_intensity_backcast"
+    assert observations[2012]["projection_atb_source_years"] == [2023]
+    assert observations[2024]["treatment"] == "ATB_bus_projected_consumption"
+    assert observations[2024]["projection_atb_source_years"] == [2023, 2025]
+    assert observations[2024]["projection_atb_source_weights"] == [.5, .5]
 
 
 def test_motorcycle_service_intensity_is_converted_to_vehicle_consumption(rules):
@@ -205,6 +255,12 @@ def test_motorcycle_service_intensity_is_converted_to_vehicle_consumption(rules)
     assert history["native_unit"] == future["native_unit"] == "MJ/vkm"
     assert future["index_reference_year"] == 2020
     assert future["index_source_year"] == 2030
+    emerging = inputs.derive_consumption("ON", "motorcycles", "bev", 2023, new_cohort=True)
+    assert emerging["treatment"] == "CEUD_incumbent_GCAM_relative_powertrain_proxy"
+    assert emerging["native_intensity"] == pytest.approx(1 * 10 * (1 / 4))
+    assert emerging["ceud_intensity_target_year"] == 2023
+    assert emerging["index_reference_year"] == 2020
+    assert emerging["index_source_year"] == 2030
 
 
 def test_intercity_source_fuel_economy_is_converted_at_the_held_source_points(rules):

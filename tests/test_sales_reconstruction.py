@@ -11,7 +11,7 @@ from parameterization.road_stocks_and_demands import (
     derive_sales_survival_cohorts,
     distribute_existing_road_capacity,
 )
-from parameterization.road_utilization import calibrate_sales_activity
+from parameterization.road_utilization import calibrate_base_year_activity
 from utils import load_config_bundle
 from validation.config_models import (
     ScenarioConfig,
@@ -175,7 +175,6 @@ def allocation_inputs(sales_inputs, *, regions=("ON",), lifetime=4):
         "provincial": sales_inputs["provincial"],
         "report5_age": pd.DataFrame(), "ldv_registrations": registrations,
         "truck_registrations": pd.DataFrame(),
-        "dashboard": pd.DataFrame(columns=["source_region", "ytd_market_share"]),
         "regions": list(regions),
         "period_config": ScenarioPeriods(
             period_mode="prospective", base_year=2023, existing=[2020, 2021, 2022],
@@ -365,7 +364,7 @@ def calibration_inputs():
 def test_activity_closes_on_retained_stock_without_mutating_stock_or_other_regions(calibration_inputs):
     capacity_before = calibration_inputs["capacity"].copy(deep=True)
     baseline_before = calibration_inputs["baseline"].copy(deep=True)
-    baseline, audit = calibrate_sales_activity(**calibration_inputs)
+    baseline, audit = calibrate_base_year_activity(**calibration_inputs)
     pd.testing.assert_frame_equal(calibration_inputs["capacity"], capacity_before)
     pd.testing.assert_frame_equal(calibration_inputs["baseline"], baseline_before)
     assert baseline.set_index("region").utilization.to_dict() == pytest.approx({"ON": 0.6, "QC": 0.2})
@@ -378,21 +377,21 @@ def test_activity_closes_on_retained_stock_without_mutating_stock_or_other_regio
 
 def test_infeasible_activity_calibration_is_rejected(calibration_inputs):
     annual = calibration_inputs["annual"].assign(activity_bn=51.0)
-    with pytest.raises(ValueError, match="Infeasible sales activity calibration"):
-        calibrate_sales_activity(**(calibration_inputs | {"annual": annual}))
+    with pytest.raises(ValueError, match="Infeasible base-year activity calibration"):
+        calibrate_base_year_activity(**(calibration_inputs | {"annual": annual}))
 
 
 def test_zero_calibration_denominator_is_rejected(calibration_inputs):
     capacity = calibration_inputs["capacity"].assign(capacity=0.0)
     with pytest.raises(ValueError, match="Invalid activity calibration denominator"):
-        calibrate_sales_activity(**(calibration_inputs | {"capacity": capacity}))
+        calibrate_base_year_activity(**(calibration_inputs | {"capacity": capacity}))
 
 
 @pytest.mark.parametrize("target", [-1.0, np.inf, np.nan])
 def test_nonphysical_calibration_target_is_rejected(calibration_inputs, target):
     annual = calibration_inputs["annual"].assign(activity_bn=target)
     with pytest.raises(ValueError, match="Invalid activity calibration denominator/target"):
-        calibrate_sales_activity(**(calibration_inputs | {"annual": annual}))
+        calibrate_base_year_activity(**(calibration_inputs | {"annual": annual}))
 
 
 def test_production_has_one_sales_method_for_all_regions():
@@ -437,4 +436,4 @@ def test_prospective_base_year_label_retains_2030_future_endpoint():
     scenario = ScenarioConfig.model_validate(payload)
     assert scenario.periods.model[0] == scenario.periods.base_year == 2025
     assert scenario.periods.historical_years(2020) == list(range(2021, 2026))
-    assert scenario.periods.projection_year(2025, legacy_at_end=True) == 2030
+    assert scenario.periods.evaluation_year(2025) == 2030

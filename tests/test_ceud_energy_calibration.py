@@ -11,6 +11,31 @@ from utils import load_config_bundle, load_harmonization_rules
 from validation.config_models import ScenarioConfig
 
 
+def test_calibration_comparison_requires_matching_partition_fingerprints():
+    from validation.ceud_calibration_diagnostic import _require_matching_configuration
+
+    paths = {"path": "config/paths.yaml", "sha256": "paths"}
+    sources = {"path": "config/sources.yaml", "sha256": "sources"}
+    rules = {"path": "config/parameters/rules.yaml", "sha256": "index"}
+    member = {"path": "config/parameters/source_normalization.yaml", "sha256": "member"}
+    publication = {"paths": paths, "sources": sources, "parameters": [rules, member]}
+    capture = {
+        "scenario": {"path": "config/scenario.yaml", "sha256": "calibrated"},
+        "paths": paths,
+        "sources": sources,
+        "rules": rules,
+        "rules:source_normalization.yaml": member,
+    }
+
+    _require_matching_configuration(publication, capture)
+    with pytest.raises(ValueError, match="parameter/source_normalization.yaml"):
+        _require_matching_configuration(publication, {
+            **capture, "rules:source_normalization.yaml": {**member, "sha256": "changed"},
+        })
+    del capture["rules:source_normalization.yaml"]
+    with pytest.raises(ValueError, match="parameter/source_normalization.yaml"):
+        _require_matching_configuration(publication, capture)
+
 @pytest.fixture
 def calibration_inputs():
     bundle = load_config_bundle("config/scenarios/validation_energy_calibration.yaml")
@@ -363,7 +388,7 @@ def test_read_only_diagnostic_checks_emitted_rows_and_identified_charts(calibrat
     with pytest.raises(ValueError, match="activity changed after fitting"):
         validate_calibration_evidence(frames, c2a=calibration_inputs["c2a"], factors=changed)
     charts = calibration_charts(CEUDCalibrationDiagnostic(frames, {}, {}), region="ON")
-    assert set(charts) == {"ceud-cal-1", "ceud-cal-2", "ceud-cal-3", "ceud-cal-4"}
+    assert set(charts) == {"ceud-cal-1", "ceud-cal-4"}
     for identity, chart in charts.items():
         spec = chart.to_dict(validate=True)
         assert spec["usermeta"]["figure_id"] == identity
@@ -414,12 +439,121 @@ def test_base_year_anchor_heatmaps_do_not_mix_historical_or_future_vintages():
     ])
     charts = calibration_anchor_charts(CEUDCalibrationDiagnostic(
         {"summary": summary, "trajectories": trajectories}, {}, {}))
-    assert set(charts) == {"ceud-cal-5-cars", "ceud-cal-5-trucks"}
+    assert set(charts) == {"ceud-cal-5-ldv", "ceud-cal-5-mhdv"}
     for identity, chart in charts.items():
         spec = chart.to_dict(validate=True)
         assert spec["usermeta"]["figure_id"] == identity
         data = [row for rows in spec["datasets"].values() for row in rows]
         assert {row["vintage"] for row in data} == {2025}
         assert {row["region"] for row in data} == {"ON", "QC"}
-        assert all(row["cell_label"] == "pending" for row in data) if identity.endswith("trucks") else \
+        assert all(row["cell_label"] == "pending" for row in data) if identity.endswith("mhdv") else \
                all(row["efficiency_change"] == pytest.approx(.1) for row in data)
+
+
+def test_regional_capture_requires_each_region_class_and_base_year_anchor():
+    from validation.ceud_calibration_diagnostic import CLASS_LABELS, require_regional_coverage
+
+    regions = ["AB", "BCT", "MB", "NB", "NL", "NS", "ON", "PE", "QC", "SK"]
+    summary = pd.DataFrame([{"region": region, "road_class": mode, "base_year": 2025}
+                            for region in regions for mode in CLASS_LABELS])
+    trajectories = summary.rename(columns={"road_class": "mode", "base_year": "vintage"})
+    frames = {"summary": summary, "trajectories": trajectories}
+    require_regional_coverage(frames, expected_regions=regions)
+    with pytest.raises(ValueError, match="coverage is incomplete"):
+        require_regional_coverage({**frames, "summary": summary.loc[summary.region.eq("ON")]}, expected_regions=regions)
+    with pytest.raises(ValueError, match="anchors are incomplete"):
+        require_regional_coverage({**frames, "trajectories": trajectories.iloc[:-1]}, expected_regions=regions)
+
+
+@pytest.mark.parametrize("regions", [[], "ON", [False], ["AB", False, "QC"], [""], [" ON"], ["ON", "ON"], [None]])
+def test_regional_expected_regions_rejects_yaml_booleans_and_invalid_codes_before_frame_access(regions):
+    from validation.ceud_calibration_diagnostic import require_regional_coverage
+
+    with pytest.raises(ValueError, match="nonempty list of distinct region-code strings"):
+        require_regional_coverage({}, expected_regions=regions)
+
+
+def test_owning_regional_rules_cover_all_ten_provinces_with_string_ontario_code():
+    bundle = load_config_bundle("config/scenarios/validation_energy_calibration_regions.yaml")
+    rules = load_harmonization_rules(bundle, "notebook_diagnostics")
+    regions = rules["ceud_calibration_regions"]["expected_regions"]
+    assert all(isinstance(region, str) for region in regions)
+    assert regions == ["AB", "BCT", "MB", "NB", "NL", "NS", "ON", "PE", "QC", "SK"]
+    assert len(regions) == len(set(regions)) == 10
+    assert set(bundle.scenario.geography.regions) == set(regions)
+
+
+def test_regional_coverage_respects_registered_newfoundland_and_pei_model_aliases():
+    from validation.ceud_calibration_diagnostic import CLASS_LABELS, require_regional_coverage
+
+    bundle = load_config_bundle("config/scenarios/validation_energy_calibration_regions.yaml")
+    regions = load_harmonization_rules(bundle, "notebook_diagnostics")["ceud_calibration_regions"]["expected_regions"]
+    mapping = load_harmonization_rules(bundle, "road_stocks_and_demands")["existing_capacity"]["region_output_map"]
+    summary = pd.DataFrame([{"region": mapping.get(region, region), "road_class": mode, "base_year": 2025}
+                            for region in regions for mode in CLASS_LABELS])
+    assert {"NLLAB", "PEI"} <= set(summary.region)
+    trajectories = summary.rename(columns={"road_class": "mode", "base_year": "vintage"})
+    require_regional_coverage({"summary": summary, "trajectories": trajectories},
+                              expected_regions=regions, region_output_map=mapping)
+
+
+def test_heatmap_groups_share_powertrain_axes_and_keep_all_ten_regions():
+    from validation.ceud_calibration_diagnostic import CLASS_LABELS, CEUDCalibrationDiagnostic, calibration_anchor_charts
+
+    regions = ["AB", "BCT", "MB", "NB", "NL", "NS", "ON", "PE", "QC", "SK"]
+    summary = pd.DataFrame([{"region": region, "road_class": mode, "base_year": 2025, "status": "calibrate"}
+                            for region in regions for mode in CLASS_LABELS])
+    trajectories = pd.DataFrame([{"region": row.region, "mode": row.road_class, "vintage": 2025,
+        "powertrain": fuel, "unadjusted_efficiency": 2., "efficiency": 2.2, "units": "service/PJ"}
+        for row in summary.itertuples() for fuel in ["bev", "gasoline" if row.road_class in
+            {"cars", "passenger_light_trucks", "freight_light_trucks"} else "diesel"]])
+    charts = calibration_anchor_charts(CEUDCalibrationDiagnostic(
+        {"summary": summary, "trajectories": trajectories}, {"expected_regions": regions}, {}))
+    for identity, chart in charts.items():
+        spec = chart.to_dict(validate=True)
+        data = [row for records in spec["datasets"].values() for row in records]
+        assert {row["region"] for row in data} == set(regions)
+        assert spec["spec"]["layer"][0]["encoding"]["y"]["sort"] == regions
+        assert len({row["vehicle_class"] for row in data}) == (3 if identity.endswith("ldv") and not identity.endswith("mhdv") else 2)
+        assert {row["powertrain"] for row in data} == ({"bev", "gasoline"} if identity.endswith("-ldv") else {"bev", "diesel"})
+
+
+def test_combined_fit_retains_excluded_energy_and_secondary_multiplier():
+    from validation.ceud_calibration_diagnostic import _energy_fit_chart
+
+    chart = _energy_fit_chart(pd.DataFrame([{"vehicle_class": "Cars", "status": "calibrate",
+        "unadjusted_liquid_energy_pj": 120., "ceud_liquid_target_pj": 100.,
+        "calibrated_liquid_energy_pj": 100., "excluded_reported_energy_pj": 4.,
+        "consumption_multiplier": 100 / 120}]))
+    spec = chart.to_dict(validate=True)
+    data = [row for records in spec["datasets"].values() for row in records]
+    excluded = [row for row in data if "excluded" in row]
+    assert len(excluded) == 1
+    assert (excluded[0]["lower"], excluded[0]["upper"]) == (100., 104.)
+    assert any(row.get("consumption_multiplier") == pytest.approx(100 / 120) for row in data
+               if "consumption_multiplier" in row)
+    assert spec["resolve"]["scale"]["y"] == "independent"
+    assert spec["layer"][1]["layer"][0]["encoding"]["y"]["axis"]["orient"] == "right"
+
+
+def test_incumbent_trajectory_uses_source_year_and_calibration_dash_for_all_classes():
+    from validation.ceud_calibration_diagnostic import CLASS_LABELS, CEUDCalibrationDiagnostic, calibration_charts
+
+    rows = [{"region": "ON", "mode": mode, "powertrain": "gasoline" if mode in
+        {"cars", "passenger_light_trucks", "freight_light_trucks"} else "diesel",
+        "source_year": year, "native_unit": "MJ/vkm", "unadjusted_native_intensity": 3.,
+        "native_intensity": 2.7}
+        for mode in CLASS_LABELS for year in [2000, 2025, 2050]]
+    summary = pd.DataFrame([{"region": "ON", "road_class": mode, "status": "calibrate",
+        "unadjusted_liquid_energy_pj": 30., "ceud_liquid_target_pj": 27.,
+        "calibrated_liquid_energy_pj": 27., "consumption_multiplier": .9} for mode in CLASS_LABELS])
+    charts = calibration_charts(CEUDCalibrationDiagnostic({"summary": summary,
+        "source_trajectories": pd.DataFrame(rows)}, {"trajectory_years": [2000, 2050]}, {}),
+        region="ON", include_anchors=False)
+    spec = charts["ceud-cal-4"].to_dict(validate=True)
+    data = [row for records in spec["datasets"].values() for row in records]
+    assert {row["vehicle_class"] for row in data} == set(CLASS_LABELS.values())
+    assert {row["source_year"] for row in data} == {2000, 2025, 2050}
+    assert spec["layer"][0]["encoding"]["x"]["scale"]["domain"] == [2000, 2050]
+    assert spec["layer"][0]["encoding"]["strokeDash"]["field"] == "basis"
+    assert "cohort" not in str(spec)

@@ -1,0 +1,205 @@
+{
+  "version": 1,
+  "source_revision": "63b791f4b3376742c84cdbd6e7a9b9b414357c98",
+  "purpose": "Historical sales-cohort recipe, observed reference state and older Ontario comparison context.",
+  "files": {
+    "canoe_ON_16d.sqlite": {
+      "sha256": "512a06d6082cf7fc2aa6d3bc46cf7a9e456b154999e9540ceebf397d5a4b46b3",
+      "bytes": 270336,
+      "source": {
+        "path": "legacy_backend/legacy_variant_sales_cohorts/canoe_ON_16d.sqlite",
+        "sha256": "b4db7481fb0f809bcdc32e75c0ca65a08027307c60ab526f886b7e5dbb2517f5",
+        "bytes": 26185728
+      },
+      "operation": "native table, consumed column and row projection",
+      "source_integrity": [
+        "ok"
+      ],
+      "source_foreign_key_violations": 0,
+      "tables": {
+        "Technology": {
+          "source_rows": 309,
+          "retained_rows": 151,
+          "predicate": "sector = 'transportation'",
+          "select_columns": "tech, sector"
+        },
+        "Efficiency": {
+          "source_rows": 1978,
+          "retained_rows": 872,
+          "predicate": "substr(tech, 1, 2) = 'T_' OR tech IN (SELECT tech FROM Technology WHERE sector = 'transportation')",
+          "select_columns": "region, input_comm, tech, vintage, output_comm, efficiency, CAST(NULL AS TEXT) AS notes"
+        },
+        "CostVariable": {
+          "source_rows": 2097,
+          "retained_rows": 1663,
+          "predicate": "substr(tech, 1, 2) = 'T_' OR tech IN (SELECT tech FROM Technology WHERE sector = 'transportation')",
+          "select_columns": "region, period, tech, vintage, cost, units, CAST(NULL AS TEXT) AS notes"
+        },
+        "ExistingCapacity": {
+          "source_rows": 244,
+          "retained_rows": 106,
+          "predicate": "substr(tech, 1, 2) = 'T_' OR tech IN (SELECT tech FROM Technology WHERE sector = 'transportation')",
+          "select_columns": "region, tech, vintage, capacity, units"
+        },
+        "LifetimeTech": {
+          "source_rows": 279,
+          "retained_rows": 142,
+          "predicate": "substr(tech, 1, 2) = 'T_' OR tech IN (SELECT tech FROM Technology WHERE sector = 'transportation')",
+          "select_columns": "region, tech, lifetime, CAST(NULL AS TEXT) AS notes"
+        },
+        "CapacityToActivity": {
+          "source_rows": 199,
+          "retained_rows": 103,
+          "predicate": "substr(tech, 1, 2) = 'T_' OR tech IN (SELECT tech FROM Technology WHERE sector = 'transportation')",
+          "select_columns": "region, tech, c2a, CAST(NULL AS TEXT) AS notes"
+        },
+        "LimitAnnualCapacityFactor": {
+          "source_rows": 1452,
+          "retained_rows": 992,
+          "predicate": "substr(tech, 1, 2) = 'T_' OR tech IN (SELECT tech FROM Technology WHERE sector = 'transportation')",
+          "select_columns": "region, period, tech, output_comm, operator, factor"
+        },
+        "Demand": {
+          "source_rows": 228,
+          "retained_rows": 90,
+          "predicate": "substr(commodity, 1, 2) = 'T_'",
+          "select_columns": "region, period, commodity, demand, units"
+        },
+        "LifetimeSurvivalCurve": {
+          "source_rows": 0,
+          "retained_rows": 0,
+          "predicate": "1",
+          "select_columns": "region, period, tech, vintage, fraction"
+        }
+      }
+    },
+    "canoe_on_12d_baseline.sqlite": {
+      "sha256": "70e0db099dea6398ee60bab256ef14184bccf4970ff125b9cb897aed23f27d0e",
+      "bytes": 172032,
+      "source": {
+        "path": "legacy_backend/canoe_on_12d_baseline.sqlite",
+        "sha256": "d254623d032ebebce10a35675680ce67d7fc30236fbd5055d02c2f94322a4350",
+        "bytes": 10629120
+      },
+      "operation": "native table, consumed column and row projection",
+      "source_integrity": [
+        "ok"
+      ],
+      "source_foreign_key_violations": 0,
+      "tables": {
+        "Efficiency": {
+          "source_rows": 1854,
+          "retained_rows": 767,
+          "predicate": "substr(tech, 1, 2) = 'T_'",
+          "select_columns": "region, input_comm, tech, vintage, output_comm, efficiency, CASE WHEN tech IN ('T_LDV_BEV_CHRG', 'T_LDV_PHEV_CHRG', 'T_MDV_CHRG', 'T_HDV_CHRG') THEN notes END AS notes"
+        },
+        "ExistingCapacity": {
+          "source_rows": 263,
+          "retained_rows": 107,
+          "predicate": "substr(tech, 1, 2) = 'T_'",
+          "select_columns": "region, tech, vintage, capacity, units"
+        },
+        "LifetimeTech": {
+          "source_rows": 251,
+          "retained_rows": 122,
+          "predicate": "substr(tech, 1, 2) = 'T_'",
+          "select_columns": "region, tech, lifetime, CASE WHEN tech IN ('T_LDV_BEV_CHRG', 'T_LDV_PHEV_CHRG', 'T_MDV_CHRG', 'T_HDV_CHRG') THEN notes END AS notes"
+        },
+        "CapacityToActivity": {
+          "source_rows": 220,
+          "retained_rows": 4,
+          "predicate": "tech IN ('T_LDV_BEV_CHRG', 'T_LDV_PHEV_CHRG', 'T_MDV_CHRG', 'T_HDV_CHRG')",
+          "select_columns": "region, tech, c2a, notes"
+        },
+        "MinAnnualCapacityFactor": {
+          "source_rows": 877,
+          "retained_rows": 577,
+          "predicate": "substr(tech, 1, 2) = 'T_'",
+          "select_columns": "region, period, tech, output_comm, factor, CASE WHEN tech IN ('T_LDV_BEV_CHRG', 'T_LDV_PHEV_CHRG', 'T_MDV_CHRG', 'T_HDV_CHRG') THEN notes END AS notes"
+        },
+        "MaxAnnualCapacityFactor": {
+          "source_rows": 974,
+          "retained_rows": 598,
+          "predicate": "substr(tech, 1, 2) = 'T_'",
+          "select_columns": "region, period, tech, output_comm, factor, CASE WHEN tech IN ('T_LDV_BEV_CHRG', 'T_LDV_PHEV_CHRG', 'T_MDV_CHRG', 'T_HDV_CHRG') THEN notes END AS notes"
+        },
+        "Demand": {
+          "source_rows": 280,
+          "retained_rows": 105,
+          "predicate": "substr(commodity, 1, 2) = 'T_'",
+          "select_columns": "region, period, commodity, demand, units"
+        }
+      }
+    },
+    "activity.xlsx": {
+      "sha256": "97e3c94b833086bbca81cf54227c7df1ee94b0e6d038bc70642e66b737c6f797",
+      "bytes": 24417,
+      "source": {
+        "path": "legacy_backend/legacy_variant_sales_cohorts/activity.xlsx",
+        "sha256": "97e3c94b833086bbca81cf54227c7df1ee94b0e6d038bc70642e66b737c6f797",
+        "bytes": 24417
+      },
+      "operation": "unchanged source bytes"
+    },
+    "c2a_vehicle.xlsx": {
+      "sha256": "f750e05eeb2d1987e3a244cbddeb9d61f8c3ead0140aa81f6171d239d030e93a",
+      "bytes": 11355,
+      "source": {
+        "path": "legacy_backend/legacy_variant_sales_cohorts/c2a_vehicle.xlsx",
+        "sha256": "f750e05eeb2d1987e3a244cbddeb9d61f8c3ead0140aa81f6171d239d030e93a",
+        "bytes": 11355
+      },
+      "operation": "unchanged source bytes"
+    },
+    "demand_growth_rate.xlsx": {
+      "sha256": "75d9d10d9e99b91df0f35627c1cf80c0862dbef51e891c92600797e19043e735",
+      "bytes": 11296,
+      "source": {
+        "path": "legacy_backend/legacy_variant_sales_cohorts/demand_growth_rate.xlsx",
+        "sha256": "75d9d10d9e99b91df0f35627c1cf80c0862dbef51e891c92600797e19043e735",
+        "bytes": 11296
+      },
+      "operation": "unchanged source bytes"
+    },
+    "survival_curve_transport.xlsx": {
+      "sha256": "918a7a5aa9f60ca42eda74b20a967b2d1c84342a5a279cf1aeccf4f25bc4b48e",
+      "bytes": 11093,
+      "source": {
+        "path": "legacy_backend/legacy_variant_sales_cohorts/survival_curve_transport.xlsx",
+        "sha256": "918a7a5aa9f60ca42eda74b20a967b2d1c84342a5a279cf1aeccf4f25bc4b48e",
+        "bytes": 11093
+      },
+      "operation": "unchanged source bytes"
+    },
+    "vehicle_sales_by_powertrain.xlsx": {
+      "sha256": "cda06f63b3167e45ddd30291d23e0efd057c7ec64e3ec336527a53dae13404b3",
+      "bytes": 31862,
+      "source": {
+        "path": "legacy_backend/legacy_variant_sales_cohorts/vehicle_sales_by_powertrain.xlsx",
+        "sha256": "cda06f63b3167e45ddd30291d23e0efd057c7ec64e3ec336527a53dae13404b3",
+        "bytes": 31862
+      },
+      "operation": "unchanged source bytes"
+    },
+    "vehicle_sales_by_size.xlsx": {
+      "sha256": "f393231f63957a02b1acdc0728614d587b27d7b7fc821b3e1a30b9a9516cf8ae",
+      "bytes": 19776,
+      "source": {
+        "path": "legacy_backend/legacy_variant_sales_cohorts/vehicle_sales_by_size.xlsx",
+        "sha256": "f393231f63957a02b1acdc0728614d587b27d7b7fc821b3e1a30b9a9516cf8ae",
+        "bytes": 19776
+      },
+      "operation": "unchanged source bytes"
+    },
+    "Update data_20260618_fixed lifetime (1).ipynb": {
+      "sha256": "ada5b14fca8d53a72d5c1561d7757be3b4112a20fa04197ea8aa098b99469559",
+      "bytes": 60370,
+      "source": {
+        "path": "legacy_backend/legacy_variant_sales_cohorts/Update data_20260618_fixed lifetime (1).ipynb",
+        "sha256": "ada5b14fca8d53a72d5c1561d7757be3b4112a20fa04197ea8aa098b99469559",
+        "bytes": 60370
+      },
+      "operation": "unchanged source bytes"
+    }
+  }
+}

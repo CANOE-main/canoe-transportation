@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import logging
+from collections.abc import Iterable
 from math import isfinite
 from typing import Any
 
@@ -45,27 +46,28 @@ DEMAND_UNITS = {"bn passenger-km", "bn tonne-km", "PJ"}
 
 
 def real_gdp_indices(
-    macro: pd.DataFrame, *, scenario: str, base_year: int,
-    periods: list[int], step: int, observed_year: int | None = None,
+    macro: pd.DataFrame, *, scenario: str, anchor_year: int,
+    evaluation_years: Iterable[int],
 ) -> dict[int, float]:
-    """Map period-end GDP to the actual CEUD observation year's real GDP."""
-    anchor_year = base_year if observed_year is None else observed_year
+    """Index exact CER annual GDP values to the caller's anchor year."""
+    targets = set(evaluation_years)
     selected = macro.loc[
         macro["scenario"].eq(scenario)
         & macro["region"].eq("Canada")
         & macro["variable_key"].eq("real_gdp")
     ]
-    years = {base_year, anchor_year, *(period + step for period in periods)}
+    years = {anchor_year, *targets}
     selected = selected.loc[selected["year"].isin(years)].copy()
-    if len(selected) != len(years) or set(selected["year"]) != years:
-        raise ValueError(f"CER real GDP lacks base or period-end years, including observation anchor, for {scenario}")
+    missing = years - set(selected["year"])
+    if missing:
+        raise ValueError(f"CER real GDP lacks evaluation years or observation anchor for {scenario}: {sorted(missing)}")
     if selected.duplicated("year").any() or selected["unit"].isna().any() or selected["unit"].nunique() != 1:
         raise ValueError("CER real GDP has duplicate years or inconsistent units")
     selected["value"] = pd.to_numeric(selected["value"], errors="raise")
     if any(not isfinite(value) or value <= 0 for value in selected["value"]):
         raise ValueError("CER real GDP must be finite and positive")
     gdp = dict(zip(selected["year"], selected["value"], strict=True))
-    return {period: float(gdp[period + step] / gdp[anchor_year]) for period in periods}
+    return {year: float(gdp[year] / gdp[anchor_year]) for year in sorted(targets)}
 
 
 def road_base_year_activity(
@@ -106,11 +108,10 @@ def road_base_year_activity(
     if set(macro.source_id) != {CER} or set(macro.edition) != {edition}:
         raise ValueError("CER macro artifact identity differs from selected edition")
     base_year = scenario.periods.base_year
-    step = scenario.periods.step
     index = real_gdp_indices(
-        macro, scenario=selected_scenario, base_year=base_year,
-        periods=[base_year - step], step=step, observed_year=observed_year,
-    )[base_year - step]
+        macro, scenario=selected_scenario, anchor_year=observed_year,
+        evaluation_years=[base_year],
+    )[base_year]
     baseline = derive_road_baseline_demand(
         provincial, regions=regions, base_year=observed_year, rules=rules,
     )
@@ -125,15 +126,14 @@ def road_base_year_activity(
             **rules["car_extrapolation"],
             **load_harmonization_rules(bundle, "ceud_inputs")["cagr"],
         }}
-        period = base_year - step
         projected, car_audit = extrapolate_passenger_ldv_demand(
             provincial, baseline, regions=regions, base_year=observed_year,
-            periods=[period], step=step, gdp_indices={period: index}, rules=extrapolation_rules,
+            evaluation_years={base_year: base_year}, gdp_indices={base_year: index}, rules=extrapolation_rules,
         )
         for service in ("cars", "passenger_light_trucks"):
             selected = baseline.service.eq(service)
             baseline.loc[selected, "projected_base_year_demand"] = [
-                projected[region, period, service] for region in baseline.loc[selected, "region"]
+                projected[region, base_year, service] for region in baseline.loc[selected, "region"]
             ]
             baseline.loc[selected, "activity_projection"] = (
                 "native_ceud_car_nonpandemic_cagr" if service == "cars"
@@ -187,6 +187,7 @@ def prepare_demand_rows(
     base_year = scenario.periods.base_year
     periods = list(scenario.periods.model)
     step = scenario.periods.step
+    evaluation_years = {period: scenario.periods.evaluation_year(period) for period in periods}
     regions = list(scenario.geography.regions)
     ceud_rules = load_harmonization_rules(bundle, "nrcan_ceud")
     road_rules = load_harmonization_rules(bundle, "road_stocks_and_demands")["demand"]
@@ -228,13 +229,12 @@ def prepare_demand_rows(
     macro = pd.read_csv(macro_file)
     if set(macro["source_id"]) != {CER} or set(macro["edition"]) != {edition}:
         raise ValueError("CER macro artifact identity differs from selected edition")
-    indices = real_gdp_indices(macro, scenario=selected_scenario,
-                               base_year=base_year, periods=periods, step=step,
-                               observed_year=observed_year)
-    base_year_index = real_gdp_indices(
-        macro, scenario=selected_scenario, base_year=base_year,
-        periods=[base_year - step], step=step, observed_year=observed_year,
-    )[base_year - step]
+    indices_by_year = real_gdp_indices(
+        macro, scenario=selected_scenario, anchor_year=observed_year,
+        evaluation_years={base_year, *evaluation_years.values()},
+    )
+    indices = {period: indices_by_year[year] for period, year in evaluation_years.items()}
+    base_year_index = indices_by_year[base_year]
     road_baseline, _ = road_base_year_activity(bundle, provincial=provincial, macro=macro)
     baseline = pd.concat([
         road_baseline.drop(columns=["ceud_observed_year", "base_year", "gdp_indexed_base_year_demand",
@@ -263,7 +263,7 @@ def prepare_demand_rows(
     if future_car_demand == "extrapolated":
         car_projection, car_audit = extrapolate_passenger_ldv_demand(
             provincial, baseline, regions=regions, base_year=observed_year,
-            periods=periods, step=step, gdp_indices=indices, rules=road_rules,
+            evaluation_years=evaluation_years, gdp_indices=indices, rules=road_rules,
         )
     elif future_car_demand != "GDP-indexed":
         raise ValueError(f"Unsupported future_car_demand: {future_car_demand}")
@@ -282,6 +282,10 @@ def prepare_demand_rows(
                "input_content_digest": digest,
                "ceud_observed_year": observed_year,
                "demand_extension": "CER_real_GDP_from_native_CEUD_observation"}
+    if scenario.periods.period_mode == "legacy":
+        # Give the revised legacy values their own identity. The existing
+        # prospective identity already corresponds to closing-year values.
+        variant["gdp_evaluation_year_by_period"] = evaluation_years
     source_ids = source_id_mapping(bundle.sources)
     cer_context = resolve_provenance(bundle.sources, source_key=CER,
                                      component_key="macro-indicators",
@@ -356,6 +360,7 @@ def prepare_demand_rows(
                   "ceud_source_editions": {key: scenario.sources.selections[key].year
                                            for key in (CEUD_PROVINCIAL, CEUD_NATIONAL)},
                   "observed_ceud_baselines": baseline.to_dict("records"),
+                  "gdp_evaluation_year_by_period": evaluation_years,
                   "gdp_index_by_period": indices, "input_content_digest": digest})
     if energy_only:
         audit["energy_only_baselines"] = baseline.loc[

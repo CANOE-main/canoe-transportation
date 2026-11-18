@@ -1,6 +1,5 @@
 name,flag,description,units
 T_spk,a,Conventional jet fuel with 50% HEFA SPK; blend limit in compliance with ASTM D7566 standards.,PJ
-T_ng,a,Natural gas for industry process,PJ
 T_mdo,a,"Marine diesel oil, 0.1% sulfur content ",PJ
 T_lng,a,Liquified natural gas ,PJ
 T_jtf,a,"Conv. jet fuel, after potential blending with renewable jet fuel ",PJ

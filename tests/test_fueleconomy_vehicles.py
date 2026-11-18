@@ -14,6 +14,7 @@ from fetching.fueleconomy_vehicles import (
     build_request,
     module_rules,
     normalize_vehicle_classes,
+    read_configuration_evidence,
     read_selected_vehicle_columns,
     validate_cache,
 )
@@ -46,6 +47,35 @@ def test_config_pins_official_four_column_vehicle_snapshot() -> None:
     assert request.required_columns == ("year", "make", "model", "VClass")
     assert request.expected_model_year_from == 1984
     assert request.expected_model_year_to == 2027
+
+
+def test_configuration_reader_preserves_native_order_nulls_duplicates_and_types(tmp_path):
+    cache = tmp_path / "vehicles.csv.zip"
+    write_vehicle_zip(cache, pd.DataFrame({
+        "trany": ["Automatic 6-spd", None, "Automatic 6-spd"],
+        "make": ["Ford", "Ford", "Ford"],
+        "model": ["Car", "Car", "Car"],
+        "year": [2024, 2024, 2024],
+        "displ": [2.0, 2.0, 2.0],
+        "unconsumed": [1, 2, 3],
+    }))
+    request = configured_request().model_copy(update={"cache_path": cache})
+    frame = read_configuration_evidence(request, columns=["year", "make", "model", "trany", "displ"])
+    assert list(frame.columns) == ["trany", "make", "model", "year", "displ"]
+    assert list(frame.index) == [0, 1, 2]
+    assert frame.duplicated().tolist() == [False, False, True]
+    assert frame.trany.isna().tolist() == [False, True, False]
+    assert str(frame.year.dtype) == "int64"
+    assert str(frame.displ.dtype) == "float64"
+    assert frame.make.tolist() == ["Ford"] * 3
+
+
+def test_configuration_reader_rejects_missing_consumed_fields(tmp_path):
+    cache = tmp_path / "vehicles.csv.zip"
+    write_vehicle_zip(cache, pd.DataFrame({"year": [2024], "make": ["Ford"], "model": ["Car"]}))
+    request = configured_request().model_copy(update={"cache_path": cache})
+    with pytest.raises(ValueError, match="Usecols"):
+        read_configuration_evidence(request, columns=["year", "make", "model", "atvType"])
 
 
 def test_classification_consumers_do_not_require_the_range_extension() -> None:

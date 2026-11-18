@@ -33,7 +33,6 @@ sources:
   selections:
     nrcan_ceud_transport_provincial: {year: 2023}
     nrcan_ceud_transport_national: {year: 2023}
-    transport_canada_ev_dashboard: {year: 2026}
     cer_canadas_energy_future: {edition: 2026}
 
 aggregation_sources:
@@ -65,7 +64,7 @@ lifetimes:
   tail_survival_threshold: 0.005  # Surviving fraction: 0.5%, then zero the following year.
 
 existing_capacity:
-  vehicle_population_year: 2025
+  vehicle_population_year: null  # Follow periods.base_year; an integer explicitly selects another MTO year.
   cleanup_tolerance: 0.001
 
 demand:
@@ -83,11 +82,13 @@ costs:
   atb_trajectory: Mid
 
 ev_chargers:
-  ld_evs_per_port: 1.0
-  mhd_evs_per_port: 1.5
+  evs_per_port: [1.0, 1.5, 1.5]  # LDV, medium trucks, heavy trucks.
+  charger_type_classes: aggregated
+  ld_home_utilization: 0.08
 
 charging_profiles:
   travel_behavior_source: none
+  charging_strategy: uncontrolled  # uncontrolled | night | day; Toronto local clock
   time_mapping: null
 
 BEV_PHEV_range_representation:

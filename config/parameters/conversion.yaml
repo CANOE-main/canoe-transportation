@@ -1,6 +1,6 @@
 # Reusable numeric conversion factors shared by source and parameter modules.
 # Keys state the conversion direction; source-specific transforms and run selections
-# belong in `rules.yaml` and scenario YAML respectively.
+# belong in the partitions indexed by `rules.yaml` and scenario YAML respectively.
 
 version: 1
 

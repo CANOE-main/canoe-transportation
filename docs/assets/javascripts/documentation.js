@@ -17,6 +17,7 @@ async function renderDocumentation() {
       });
       if (!image.naturalWidth) throw new Error(`Empty figure: ${image.src}`);
       const paragraph = image.parentElement;
+      const heading = paragraph.previousElementSibling;
       const caption = paragraph.nextElementSibling;
       const figure = document.createElement("figure");
       figure.className = "canoe-published-figure";
@@ -30,6 +31,10 @@ async function renderDocumentation() {
       }
       if (image.naturalWidth > 1000 || image.naturalHeight > 1000) {
         figure.classList.add(image.naturalHeight > image.naturalWidth ? "portrait-figure" : "wide-figure");
+        // A named print page breaks before the figure. Keep its leading heading on that page.
+        if (figure.closest("#print-site-page") && /^H[2-6]$/.test(heading?.tagName ?? "")) {
+          figure.prepend(heading);
+        }
       }
     }
     const nodes = [...document.querySelectorAll(".canoe-mermaid")];

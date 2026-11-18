@@ -28,7 +28,6 @@ RUNTIME_GLOBS = (
 GENERATED_PATHS = (
     "inputs/1_interim",
     "inputs/2_processed",
-    "inputs/validation",
     "outputs",
 )
 CACHE_PATHS = ("inputs/0_cache",)
@@ -125,6 +124,14 @@ def build_cleanup_plan(
         targets.extend(existing_glob_targets(root, pattern, "runtime"))
     if include_generated:
         targets.extend(existing_literal_targets(root, GENERATED_PATHS, "generated"))
+        validation = root / "inputs/validation"
+        if validation.is_dir():
+            resolve_under_root(root, validation)
+            targets.extend(
+                CleanupTarget(resolve_under_root(root, child), "generated")
+                for child in validation.iterdir()
+                if child.name != "transportation_reference"
+            )
     if include_cache:
         targets.extend(existing_literal_targets(root, CACHE_PATHS, "cache"))
 
@@ -184,7 +191,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--include-generated",
         action="store_true",
-        help="Also clean generated backend outputs: inputs/1_interim, inputs/2_processed, and outputs.",
+        help="Also clean generated intermediate, processed, validation, and output artifacts.",
     )
     parser.add_argument(
         "--include-cache",

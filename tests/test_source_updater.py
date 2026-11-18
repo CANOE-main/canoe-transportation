@@ -15,15 +15,20 @@ import pytest
 import yaml
 
 from fetching import nrcan_ceud
+from fetching import statcan_tables as statcan
 from fetching import source_updater as updater
-from utils import load_config_bundle, resolve_input_path
+from utils import (
+    harmonization_rule_fingerprints, harmonization_rule_paths,
+    load_config_bundle, resolve_input_path,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCENARIO = "config/scenarios/default.yaml"
 NRCAN = "nrcan_fuel_consumption_ratings"
 FUEL = "fueleconomy_gov_vehicle_data"
-TC = "transport_canada_ev_dashboard"
+STATCAN = "statcan_transport_tables"
+ANNUAL_STOCK = "23-10-0308-01"
 
 
 def digest(content: bytes, algorithm: str = "sha256") -> str:
@@ -88,6 +93,10 @@ def isolated_bundle(tmp_path):
     shutil.copytree(REPO_ROOT / "config", tmp_path / "config")
     bundle = load_config_bundle(SCENARIO, repo_root=tmp_path)
     registry = yaml.safe_load(bundle.sources_path.read_text(encoding="utf-8"))
+    # These source-updater fixtures model a legacy unpinned baseline regardless
+    # of which real StatCan releases the checkout has since accepted.
+    for component in registry["sources"][STATCAN]["components"].values():
+        component["adapter"].pop("snapshot", None)
     for request in nrcan_ceud.iter_rating_requests(bundle):
         original = rating_csv(request, make="Original")
         request.cache_path.parent.mkdir(parents=True, exist_ok=True)
@@ -112,6 +121,21 @@ def rating_session(bundle, *, changed=True):
 def cache_bytes(bundle):
     root = resolve_input_path(bundle, "cache")
     return {p.relative_to(root): p.read_bytes() for p in root.rglob("*") if p.is_file()}
+
+
+def test_source_without_policy_is_skipped_even_without_refresh_notes(isolated_bundle):
+    source = "nrcan_ceud_transport_provincial"
+    registry = yaml.safe_load(isolated_bundle.sources_path.read_text(encoding="utf-8"))
+    registry["sources"][source]["refresh_notes"] = ""
+    bundle = save_registry(isolated_bundle, registry)
+    result = updater.run_update(bundle, sources={source}, session=FakeSession())
+    report = json.loads(result.report_path.read_text(encoding="utf-8"))
+    row = next(item for item in report["sources"] if item["source"] == source)
+    assert row["status"] == "skipped"
+    assert "No automatic update policy" in row["reason"]
+    assert len(result.errors) == 1
+    assert "not eligible for automated updates" in result.errors[0]
+    assert report["acquisitions"] == []
 
 
 def assert_preserved(bundle, original, caches):
@@ -291,11 +315,32 @@ def test_existing_conflicting_snapshot_is_never_overwritten(isolated_bundle):
     content = session.downloads[request.url][0]
     target = updater._snapshot_path(bundle, request.cache_path, content)
     target.write_bytes(b"different existing file")
-    original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
+    caches = cache_bytes(bundle)
     result = updater.run_update(bundle, sources={NRCAN}, apply=True, session=session)
-    assert result.errors and not result.applied
-    assert "conflicting cache" in result.errors[0]
-    assert_preserved(bundle, original, caches)
+    assert not result.errors and result.applied
+    current = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
+    replacement = nrcan_ceud.iter_rating_requests(current)[0].cache_path
+    assert replacement != target and replacement.read_bytes() == content
+    assert target.read_bytes() == b"different existing file"
+    for path, previous in caches.items():
+        assert (resolve_input_path(bundle, "cache") / path).read_bytes() == previous
+
+
+def test_adopted_missing_snapshot_is_restored_without_registry_repin(isolated_bundle):
+    bundle = isolated_bundle
+    session = rating_session(bundle)
+    first = updater.run_update(bundle, sources={NRCAN}, apply=True, session=session)
+    assert first.applied and not first.errors
+    current = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
+    request = nrcan_ceud.iter_rating_requests(current)[0]
+    content = request.cache_path.read_bytes()
+    request.cache_path.unlink()
+    registry = current.sources_path.read_bytes()
+    result = updater.run_update(current, sources={NRCAN}, apply=True, session=session)
+    assert result.applied and not result.errors
+    assert current.sources_path.read_bytes() == registry
+    assert request.cache_path.read_bytes() == content
+    assert result.diff_path.read_text(encoding="utf-8") == ""
 
 
 def test_catalogue_change_during_download_blocks_adoption(isolated_bundle):
@@ -412,17 +457,21 @@ def test_failed_selected_batch_does_not_adopt_valid_source(isolated_bundle):
     assert_preserved(bundle, original, caches)
 
 
-def fuel_zip(*, range_columns=True):
+def fuel_zip(*, range_columns=True, make="Example", displacement=0, configuration_columns=True):
     columns = ["year", "make", "model", "VClass"]
     if range_columns:
         columns += ["id", "mfrCode", "engId", "atvType", "fuelType1", "fuelType2", "range", "rangeA", "phevBlended"]
+    if configuration_columns:
+        columns += ["displ", "cylinders", "drive", "trany"]
     stream = io.StringIO(newline="")
     writer = csv.DictWriter(stream, fieldnames=columns, lineterminator="\n")
     writer.writeheader()
     for index, year in enumerate([1984, 2024, 2027], 1):
-        row = {"year": year, "make": "Example", "model": "Car", "VClass": "Compact Cars"}
+        row = {"year": year, "make": make, "model": "Car", "VClass": "Compact Cars"}
         if range_columns:
             row.update(id=index, mfrCode="EX", engId=index, atvType="EV", fuelType1="Electricity", fuelType2="", range=200, rangeA=0, phevBlended=False)
+        if configuration_columns:
+            row.update(displ=displacement, cylinders=0, drive="Front-Wheel Drive", trany="Automatic (A1)")
         writer.writerow(row)
     output = io.BytesIO()
     with ZipFile(output, "w", compression=ZIP_DEFLATED) as archive:
@@ -443,6 +492,11 @@ def test_fueleconomy_validates_shared_class_and_range_contracts(isolated_bundle,
         assert result.errors and not result.applied
         assert_preserved(bundle, original, caches)
         return
+    assert result.errors and not result.applied  # No old comparison cache: review is explicit.
+    review = updater.run_update(bundle, sources={FUEL}, session=session)
+    assert not review.errors
+    result = updater.run_update(bundle, sources={FUEL}, apply=True, session=session,
+                                review_report=review.report_path)
     assert result.applied and not result.errors
     current = load_config_bundle(SCENARIO, repo_root=bundle.repo_root).sources.sources[FUEL]
     assert "2099-01-15" in current.version
@@ -452,210 +506,82 @@ def test_fueleconomy_validates_shared_class_and_range_contracts(isolated_bundle,
     assert target.read_bytes() == content
 
 
-def dashboard_html(bundle, *, share="1%", ytd_share=None, columns=("Q1", "YTD"),
-                   quarter_values=None, reporting_date=None):
-    from fetching.assorted_sources import module_rules
-
-    rules = module_rules(bundle)["tc_ev_dashboard"]
-    chargers = rules["public_chargers"]
-    charger_regions = chargers["source_regions"]
-    year = bundle.scenario.sources.selections[TC].year
-    headers = {quarter: f"Market share ({quarter} {year})" for quarter in ("Q1", "Q2", "Q3", "Q4")}
-    headers["YTD"] = rules["ytd_header"]
-    values = {quarter: share for quarter in ("Q1", "Q2", "Q3", "Q4")}
-    values.update(quarter_values or {})
-    values["YTD"] = share if ytd_share is None else ytd_share
-    header_cells = "".join(f"<th>{headers[column]}</th>" for column in columns)
-    share_cells = "".join(f"<td>{values[column]}</td>" for column in columns)
-    province_rows = "".join(f"<tr><td>{region}</td><td>Total public chargers: 1</td></tr>" for region in charger_regions)
-    share_rows = "".join(f"<tr><td>{region}</td>{share_cells}</tr>" for region in rules["source_regions"])
-    return (f'<h2 id="{rules["heading_id"]}">{rules["heading_text"]}</h2><table id="{rules["table_id"]}">'
-            f'<tr><th>Province/territory</th>{header_cells}</tr>'
-            f'{share_rows}</table>'
-            f'<h2 id="{chargers["heading_id"]}">Public</h2><p>Total chargers: <strong>{len(charger_regions)}</strong></p>'
-            '<h3 id="ratio-of-light-duty-electric-vehicles-to-public-ev-chargers">Ratio</h3>'
-            f'<table id="{chargers["chart_table_id"]}"><tr><th>Year</th><th>Level 2</th><th>Level 3</th></tr>'
-            f'<tr><td>{reporting_date or chargers["as_of"]}</td><td>10</td><td>{len(charger_regions)-10}</td></tr></table>'
-            f'<table id="{chargers["province_table_id"]}"><tr><th>Province/territory</th><th>Charger data</th></tr>'
-            f'{province_rows}</table>').encode("utf-8")
-
-
-def pin_dashboard(bundle):
-    """Register fixture bytes without touching the repository's accepted snapshot."""
+def fuel_review_fixture(bundle):
+    """Pin a complete synthetic baseline and propose a changed selected record."""
     registry = yaml.safe_load(bundle.sources_path.read_text(encoding="utf-8"))
-    registered = registry["sources"][TC]
-    source = registered["adapter"]
-    charger = registered["components"]["public_light_duty_chargers"]
-    previous_note = charger["adapter"].get("reconciliation_note", "")
-    if previous_note:
-        charger["database_note"] = charger["database_note"].replace(previous_note, "").strip()
-    charger["adapter"]["reconciliation_note"] = ""
-    previous_date = charger["adapter"]["reporting_date"]
-    charger["adapter"]["reporting_date"] = "March 2026"
-    for field in ("label", "database_note"):
-        charger[field] = charger[field].replace(previous_date, "March 2026")
-    registered["version"] = "2026 Q1; isolated test fixture"
-    old = dashboard_html(bundle)
-    target = resolve_input_path(bundle, "cache", source["cache_path"])
+    adapter = registry["sources"][FUEL]["components"]["vehicles"]["adapter"]
+    original = fuel_zip(make="Original")
+    target = resolve_input_path(bundle, "cache", adapter["cache_path"])
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_bytes(old)
-    source.update(expected_sha256=digest(old), expected_bytes=len(old))
-    return save_registry(bundle, registry), target, old
-
-
-def set_dashboard_charger_precedence(bundle, value):
-    path = bundle.repo_root / "config/parameters/rules.yaml"
-    rules = yaml.safe_load(path.read_text(encoding="utf-8"))
-    rules["fetching"]["assorted_sources"]["tc_ev_dashboard"]["public_chargers"]["national_total_precedence"] = value
-    path.write_text(yaml.safe_dump(rules, sort_keys=False), encoding="utf-8")
-
-
-def dashboard_session(bundle, content):
+    target.write_bytes(original)
+    adapter.update(expected_sha256=digest(original), expected_bytes=len(original))
+    bundle = save_registry(bundle, registry)
+    content = fuel_zip(make="Replacement")
     session = FakeSession()
-    session.downloads[bundle.sources.sources[TC].adapter["access"]["url"]] = (content, {})
-    return session
+    session.downloads[adapter["url"]] = (
+        content, {"Last-Modified": "Thu, 15 Jan 2099 12:00:00 GMT"}
+    )
+    return bundle, target, original, content, session
 
 
-@pytest.mark.parametrize("changed_values", [False, True])
-def test_tc_republish_requires_identical_shares_and_chargers(isolated_bundle, changed_values):
-    bundle, target, old = pin_dashboard(isolated_bundle)
-    new = dashboard_html(bundle, share="2%" if changed_values else "1%") + b"<!-- harmless footer update -->"
-    session = dashboard_session(bundle, new)
+def test_fueleconomy_propulsion_only_change_requires_exact_review(isolated_bundle):
+    bundle, _target, _old, _content, session = fuel_review_fixture(isolated_bundle)
+    component = bundle.sources.sources[FUEL].component("vehicles").adapter
+    session.downloads[component["url"]] = (
+        fuel_zip(make="Original", displacement=2),
+        {"Last-Modified": "Thu, 15 Jan 2099 12:00:00 GMT"},
+    )
     original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
-    result = updater.run_update(bundle, sources={TC}, apply=True, session=session)
-    if changed_values:
-        assert result.errors and not result.applied
-        assert "review" in " ".join(result.errors).lower()
-        assert_preserved(bundle, original, caches)
-    else:
-        assert result.applied and not result.errors
-        assert target.read_bytes() == old
-
-
-def test_tc_additional_reordered_quarter_keeps_configured_observation_columns(isolated_bundle):
-    bundle, target, old = pin_dashboard(isolated_bundle)
-    content = dashboard_html(bundle, columns=("Q2", "YTD", "Q1"), quarter_values={"Q2": "9%"})
-    session = dashboard_session(bundle, content)
-    original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
-
-    result = updater.run_update(bundle, sources={TC}, session=session)
-
-    assert not result.errors and not result.applied
-    report = json.loads(result.report_path.read_text(encoding="utf-8"))
-    assert report["status"] == "report_only"
-    evidence = report["candidates"][0]["evidence"]
-    selection = evidence["publication_selection"]
-    assert selection["before"]["selected_headers"]["quarter"] == "Market share (Q1 2026)"
-    assert selection["after"]["selected_headers"]["quarter"] == "Market share (Q1 2026)"
-    assert selection["after"]["additional_quarter_columns"] == ["Market share (Q2 2026)"]
-    assert evidence["observations"]["before"] == evidence["observations"]["after"]
-    assert evidence["observation_changes"] == []
-    assert_preserved(bundle, original, caches)
-    applied = updater.run_update(bundle, sources={TC}, session=session, apply=True,
-                                 review_report=result.report_path)
-    assert applied.applied and not applied.errors
-    assert target.read_bytes() == old
-
-
-def test_tc_ytd_change_requires_review_then_normalizes_offline_and_is_idempotent(isolated_bundle, monkeypatch):
-    from fetching import assorted_sources as adapter
-
-    bundle, target, old = pin_dashboard(isolated_bundle)
-    content = dashboard_html(bundle, ytd_share="2%", columns=("Q2", "YTD", "Q1"),
-                             quarter_values={"Q2": "9%"})
-    session = dashboard_session(bundle, content)
-    original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
-
-    review = updater.run_update(bundle, sources={TC}, session=session)
-
-    assert not review.errors and not review.applied
-    report = json.loads(review.report_path.read_text(encoding="utf-8"))
+    review = updater.run_update(bundle, sources={FUEL}, session=session)
+    assert not review.errors
+    report = json.loads(review.report_path.read_text())
     candidate = report["candidates"][0]
-    assert candidate["review_required"]
-    evidence = candidate["evidence"]
-    assert len(evidence["observations"]["before"]["market_shares"]) == 14
-    assert len(evidence["observations"]["after"]["market_shares"]) == 14
-    assert len(evidence["observation_changes"]) == 14
-    assert all(change["component"] == "market_shares" and
-               change["before"]["ytd_market_share"] == 0.01 and
-               change["after"]["ytd_market_share"] == 0.02
-               for change in evidence["observation_changes"])
-    assert_preserved(bundle, original, caches)
-    blocked = updater.run_update(bundle, sources={TC}, session=session, apply=True)
+    records = candidate["evidence"]["selected_records"]
+    assert records["vehicles"]["changed"] is False
+    assert records["range_evidence"]["changed"] is False
+    assert records["propulsion_configuration"]["changed"] is True
+    assert "FuelEconomy propulsion configuration selected records changed" in candidate["review_required"]
+    blocked = updater.run_update(bundle, sources={FUEL}, apply=True, session=session)
     assert blocked.errors and not blocked.applied
     assert_preserved(bundle, original, caches)
-
-    adopted = updater.run_update(bundle, sources={TC}, session=session, apply=True,
-                                 review_report=review.report_path)
-
+    adopted = updater.run_update(bundle, sources={FUEL}, apply=True, session=session, review_report=review.report_path)
     assert adopted.applied and not adopted.errors
-    assert target.read_bytes() == old
-    current = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
-    source = current.sources.sources[TC]
-    assert source.adapter["expected_sha256"] == digest(content)
-    assert resolve_input_path(current, "cache", source.adapter["cache_path"]).read_bytes() == content
-    no_network = FakeSession()
-    monkeypatch.setattr(adapter, "load_config_bundle", lambda _path: current)
-    output = adapter.fetch_and_normalize_tc_dashboard(SCENARIO, download=False, session=no_network)
-    assert no_network.calls == []
-    rules = adapter.module_rules(current)["tc_ev_dashboard"]
-    with (output / rules["output_file"]).open(encoding="utf-8", newline="") as handle:
-        rows = list(csv.DictReader(handle))
-    assert len(rows) == 14
-    assert all(float(row["quarter_market_share"]) == 0.01 for row in rows)
-    assert all(float(row["ytd_market_share"]) == 0.02 for row in rows)
-
-    snapshots, registry = cache_bytes(current), current.sources_path.read_bytes()
-    repeated = updater.run_update(current, sources={TC}, session=session, apply=True)
-    assert not repeated.applied and not repeated.errors
-    assert_preserved(current, registry, snapshots)
 
 
-def test_tc_missing_pinned_baseline_is_reviewable_and_preserved_until_adoption(isolated_bundle):
-    bundle, target, _old = pin_dashboard(isolated_bundle)
-    target.unlink()
-    content = dashboard_html(bundle, ytd_share="2%", columns=("Q1", "Q2", "YTD"))
-    session = dashboard_session(bundle, content)
+def test_fueleconomy_missing_consumed_propulsion_column_blocks_adoption(isolated_bundle):
+    bundle, _target, _old, _content, session = fuel_review_fixture(isolated_bundle)
+    component = bundle.sources.sources[FUEL].component("vehicles").adapter
+    session.downloads[component["url"]] = (
+        fuel_zip(make="Original", configuration_columns=False),
+        {"Last-Modified": "Thu, 15 Jan 2099 12:00:00 GMT"},
+    )
+    original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
+    result = updater.run_update(bundle, sources={FUEL}, apply=True, session=session)
+    assert result.errors and not result.applied
+    assert any("Usecols" in error or "columns" in error for error in result.errors)
+    assert_preserved(bundle, original, caches)
+
+
+def test_review_required_blocks_other_valid_sources_in_the_batch(isolated_bundle):
+    bundle, _target, _old, _content, session = fuel_review_fixture(isolated_bundle)
+    ratings = rating_session(bundle)
+    session.downloads.update(ratings.downloads)
+    session.resources.update(ratings.resources)
     original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
 
-    review = updater.run_update(bundle, sources={TC}, session=session)
-
-    assert not review.errors and not review.applied
-    candidate = json.loads(review.report_path.read_text(encoding="utf-8"))["candidates"][0]
-    assert candidate["review_required"]
-    assert candidate["evidence"]["registered_cache"]["status"] == "missing"
-    assert candidate["evidence"]["observations"]["before"] is None
-    assert len(candidate["evidence"]["observations"]["after"]["market_shares"]) == 14
-    assert_preserved(bundle, original, caches)
-    blocked = updater.run_update(bundle, sources={TC}, session=session, apply=True)
-    assert blocked.errors and not blocked.applied
-    assert_preserved(bundle, original, caches)
-    adopted = updater.run_update(bundle, sources={TC}, session=session, apply=True,
-                                 review_report=review.report_path)
-    assert adopted.applied and not adopted.errors
-    assert not target.exists()
-
-
-def test_tc_review_required_blocks_other_valid_sources_in_the_batch(isolated_bundle):
-    bundle, _target, _old = pin_dashboard(isolated_bundle)
-    session = rating_session(bundle)
-    session.downloads.update(dashboard_session(bundle, dashboard_html(bundle, ytd_share="2%")).downloads)
-    original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
-
-    blocked = updater.run_update(bundle, sources={TC, NRCAN}, session=session, apply=True)
+    blocked = updater.run_update(bundle, sources={FUEL, NRCAN}, session=session, apply=True)
 
     assert blocked.errors and not blocked.applied
     assert_preserved(bundle, original, caches)
 
 
-def test_tc_review_report_is_only_accepted_for_explicit_apply(isolated_bundle):
-    bundle, _target, _old = pin_dashboard(isolated_bundle)
-    session = dashboard_session(bundle, dashboard_html(bundle, ytd_share="2%"))
-    review = updater.run_update(bundle, sources={TC}, session=session)
+def test_review_report_is_only_accepted_for_explicit_apply(isolated_bundle):
+    bundle, _target, _old, _content, session = fuel_review_fixture(isolated_bundle)
+    review = updater.run_update(bundle, sources={FUEL}, session=session)
     assert not review.errors
     original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
 
-    rejected = updater.run_update(bundle, sources={TC}, session=session,
+    rejected = updater.run_update(bundle, sources={FUEL}, session=session,
                                   review_report=review.report_path)
 
     assert rejected.errors and not rejected.applied
@@ -663,32 +589,30 @@ def test_tc_review_report_is_only_accepted_for_explicit_apply(isolated_bundle):
     assert_preserved(bundle, original, caches)
 
 
-@pytest.mark.parametrize("changed", ["candidate_bytes", "registry", "rules", "scenario", "selection",
+@pytest.mark.parametrize("changed", ["candidate_bytes", "registry", "rules", "rules_partition", "scenario", "selection",
                                     "failed_report", "tampered_evidence", "missing_report"])
-def test_tc_review_rejects_changed_context_and_untrusted_report(isolated_bundle, changed):
-    bundle, _target, _old = pin_dashboard(isolated_bundle)
-    content = dashboard_html(bundle, ytd_share="2%")
-    session = dashboard_session(bundle, content)
-    review = updater.run_update(bundle, sources={TC}, session=session)
+def test_review_rejects_changed_context_and_untrusted_report(isolated_bundle, changed):
+    bundle, _target, _old, content, session = fuel_review_fixture(isolated_bundle)
+    review = updater.run_update(bundle, sources={FUEL}, session=session)
     assert not review.errors
     report_path = review.report_path
-    selection = {TC}
+    selection = {FUEL}
     if changed == "candidate_bytes":
-        session = dashboard_session(bundle, content + b"<!-- changed after review -->")
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        captured = report_path.parent / report["acquisitions"][0]["file"]
+        captured.write_bytes(content + b"changed after review")
     elif changed == "registry":
         with bundle.sources_path.open("a", encoding="utf-8") as handle:
             handle.write("\n# Registry edited after review.\n")
         bundle = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
-    elif changed in {"rules", "scenario"}:
-        path = bundle.repo_root / ("config/parameters/rules.yaml" if changed == "rules" else SCENARIO)
+    elif changed in {"rules", "rules_partition", "scenario"}:
+        path = (harmonization_rule_paths(bundle)[1] if changed == "rules_partition" else
+                bundle.repo_root / ("config/parameters/rules.yaml" if changed == "rules" else SCENARIO))
         with path.open("a", encoding="utf-8") as handle:
             handle.write("\n# Configuration edited after review.\n")
         bundle = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
     elif changed == "selection":
         selection.add(NRCAN)
-        ratings = rating_session(bundle)
-        ratings.downloads.update(session.downloads)
-        session = ratings
     elif changed in {"failed_report", "tampered_evidence"}:
         report = json.loads(report_path.read_text(encoding="utf-8"))
         if changed == "failed_report":
@@ -708,204 +632,318 @@ def test_tc_review_rejects_changed_context_and_untrusted_report(isolated_bundle,
     assert_preserved(bundle, original, caches)
 
 
-def test_tc_reviewed_charger_reporting_date_updates_metadata_and_offline_parser(isolated_bundle, monkeypatch):
-    from fetching import assorted_sources as adapter
-
-    bundle, target, old = pin_dashboard(isolated_bundle)
-    content = dashboard_html(bundle, columns=("Q1", "Q2", "YTD"), reporting_date="June 2026")
-    session = dashboard_session(bundle, content)
-    review = updater.run_update(bundle, sources={TC}, session=session)
-    assert not review.errors
-    candidate = json.loads(review.report_path.read_text(encoding="utf-8"))["candidates"][0]
-    assert candidate["review_required"]
-
-    adopted = updater.run_update(bundle, sources={TC}, session=session, apply=True,
+@pytest.mark.parametrize("live_change", [b"changed ZIP packaging", b"different live records"])
+def test_reviewed_apply_revalidates_exact_captured_bytes_without_network(isolated_bundle, live_change):
+    bundle, original_path, original, content, session = fuel_review_fixture(isolated_bundle)
+    review = updater.run_update(bundle, sources={FUEL}, session=session)
+    report = json.loads(review.report_path.read_text(encoding="utf-8"))
+    assert not review.errors and report["review_schema_version"] == 3
+    assert report["candidates"][0]["review_required"]
+    assert (review.report_path.parent / report["acquisitions"][0]["file"]).read_bytes() == content
+    assert original_path.read_bytes() == original
+    # Adopt the exact reviewed capture even if the live URL has since changed.
+    session.downloads = {url: (live_change, {}) for url in session.downloads}
+    session.calls.clear()
+    applied = updater.run_update(bundle, sources={FUEL}, session=session, apply=True,
                                  review_report=review.report_path)
-
-    assert adopted.applied and not adopted.errors
-    assert target.read_bytes() == old
+    assert not applied.errors and applied.applied
+    assert session.calls == []
     current = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
-    source = current.sources.sources[TC]
-    chargers = source.component("public_light_duty_chargers")
-    assert chargers.adapter["reporting_date"] == "June 2026"
-    assert "June 2026" in chargers.label
-    assert "June 2026" in chargers.database_note
-    assert "June 2026" in source.version
-    monkeypatch.setattr(adapter, "load_config_bundle", lambda _path: current)
-    no_network = FakeSession()
-    output = adapter.fetch_and_normalize_tc_dashboard(SCENARIO, download=False, session=no_network)
-    assert no_network.calls == []
-    rules = adapter.module_rules(current)["tc_ev_dashboard"]["public_chargers"]
-    for key in ("province_output_file", "type_output_file"):
-        with (output / rules[key]).open(encoding="utf-8", newline="") as handle:
-            rows = list(csv.DictReader(handle))
-        assert rows and all(row["as_of"] == "June 2026" for row in rows)
+    adapter = current.sources.sources[FUEL].component("vehicles").adapter
+    target = resolve_input_path(current, "cache", adapter["cache_path"])
+    assert target.read_bytes() == content
+    assert adapter["expected_sha256"] == digest(content)
+    assert original_path.read_bytes() == original
+    applied_report = json.loads(applied.report_path.read_text(encoding="utf-8"))
+    assert (applied.report_path.parent / applied_report["acquisitions"][0]["file"]).read_bytes() == content
 
 
-@pytest.mark.parametrize("configuration", ["rules", "scenario"])
-def test_tc_configuration_edit_during_download_blocks_adoption(isolated_bundle, configuration):
-    bundle, _target, _old = pin_dashboard(isolated_bundle)
-    content = dashboard_html(bundle) + b"<!-- harmless footer update -->"
-    session = dashboard_session(bundle, content)
-    original_get = session.get
-    path = bundle.repo_root / ("config/parameters/rules.yaml" if configuration == "rules" else SCENARIO)
-
-    def edit_configuration_while_downloading(url, **kwargs):
-        with path.open("a", encoding="utf-8") as handle:
-            handle.write("\n# Edited while the source candidate was downloading.\n")
-        return original_get(url, **kwargs)
-
-    session.get = edit_configuration_while_downloading
+@pytest.mark.parametrize("damage", ["missing_payload", "outside_path", "legacy_schema"])
+def test_reviewed_acquisition_damage_fails_without_network_or_publication(isolated_bundle, damage):
+    bundle, _target, _old, _content, session = fuel_review_fixture(isolated_bundle)
+    review = updater.run_update(bundle, sources={FUEL}, session=session)
+    assert not review.errors
+    report = json.loads(review.report_path.read_text(encoding="utf-8"))
+    if damage == "missing_payload":
+        (review.report_path.parent / report["acquisitions"][0]["file"]).unlink()
+    elif damage == "outside_path":
+        report["acquisitions"][0]["file"] = "../outside.bin"
+        report["review_fingerprint"] = updater._review_fingerprint(report)
+    else:
+        report["review_schema_version"] = 1
+        report["review_fingerprint"] = updater._review_fingerprint(report)
+    review.report_path.write_text(json.dumps(report), encoding="utf-8")
     original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
+    session.calls.clear()
+    result = updater.run_update(bundle, sources={FUEL}, session=session, apply=True,
+                                review_report=review.report_path)
+    assert result.errors and not result.applied
+    assert not session.calls
+    assert_preserved(bundle, original, caches)
 
-    result = updater.run_update(bundle, sources={TC}, session=session, apply=True)
+
+def test_review_binds_every_declared_rules_file_and_its_digest(isolated_bundle):
+    bundle, _target, _old, _content, session = fuel_review_fixture(isolated_bundle)
+    review = updater.run_update(bundle, sources={FUEL}, session=session)
+    report = json.loads(review.report_path.read_text(encoding="utf-8"))
+    expected = harmonization_rule_fingerprints(bundle)
+    assert not review.errors
+    assert len(expected) > 1 and "rules.yaml" in expected
+    assert report["rules_fingerprints"] == expected
+    serialized = json.dumps(expected, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    assert report["rules_sha256"] == hashlib.sha256(serialized).hexdigest()
+    report["rules_fingerprints"][harmonization_rule_paths(bundle)[1].name] = "0" * 64
+    assert updater._review_fingerprint(report) != report["review_fingerprint"]
+
+
+def test_old_single_file_review_requires_fresh_complete_rules_review(isolated_bundle):
+    bundle, _target, _old, _content, session = fuel_review_fixture(isolated_bundle)
+    review = updater.run_update(bundle, sources={FUEL}, session=session)
+    report = json.loads(review.report_path.read_text(encoding="utf-8"))
+    report["review_schema_version"] = 2
+    report.pop("rules_fingerprints")
+    report["review_fingerprint"] = updater._review_fingerprint(report)
+    review.report_path.write_text(json.dumps(report), encoding="utf-8")
+    original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
+    session.calls.clear()
+
+    result = updater.run_update(bundle, sources={FUEL}, session=session, apply=True, review_report=review.report_path)
 
     assert result.errors and not result.applied
-    assert "chang" in " ".join(result.errors).lower()
+    assert "complete rules-file identity contract" in " ".join(result.errors)
+    assert "report-only review again" in " ".join(result.errors)
+    assert not session.calls
     assert_preserved(bundle, original, caches)
 
 
-def test_tc_change_to_additional_quarter_observations_requires_new_review(isolated_bundle):
-    bundle, _target, _old = pin_dashboard(isolated_bundle)
-    columns = ("Q1", "Q2", "YTD")
-    first_content = dashboard_html(bundle, columns=columns, quarter_values={"Q2": "9%"})
-    session = dashboard_session(bundle, first_content)
-    review = updater.run_update(bundle, sources={TC}, session=session)
+@pytest.mark.parametrize("change_at", ["candidate_validation", "durable_review"])
+def test_partition_change_during_apply_fails_before_any_publication(isolated_bundle, monkeypatch, change_at):
+    bundle, _target, _old, _content, session = fuel_review_fixture(isolated_bundle)
+    review = updater.run_update(bundle, sources={FUEL}, session=session)
     assert not review.errors
-    adopted = updater.run_update(bundle, sources={TC}, session=session, apply=True,
-                                 review_report=review.report_path)
-    assert adopted.applied and not adopted.errors
-    current = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
-    next_content = dashboard_html(current, columns=columns, quarter_values={"Q2": "8%"})
-    session = dashboard_session(current, next_content)
-    original, caches = current.sources_path.read_bytes(), cache_bytes(current)
-
-    changed = updater.run_update(current, sources={TC}, session=session)
-
-    assert not changed.errors and not changed.applied
-    candidate = json.loads(changed.report_path.read_text(encoding="utf-8"))["candidates"][0]
-    assert candidate["review_required"]
-    evidence = candidate["evidence"]
-    assert evidence["observations"]["before"] == evidence["observations"]["after"]
-    assert evidence["observation_changes"] == []
-    assert evidence["published_observations"]["before"] != evidence["published_observations"]["after"]
-    assert_preserved(current, original, caches)
-    blocked = updater.run_update(current, sources={TC}, session=session, apply=True)
-    assert blocked.errors and not blocked.applied
-    assert_preserved(current, original, caches)
-
-
-def test_tc_rejected_charger_totals_retain_market_and_reconciliation_evidence(isolated_bundle):
-    set_dashboard_charger_precedence(isolated_bundle, "require_equal")
-    bundle, _target, _old = pin_dashboard(isolated_bundle)
-    content = dashboard_html(bundle, columns=("Q1", "Q2", "YTD"), ytd_share="2%")
-    content = content.replace(b"Total public chargers: 1</td>",
-                              b"Total public chargers: 2</td>", 1)
-    session = dashboard_session(bundle, content)
     original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
+    partition = harmonization_rule_paths(bundle)[1]
+    changed = False
 
-    rejected = updater.run_update(bundle, sources={TC}, session=session)
+    def change_partition():
+        nonlocal changed
+        if not changed:
+            with partition.open("a", encoding="utf-8") as handle:
+                handle.write("\n# Declared partition changed during reviewed apply.\n")
+            changed = True
 
-    assert rejected.errors and not rejected.applied
-    report = json.loads(rejected.report_path.read_text(encoding="utf-8"))
-    assert report["status"] == "failed"
-    source = next(row for row in report["sources"] if row["source"] == TC)
-    assert source["status"] == "error"
-    evidence = source["evidence"]
-    assert evidence["sha256"] == digest(content)
-    validation_error = evidence["validation_error"]
-    assert {key: validation_error[key] for key in ("national_total", "provincial_total", "difference")} == {
-        "national_total": 13, "provincial_total": 14, "difference": 1,
+    if change_at == "candidate_validation":
+        validate = updater._fueleconomy
+
+        def mutate_after_validation(*args, **kwargs):
+            candidates = validate(*args, **kwargs)
+            change_partition()
+            return candidates
+
+        monkeypatch.setattr(updater, "_fueleconomy", mutate_after_validation)
+    else:
+        write = updater.write_text_atomic
+
+        def mutate_after_durable_report(text, path, *args, **kwargs):
+            result = write(text, path, *args, **kwargs)
+            if Path(path).name == "report.json":
+                change_partition()
+            return result
+
+        monkeypatch.setattr(updater, "write_text_atomic", mutate_after_durable_report)
+    session.calls.clear()
+
+    result = updater.run_update(bundle, sources={FUEL}, session=session, apply=True, review_report=review.report_path)
+
+    assert changed and result.errors and not result.applied
+    assert "Rules configuration changed" in " ".join(result.errors)
+    assert not session.calls
+    assert_preserved(bundle, original, caches)
+
+
+class StatCanSelectionSession(FakeSession):
+    """Expose one table only, so requesting an unselected table fails the test."""
+
+    def __init__(self, request, payload, content):
+        super().__init__()
+        self.request = request
+        self.payload = payload
+        self.archive_url = f"https://www150.statcan.gc.ca/n1/tbl/csv/{request.product_id}-eng.zip"
+        self.downloads[self.archive_url] = (content, {})
+
+    def post(self, url, *, json, timeout, stream=False):
+        assert url == self.request.metadata_url
+        assert json == [{"productId": self.request.product_id}]
+        self.calls.append((url, json))
+        return FakeResponse(url, payload=self.payload)
+
+    def get(self, url, *, timeout, params=None, stream=False):
+        if url == self.request.download_api_url:
+            self.calls.append((url, params))
+            return FakeResponse(url, payload={"status": "SUCCESS", "object": self.archive_url})
+        return super().get(url, timeout=timeout, params=params, stream=stream)
+
+
+def annual_statcan_selection_fixture(bundle):
+    request = next(item for item in statcan.build_requests(bundle) if item.table_id == ANNUAL_STOCK)
+    table = request.table_rules
+    metadata = {
+        "productId": request.product_id, "cubeTitleEn": request.title,
+        "releaseTime": "2026-09-22T08:30:00", "cubeStartDate": "2023-01-01",
+        "cubeEndDate": "2025-01-01", "frequencyCode": 12,
+        "dimension": [{
+            "dimensionNameEn": name,
+            "member": [{"memberNameEn": member} for member in table.get("selectors", {}).get(name, ["Ontario"])],
+        } for name in table["metadata_dimensions"]],
     }
-    assert validation_error["reporting_date"] == "March 2026"
-    assert len(validation_error["provincial_records"]) == 13
-    assert sum(row["public_chargers"] for row in validation_error["provincial_records"]) == 14
-    assert {row["charger_type"] for row in validation_error["charger_type_records"]} == {"L2", "DCFC"}
-    market = evidence["market_shares"]
-    assert market["publication_selection"]["selected_headers"]["quarter"] == "Market share (Q1 2026)"
-    assert len(market["observations"]) == 14
-    assert all(row["ytd_market_share"] == 0.02 for row in market["observations"])
-    assert market["published_observations"]["headers"] == [
-        "Province/territory", "Market share (Q1 2026)", "Market share (Q2 2026)", "2026 year-to-date",
-    ]
-    assert len(market["published_observations"]["rows"]) == 14
-    assert_preserved(bundle, original, caches)
+    rows = []
+    for year in (2023, 2025):
+        row = {column: "fixture" for column in table["required_columns"]}
+        row.update(REF_DATE=year, GEO="Ontario", UOM="Number", SCALAR_FACTOR="units", VALUE=2)
+        for column, members in table["selectors"].items():
+            row[column] = members[0]
+        rows.append(row)
+    stream = io.StringIO(newline="")
+    writer = csv.DictWriter(stream, fieldnames=table["required_columns"], lineterminator="\n")
+    writer.writeheader()
+    writer.writerows(rows)
+    zipped = io.BytesIO()
+    with ZipFile(zipped, "w", compression=ZIP_DEFLATED) as archive:
+        archive.writestr(f"{request.product_id}.csv", stream.getvalue())
+    request.metadata_cache_path.parent.mkdir(parents=True, exist_ok=True)
+    previous = dict(metadata, cubeEndDate="2023-01-01", releaseTime="2024-01-01T08:30:00")
+    request.metadata_cache_path.write_text(json.dumps([{"status": "SUCCESS", "object": previous}]), encoding="utf-8")
+    request.archive_cache_path.write_bytes(b"preserved legacy archive")
+    return StatCanSelectionSession(request, [{"status": "SUCCESS", "object": metadata}], zipped.getvalue())
 
-    attempted = updater.run_update(bundle, sources={TC}, session=session, apply=True,
-                                   review_report=rejected.report_path)
 
-    assert attempted.errors and not attempted.applied
-    assert_preserved(bundle, original, caches)
-
-
-def test_tc_provincial_precedence_preserves_discrepancy_through_review_and_offline_replay(isolated_bundle, monkeypatch):
-    from fetching import assorted_sources as adapter
-
-    set_dashboard_charger_precedence(isolated_bundle, "provincial")
-    bundle, old_path, old = pin_dashboard(isolated_bundle)
-    content = dashboard_html(bundle, columns=("Q1", "Q2", "YTD"), ytd_share="2%")
-    content = content.replace(b"Total public chargers: 1</td>", b"Total public chargers: 2</td>", 1)
-    session = dashboard_session(bundle, content)
+def test_statcan_component_review_downloads_only_selected_table_and_preserves_inputs(isolated_bundle):
+    bundle = isolated_bundle
+    session = annual_statcan_selection_fixture(bundle)
     original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
 
-    review = updater.run_update(bundle, sources={TC}, session=session)
+    result = updater.run_update(bundle, sources={STATCAN}, components={ANNUAL_STOCK}, session=session)
 
-    assert not review.errors and not review.applied
+    assert not result.errors and not result.applied
+    report = json.loads(result.report_path.read_text(encoding="utf-8"))
+    assert report["selected_components"] == [ANNUAL_STOCK]
+    assert [(row["source"], row["component"]) for row in report["candidates"]] == [(STATCAN, ANNUAL_STOCK)]
+    assert len(report["acquisitions"]) == 4  # Metadata, resolver, archive, metadata stability check.
+    for row in report["candidates"]:
+        assert row["review_required"] == ["StatCan reference-period coverage expanded"]
+        assert all(change["path"][:4] == ["sources", STATCAN, "components", ANNUAL_STOCK] for change in row["changes"])
+    assert_preserved(bundle, original, caches)
+
+
+def test_selected_statcan_review_replays_offline_and_cannot_edit_other_tables(isolated_bundle):
+    bundle = isolated_bundle
+    session = annual_statcan_selection_fixture(bundle)
+    original_registry = yaml.safe_load(bundle.sources_path.read_text(encoding="utf-8"))
+    old_caches = cache_bytes(bundle)
+    review = updater.run_update(bundle, sources={STATCAN}, components={ANNUAL_STOCK}, session=session)
+    assert not review.errors
+    session.calls.clear()
+    session.downloads.clear()
+
+    result = updater.run_update(bundle, sources={STATCAN}, components={ANNUAL_STOCK}, session=session,
+                                apply=True, review_report=review.report_path)
+
+    assert result.applied and not result.errors
+    assert session.calls == []
+    adopted = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
+    current_registry = yaml.safe_load(bundle.sources_path.read_text(encoding="utf-8"))
+    for component, before in original_registry["sources"][STATCAN]["components"].items():
+        if component != ANNUAL_STOCK:
+            assert current_registry["sources"][STATCAN]["components"][component] == before
+    request = next(item for item in statcan.build_requests(adopted) if item.table_id == ANNUAL_STOCK)
+    assert request.snapshot is not None
+    assert statcan.ensure_cached_artifacts(request, download=False) == ("cached", "cached", "")
+    for relative, content in old_caches.items():
+        assert (resolve_input_path(bundle, "cache") / relative).read_bytes() == content
+
+
+@pytest.mark.parametrize("sources,components", [
+    (None, {ANNUAL_STOCK}), (set(), {ANNUAL_STOCK}),
+    ({STATCAN, NRCAN}, {ANNUAL_STOCK}), ({STATCAN}, set()),
+    ({STATCAN}, {"missing-table"}), ({NRCAN}, {"vehicles"}),
+])
+def test_invalid_component_selection_fails_before_acquisition(isolated_bundle, sources, components):
+    bundle = isolated_bundle
+    session = FakeSession()
+    original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
+
+    result = updater.run_update(bundle, sources=sources, components=components, session=session, apply=True)
+
+    assert result.errors and not result.applied
+    assert "selection" in " ".join(result.errors).lower()
+    assert not session.calls
+    assert_preserved(bundle, original, caches)
+
+
+@pytest.mark.parametrize("selection", [None, {"20-10-0025-01"}])
+def test_review_rejects_dropped_or_changed_component_selection(isolated_bundle, selection):
+    bundle = isolated_bundle
+    session = annual_statcan_selection_fixture(bundle)
+    review = updater.run_update(bundle, sources={STATCAN}, components={ANNUAL_STOCK}, session=session)
+    assert not review.errors
+    original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
+    session.calls.clear()
+
+    result = updater.run_update(bundle, sources={STATCAN}, components=selection, session=session,
+                                apply=True, review_report=review.report_path)
+
+    assert result.errors and not result.applied
+    assert "selection" in " ".join(result.errors)
+    assert not session.calls
+    assert_preserved(bundle, original, caches)
+
+
+def test_component_selection_is_bound_to_review_fingerprint(isolated_bundle):
+    bundle = isolated_bundle
+    session = annual_statcan_selection_fixture(bundle)
+    review = updater.run_update(bundle, sources={STATCAN}, components={ANNUAL_STOCK}, session=session)
     report = json.loads(review.report_path.read_text(encoding="utf-8"))
-    assert report["status"] == "report_only"
-    candidate = report["candidates"][0]
-    assert candidate["review_required"]
-    evidence = candidate["evidence"]
-    before, after = (evidence["charger_reconciliation"][name] for name in ("before", "after"))
-    assert not before["discrepancy"]
-    assert {key: after[key] for key in (
-        "national_total_precedence", "authoritative_total", "national_total", "provincial_total", "difference", "discrepancy"
-    )} == {
-        "national_total_precedence": "provincial", "authoritative_total": 14,
-        "national_total": 13, "provincial_total": 14, "difference": 1, "discrepancy": True,
-    }
-    notes = evidence["update_notes"]
-    assert len(notes) == 1 and notes[0]["code"] == "national_total_mismatch"
-    assert notes[0]["reconciliation"] == after
-    assert_preserved(bundle, original, caches)
-    blocked = updater.run_update(bundle, sources={TC}, session=session, apply=True)
-    assert blocked.errors and not blocked.applied
+    report["selected_components"] = ["20-10-0025-01"]
+    assert updater._review_fingerprint(report) != report["review_fingerprint"]
+
+
+def test_selected_candidate_cannot_propose_cross_component_registry_edit(isolated_bundle, monkeypatch):
+    bundle = isolated_bundle
+    session = FakeSession()
+    original, caches = bundle.sources_path.read_bytes(), cache_bytes(bundle)
+    candidate = updater.Candidate(STATCAN, ANNUAL_STOCK,
+        [(("sources", STATCAN, "components", "20-10-0025-01", "label"), "unselected edit")], {}, {})
+    monkeypatch.setattr(updater, "_statcan", lambda *args, **kwargs: [candidate])
+
+    result = updater.run_update(bundle, sources={STATCAN}, components={ANNUAL_STOCK}, session=session, apply=True)
+
+    assert result.errors and not result.applied
+    assert "outside its component" in " ".join(result.errors)
     assert_preserved(bundle, original, caches)
 
-    applied = updater.run_update(bundle, sources={TC}, session=session, apply=True,
-                                 review_report=review.report_path)
 
-    assert applied.applied and not applied.errors
-    assert old_path.read_bytes() == old
-    current = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
-    source = current.sources.sources[TC]
-    assert source.adapter["expected_sha256"] == digest(content)
-    assert resolve_input_path(current, "cache", source.adapter["cache_path"]).read_bytes() == content
-    component = source.component("public_light_duty_chargers")
-    note = component.adapter["reconciliation_note"]
-    assert "provincial total 14" in note and "chart total 13" in note
-    assert "difference +1" in note
-    assert note in component.database_note
-    monkeypatch.setattr(adapter, "load_config_bundle", lambda _path: current)
-    no_network = FakeSession()
-    output = adapter.fetch_and_normalize_tc_dashboard(SCENARIO, download=False, session=no_network)
-    assert no_network.calls == []
-    rules = adapter.module_rules(current)["tc_ev_dashboard"]["public_chargers"]
-    with (output / rules["province_output_file"]).open(encoding="utf-8", newline="") as handle:
-        rows = list(csv.DictReader(handle))
-    assert len(rows) == 13 and sum(int(row["public_chargers"]) for row in rows) == 14
-    with (output / rules["type_output_file"]).open(encoding="utf-8", newline="") as handle:
-        types = list(csv.DictReader(handle))
-    assert {row["charger_type"]: int(row["public_chargers"]) for row in types} == {"L2": 10, "DCFC": 3}
-    assert sum(float(row["national_share"]) for row in types) == pytest.approx(1.)
-    warnings = [json.loads(line) for line in (output / "warnings.jsonl").read_text(encoding="utf-8").splitlines()]
-    assert len(warnings) == 1 and warnings[0]["code"] == "national_total_mismatch"
-    assert warnings[0]["reconciliation"]["authoritative_total"] == 14
-    with (output / "manifest.csv").open(encoding="utf-8", newline="") as handle:
-        manifest = list(csv.DictReader(handle))
-    charger_manifest = next(row for row in manifest if row["component_id"] == "public_light_duty_chargers")
-    assert int(charger_manifest["warning_count"]) == 1
-    registered, snapshots = current.sources_path.read_bytes(), cache_bytes(current)
-    repeated = updater.run_update(current, sources={TC}, session=session, apply=True)
-    assert not repeated.errors and not repeated.applied
-    assert_preserved(current, registered, snapshots)
+def test_legacy_unfiltered_review_fingerprint_and_offline_replay_remain_compatible(isolated_bundle):
+    bundle, _target, _old, _content, session = fuel_review_fixture(isolated_bundle)
+    review = updater.run_update(bundle, sources={FUEL}, session=session)
+    report = json.loads(review.report_path.read_text(encoding="utf-8"))
+    assert report.pop("selected_components") is None
+    assert updater._review_fingerprint(report) == report["review_fingerprint"]
+    review.report_path.write_text(json.dumps(report), encoding="utf-8")
+    session.calls.clear()
+
+    result = updater.run_update(bundle, sources={FUEL}, session=session, apply=True, review_report=review.report_path)
+
+    assert not result.errors and result.applied
+    assert session.calls == []
+
+
+@pytest.mark.parametrize("sources", [[], [STATCAN, NRCAN]])
+def test_cli_component_filter_requires_exactly_one_source(monkeypatch, sources):
+    arguments = ["source_updater", "--scenario", SCENARIO, "--component", ANNUAL_STOCK]
+    for source in sources:
+        arguments += ["--source", source]
+    monkeypatch.setattr("sys.argv", arguments)
+    monkeypatch.setattr(updater, "load_config_bundle", lambda *_: pytest.fail("CLI must validate selection before loading config"))
+    with pytest.raises(SystemExit) as error:
+        updater.main()
+    assert error.value.code == 2

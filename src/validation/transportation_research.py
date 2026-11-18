@@ -28,6 +28,7 @@ from utils import (
 from validation.config_models import MappingModel
 from validation.sqlite_utils import open_sqlite_readonly, quote_identifier
 from validation.legacy_sales_reconstruction import reconstruct_legacy_sales
+from validation.transportation_reference import read_reference_manifest
 
 
 LOGGER = logging.getLogger(__name__)
@@ -40,6 +41,7 @@ class CeudSeries(MappingModel):
 
 class TransportationResearchRules(MappingModel):
     reference_route: str
+    reference_manifest: str | None = Field(default=None, min_length=1)
     report_route: str
     reference_sqlite: str
     reference_notebook: str
@@ -541,15 +543,23 @@ def build_research_report(
     )
     reference_dir = resolve_artifact_path(bundle, rules.reference_route)
     reference = reference_dir / rules.reference_sqlite
+    baseline = resolve_repo_path(bundle.repo_root, rules.legacy_baseline)
+    reference_evidence = None
+    if rules.reference_manifest:
+        reference_evidence = read_reference_manifest(reference_dir, rules.reference_manifest)
+        for path in (reference, baseline, reference_dir / rules.reference_notebook,
+                     resolve_repo_path(bundle.repo_root, rules.inherited_sqlite)):
+            if path.resolve().parent != reference_dir.resolve() or path.name not in reference_evidence["files"]:
+                raise ValueError(f"Historical comparison input missing from curated manifest: {path}")
     reference_state, reference_metadata = compare_reference_state(
-        reference, resolve_repo_path(bundle.repo_root, rules.legacy_baseline),
+        reference, baseline,
         absolute_tolerance=bundle.scenario.comparison.absolute_tolerance,
         relative_tolerance=bundle.scenario.comparison.relative_tolerance,
     )
     frames["reference_state"] = reference_state
     frames["notebook_source_cells"], notebook_metadata = inspect_notebook(reference_dir / rules.reference_notebook)
     frames.update(road_parameter_comparison(
-        database, reference, resolve_repo_path(bundle.repo_root, rules.legacy_baseline),
+        database, reference, baseline,
         demand_rules=demand_rules,
     ))
     legacy_stock = _read_vehicle_capacity(reference, {
@@ -578,7 +588,7 @@ def build_research_report(
     if report["existing_capacity"].get("road_stock_method") != "sales_survival":
         raise ValueError("Research requires a production sales-derived cohort build")
     sales_rows = frames["stock_activity_energy"].merge(
-        pd.DataFrame(report["road_utilization"]["sales_activity_calibration"])[
+        pd.DataFrame(report["road_utilization"]["base_year_activity_calibration"])[
             ["region", "road_class", "target_activity_bn"]],
         on=["region", "road_class"], how="left", validate="one_to_one",
     )
@@ -597,6 +607,7 @@ def build_research_report(
         "cohort_audit": report["existing_capacity"], "utilization_audit": report["road_utilization"],
         "demand_audit": report["demand"],
         "ceud_parameter_inputs": manifest, "reference_state": reference_metadata,
+        "reference_evidence": reference_evidence,
         "notebook": notebook_metadata,
         "accepted_survival_sha256": accepted_survival_sha256,
         "sales_activity_closure": {"classes_checked": len(sales_rows), "passes": closure,
@@ -669,6 +680,10 @@ def refresh_research_comparisons(
     reference_dir = resolve_artifact_path(bundle, rules.reference_route)
     reference = reference_dir / rules.reference_sqlite
     baseline = resolve_repo_path(bundle.repo_root, rules.legacy_baseline)
+    if rules.reference_manifest and metadata.get("reference_evidence") != read_reference_manifest(
+        reference_dir, rules.reference_manifest,
+    ):
+        raise ValueError("Curated reference identity differs from the captured report; recapture")
     identities = (
         (database, metadata["files"]["database"]),
         (build_report, metadata["files"]["build_report"]),
@@ -957,10 +972,11 @@ def deepen_fleet_diagnosis(
     fleet["stock_explanation"] = fleet.apply(
         explain_stock, axis=1,
     )
-    calibration = pd.DataFrame(metadata.get("utilization_audit", {}).get("sales_activity_calibration", []))
+    calibration = pd.DataFrame(metadata.get("utilization_audit", {}).get("base_year_activity_calibration", []))
     if calibration.empty:
-        raise ValueError("Captured report lacks the implemented utilization calibration audit")
+        raise ValueError("Captured report lacks the base-year utilization calibration audit; regenerate its report")
     _require_unique(calibration, keys, "utilization calibration audit")
+    calibration = calibration.loc[calibration.road_class.isin(summary.road_class)]
     calibration = calibration[keys + ["prior_mean_utilization", "utilization", "capacity_activity_denominator_bn", "target_activity_bn"]].rename(
         columns={"utilization": "implemented_utilization"},
     )
@@ -1037,7 +1053,78 @@ def deepen_fleet_diagnosis(
     }
 
 
-def independent_fleet_comparison(frames: dict[str, pd.DataFrame], *, step: int) -> dict[str, pd.DataFrame]:
+def _comparison_backend_annual_stock(
+    frames: dict[str, pd.DataFrame], cleanup_audit: dict[str, Any] | None,
+) -> pd.DataFrame:
+    """Recover retained annual stock from exact fuel rows and audited removals."""
+    backend = frames["sales_cohort_reconciliation"].copy()
+    backend["allocated_before_cleanup_k_vehicles"] = backend.inserted_cohort_k_vehicles
+    backend["cleanup_removed_k_vehicles"] = 0.
+    backend["surviving_k_vehicles"] = backend.inserted_cohort_k_vehicles
+    if "road_fuel_shares" not in frames:
+        return backend
+    annual_keys = ["region", "road_class", "vintage", "vintage_year"]
+    capacity_keys = ["region", "tech", "vintage"]
+    shares = frames["road_fuel_shares"]
+    shares = shares.loc[shares.road_class.isin(backend.road_class.unique())].copy()
+    _require_unique(shares, [*annual_keys, "tech"], "annual comparison fuel contributions")
+    if shares.capacity.isna().any() or not shares.capacity.map(isfinite).all() or shares.capacity.lt(0).any():
+        raise ValueError("Invalid annual comparison fuel contributions")
+    allocated = backend[annual_keys + ["allocated_before_cleanup_k_vehicles"]].merge(
+        shares.groupby(annual_keys, as_index=False).capacity.sum(),
+        on=annual_keys, how="outer", validate="one_to_one", indicator=True,
+    )
+    if not allocated._merge.eq("both").all() or not all(
+        isclose(row.allocated_before_cleanup_k_vehicles, row.capacity, rel_tol=1e-10, abs_tol=1e-8)
+        for row in allocated.itertuples()
+    ):
+        raise ValueError("Annual comparison contributions differ from allocated fuel stock")
+    inserted = frames["fleet_cohort_accounting"]
+    grouped = shares.groupby(capacity_keys, as_index=False).capacity.sum()
+    retained = grouped.merge(inserted[capacity_keys + ["capacity"]], on=capacity_keys,
+                             how="outer", suffixes=("_allocated", "_inserted"),
+                             validate="one_to_one", indicator=True)
+    if retained._merge.eq("right_only").any() or not all(
+        isclose(row.capacity_allocated, row.capacity_inserted, rel_tol=1e-10, abs_tol=1e-8)
+        for row in retained.loc[retained._merge.eq("both")].itertuples()
+    ):
+        raise ValueError("Annual comparison contributions differ from retained technology stock")
+    removed = pd.DataFrame((cleanup_audit or {}).get("removed_rows", []),
+                           columns=["table", *capacity_keys, "value", "units", "reason"])
+    removed = removed.loc[removed.table.eq("existing_capacity") & removed.units.eq("k vehicles")]
+    _require_unique(removed, capacity_keys, "captured capacity cleanup")
+    removed = removed.merge(grouped, on=capacity_keys, how="inner", validate="one_to_one")
+    if not removed.empty:
+        epsilon = float((cleanup_audit or {}).get("epsilon", float("nan")))
+        if (not isfinite(epsilon) or epsilon < 0
+                or not removed.reason.eq("below_cleanup_tolerance").all()
+                or not removed.value.map(isfinite).all()
+                or removed.value.lt(0).any() or (removed.value.gt(0) & removed.value.ge(epsilon)).any()
+                or not all(isclose(row.value, row.capacity, rel_tol=1e-10, abs_tol=1e-8)
+                           for row in removed.itertuples())):
+            raise ValueError("Annual comparison cleanup evidence differs from allocated fuel stock")
+    retained_keys = set(retained.loc[retained._merge.eq("both"), capacity_keys].itertuples(index=False, name=None))
+    removed_keys = set(removed[capacity_keys].itertuples(index=False, name=None))
+    missing_positive_keys = set(retained.loc[
+        retained._merge.eq("left_only") & retained.capacity_allocated.gt(0), capacity_keys,
+    ].itertuples(index=False, name=None))
+    if retained_keys & removed_keys or not missing_positive_keys <= removed_keys:
+        raise ValueError("Annual comparison stock omission lacks matching cleanup evidence")
+    shares["cleanup_removed_k_vehicles"] = [
+        row.capacity if (row.region, row.tech, row.vintage) in removed_keys else 0.
+        for row in shares.itertuples()
+    ]
+    annual_removed = shares.groupby(annual_keys, as_index=False).cleanup_removed_k_vehicles.sum()
+    backend = backend.drop(columns="cleanup_removed_k_vehicles").merge(
+        annual_removed, on=annual_keys, how="left", validate="one_to_one",
+    )
+    backend["surviving_k_vehicles"] = backend.allocated_before_cleanup_k_vehicles - backend.cleanup_removed_k_vehicles
+    return backend
+
+
+def independent_fleet_comparison(
+    frames: dict[str, pd.DataFrame], *, step: int, cleanup_audit: dict[str, Any] | None = None,
+) -> dict[str, pd.DataFrame]:
     """Compare complete parameterizations; preserve annual lineage and UF controls.
 
     Backend capacities already include survival and fixed-lifetime allocation.
@@ -1045,15 +1132,17 @@ def independent_fleet_comparison(frames: dict[str, pd.DataFrame], *, step: int) 
     once. Neither method borrows the other's normalization or efficiencies.
     """
     keys = ["region", "road_class"]
-    backend = frames["sales_cohort_reconciliation"].copy()
+    backend = _comparison_backend_annual_stock(frames, cleanup_audit)
     backend["evidence"] = "Current backend"
-    backend["surviving_k_vehicles"] = backend.inserted_cohort_k_vehicles
-    backend["survival_treatment"] = "Annual survival → CEUD scaling → fixed-lifetime allocation; no second retirement"
+    backend["survival_treatment"] = "Annual survival → CEUD scaling → fixed-lifetime allocation → audited cleanup; no second retirement"
     legacy = frames["legacy_reconstructed_annual"].copy()
     legacy["evidence"] = "Legacy recipe"
     legacy["survival_treatment"] = "Aggregate acquisitions first; survival at representative model vintage"
     columns = keys + ["evidence", "vintage", "vintage_year", "surviving_k_vehicles", "survival_treatment"]
-    annual = pd.concat([backend[columns], legacy[columns]], ignore_index=True)
+    annual = pd.concat([
+        backend[columns + ["allocated_before_cleanup_k_vehicles", "cleanup_removed_k_vehicles"]],
+        legacy[columns],
+    ], ignore_index=True)
     if step <= 0 or annual[columns].isna().any().any() or annual.surviving_k_vehicles.lt(0).any():
         raise ValueError("Invalid comparison annual lineage")
     annual["annual_position"] = ((annual.vintage_year - annual.vintage - 1) % step + 1).astype(int)
@@ -1155,7 +1244,10 @@ def reconstruct_comparison(result, bundle, rules) -> dict[str, pd.DataFrame]:
     ):
         raise ValueError("Executable legacy acquisition recipe differs from the annual workbook audit")
     assembled = {**frames, **legacy}
-    comparison = independent_fleet_comparison(assembled, step=bundle.scenario.periods.step)
+    comparison = independent_fleet_comparison(
+        assembled, step=bundle.scenario.periods.step,
+        cleanup_audit=metadata.get("cohort_audit", {}).get("cleanup"),
+    )
     service = frames["demand_baseline_service_targets"]
     comparison["baseline_activity_energy_cases"] = comparison["baseline_activity_energy_cases"].merge(
         service[["region", "road_class", "current_base_year_demand_bn", "legacy_calendar_base_year_demand_bn"]],

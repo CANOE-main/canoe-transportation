@@ -15,6 +15,7 @@ def _():
     from math import ceil, floor
     from validation.transportation_research import load_validation_diagnosis
     from validation.notebook_figures import identified_chart, source_legend_style
+    from utils import load_config_bundle, load_harmonization_rules
 
     CLASS_LABELS = {
         "cars": "Cars", "passenger_light_trucks": "Passenger light trucks",
@@ -171,50 +172,104 @@ def _():
     def display_chart(chart):
         return mo.ui.altair_chart(chart, chart_selection=False, legend_selection=False)
 
-    return BUILDS, BUILD_LABELS, CASES, CASE_COLORS, CASE_LABELS, CASE_SHAPES, CLASS_LABELS, STOCK_LABELS, STOCK_ORDER, alt, class_grid, cohort_style_legend, build_cohort_hatching, display_chart, display_table, load_validation_diagnosis, mo, pd, stock_grid, identified_chart, source_legend_style
+    return BUILDS, BUILD_LABELS, CASES, CASE_COLORS, CASE_LABELS, CASE_SHAPES, CLASS_LABELS, STOCK_LABELS, STOCK_ORDER, alt, class_grid, cohort_style_legend, build_cohort_hatching, display_chart, display_table, load_validation_diagnosis, mo, pd, stock_grid, identified_chart, source_legend_style, load_config_bundle, load_harmonization_rules
+
+
+@app.cell(hide_code=True)
+def transport_preparation_context(load_config_bundle, load_harmonization_rules, mo):
+    preparation_bundle = load_config_bundle("config/scenarios/default.yaml")
+    comparison_scenario = load_harmonization_rules(
+        preparation_bundle, "transportation_research",
+    )["notebook_scenario"]
+    calibration_scenario = load_harmonization_rules(
+        preparation_bundle, "notebook_diagnostics",
+    )["prepare_scenarios"]["ceud_calibration"]
+    transport_prepare_commands = "\n".join([
+        f"uv run --offline python src/build_transport.py --scenario {comparison_scenario} --overwrite",
+        f"uv run --offline python -m validation.transportation_research --scenario {comparison_scenario} --write-report",
+        f"uv run --offline python -m validation.charging_cost_comparison --scenario {comparison_scenario} --write-report",
+        f"uv run --offline python src/build_transport.py --scenario {calibration_scenario} --overwrite",
+    ])
+    mo.vstack([
+        mo.md("""
+        # How do transport assumptions change stock, activity, energy and charger costs?
+
+        Compare fixed-lifetime backend parameters with the curated historical evidence.
+        The figures use two comparison reports from the baseline build and a separate
+        calibration capture.
+        """),
+        mo.accordion({"Prepare the matching evidence, offline and in order": mo.md(
+            f"```sh\n{transport_prepare_commands}\n```\n\n"
+            "Both reports must describe the same successful baseline build. Run the "
+            "calibration build after the reports, then reopen or rerun the notebook."
+        )}),
+    ])
+    return (transport_prepare_commands,)
 
 
 @app.cell
-def _(load_validation_diagnosis):
-    diagnosis = load_validation_diagnosis()
+def transport_comparison_evidence(load_validation_diagnosis, mo, transport_prepare_commands):
+    diagnosis = None
+    transport_evidence_problem = None
+    try:
+        diagnosis = load_validation_diagnosis()
+    except FileNotFoundError as error:
+        transport_evidence_problem = str(error)
+    except ValueError as error:
+        # Keep scientific/configuration errors visible; handle only named stale-build guards.
+        expected_freshness_errors = {
+            "Research report requires a successful matching scenario build",
+            "Research database differs from its build fingerprint",
+            "Research build has different period controls",
+            *(f"Research build has stale {name} configuration" for name in ("scenario", "paths", "sources")),
+            "Fleet capture differs from the live validation scenario; rebuild and recapture",
+            "Charging capture belongs to a different validation scenario",
+            *(f"Comparison {name} differs from the live validation build; recapture both reports"
+              for name in ("database", "build_report")),
+            "The configured fleet comparison predates the direct parameter comparison. Regenerate its report.",
+        }
+        if str(error) not in expected_freshness_errors:
+            raise
+        transport_evidence_problem = str(error)
+    mo.stop(transport_evidence_problem is not None, mo.vstack([
+        mo.md("## Comparison evidence is unavailable"),
+        mo.callout(transport_evidence_problem or "", kind="warn"),
+        mo.md("Restore missing registered/reference inputs, then rebuild and capture both reports "
+              "for the configured comparison scenario. Keep old capture identities unchanged.\n\n"
+              f"```sh\n{transport_prepare_commands}\n```\n\n"
+              "Run these commands serially, then reopen or rerun the notebook."),
+    ]))
     return (diagnosis,)
 
 
 @app.cell(hide_code=True)
 def _(diagnosis, mo):
     scenario = diagnosis["fleet_metadata"]["scenario"]
-    mo.vstack([mo.md(f"""
-    # Transportation validation: independent methods
+    mo.md(f"""
+    Compare the current backend with reconstructed legacy methods at **calendar 2025**,
+    using **[*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) 2023** observations held through 2025.
+    Backend stock is fitted to CEUD; legacy stock is reconstructed without that fit.
+    Agreement with a fitted total is an accounting check, not independent fleet validation.
 
-    **2025 evaluation**, shared **[*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) 2023 edition**; observed stock, activity and energy are held
-    constant through 2025. Backend stock is normalized to [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm); legacy stock is independently reconstructed.
-    This comparison uses production's **fixed-lifetime mode** (`survival_curves: false`).
-    Road stock comes from annual sales and configured survival schedules, including their harmonized tails,
-    followed by [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) calibration and fixed-lifetime eligibility allocation. Curve-mode installed capacity
-    and the separate physical-stock handoff are examined in [stock_cohort_diagnosis.py](stock_cohort_diagnosis.py).
-    [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) observation year, UF calibration year, evaluation year and model labels are different concepts.
-    Prospective **model period 2025 represents demand calendar year 2030**; baseline accounting here is calendar 2025.
+    This scenario uses **fixed lifetimes** (`survival_curves: false`): annual sales pass through
+    survival, stock calibration and lifetime allocation. [stock_cohort_diagnosis.py](stock_cohort_diagnosis.py)
+    examines those steps and the separate survival-curve representation.
+    Keep observation, calibration and evaluation years separate from model labels:
+    prospective **model period 2025 represents demand in calendar 2030**.
     Scenario: [{scenario['scenario']['name']}](../../{diagnosis['scenario_path']}).
 
     Primary legacy reference: the supplied notebook's **active `fixed_lifetime=False` recipe** and workbooks.
-    The supplied `canoe_ON_16d.sqlite` does not reproduce its capacity output; it remains discrepancy evidence.
-    It is also the explicitly selected **inherited-parameter snapshot**, substituting for missing
-    `Input data/canoe_ALL_cm.sqlite`. Legacy efficiency-dependent energy is conditional on that substitution;
-    it does not establish the original input's historical identity. Reference files remain immutable.
-    The comparison preserves each method's vehicle efficiencies, costs and calibration.
-    Production charger transfers are now **1.0 PJ/PJ** because vehicle electricity consumption
-    already includes charging losses; Section 6 explains the accounting correction.
-    """), mo.accordion({"Reproduce offline, in order": mo.md(f"""
-    ```powershell
-    uv run --offline python src/build_transport.py --scenario {diagnosis['scenario_path']} --overwrite
-    uv run --offline python -m validation.transportation_research --scenario {diagnosis['scenario_path']} --write-report
-    uv run --offline python -m validation.charging_cost_comparison --scenario {diagnosis['scenario_path']} --write-report
-    uv run --offline marimo edit docs/insights/transportation_validation_diagnosis.py
-    ```
+    The curated files under `inputs/validation/transportation_reference/sales_cohorts/`
+    retain the original workbook and notebook bytes and the comparison rows from `canoe_ON_16d.sqlite`.
+    That SQLite state differs from the recipe's capacity output. The replay uses its retained
+    inherited parameters as a proxy for the missing `Input data/canoe_ALL_cm.sqlite`.
+    Legacy energy results are conditional on that substitution.
+    Each method retains its own vehicle parameters and calibration. Section 6 explains the current
+    **1.0 PJ/PJ** charger transfer and the cases where charging-loss evidence is incomplete.
     Both reports must identify the same configured build. All numerical comparison tables are exported
     under its configured research report route, with input and CSV hashes. A fresh notebook replays the
     inspected legacy calculation functions and rejects changed recipe/input identities.
-    """)})])
+    """)
     return
 
 
@@ -233,20 +288,17 @@ def _(mo):
         value="Native ExistingCapacity parameters", label="Quantity for both cohort charts",
     )
     mo.vstack([mo.md("""
-    ## 1. Existing capacity and cohort lineage
+    ## 1. Are both capacity parameters measuring the same stock?
 
-    The default shows each method's **native ExistingCapacity parameter**. Legacy exports the
-    **sum of original acquisitions** in each vintage; the backend exports **already surviving,
-    [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm)-scaled stock after fixed-lifetime allocation in this scenario**. These are deliberately different meanings,
-    even though both use thousand vehicles. The legacy calculation has not been normalized to [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm)
-    or forced through the backend's allocation.
+    The default shows each method's **ExistingCapacity parameter**. Legacy records
+    **original acquisitions** within a model vintage; the backend records **surviving stock**, fitted
+    to CEUD and allocated under fixed lifetimes. Both use thousand vehicles, but measure different quantities.
 
     Switch to **surviving stock at calendar 2025** to compare the backend stock with legacy
     acquisitions × its own rounded survival at `2025 − representative vintage`. This second view
-    is a point-year diagnostic, **not Temoa's period-average adjusted capacity**. It is the quantity
-    the previous two charts displayed; it was not the legacy ExistingCapacity export.
-    The backend sales → survivors → allocation plot and Temoa retirement assessment are now in
-    [stock_cohort_diagnosis.py](stock_cohort_diagnosis.py).
+    is a single-year diagnostic, **not Temoa's period-average adjusted capacity**. It allows a stock
+    comparison without replacing either method's exported parameter. The sales → survivors → allocation
+    steps and Temoa retirement interpretation are examined in [stock_cohort_diagnosis.py](stock_cohort_diagnosis.py).
     """), stock_quantity])
     return (stock_quantity,)
 
@@ -309,17 +361,16 @@ def _(BUILDS, STOCK_LABELS, alt, diagnosis, display_chart, display_table, mo, pd
     quantity_note = ("Black crosses are CEUD 2023 stock held through 2025; the backend matches it by calibration."
                      if show_survivors else "No CEUD target is drawn for raw historical acquisitions; CEUD measures surviving stock.")
     mo.vstack([mo.md(f"""
-    ### Native parameters and the separate stock snapshot
+    ### Why do the exported parameters and 2025 stock differ?
 
     One bar per build, stacked by model vintage. Cars/light trucks share one vertical scale;
     medium/heavy share another. **{quantity_note}**
 
-    **Why the earlier car bar was smaller:** it showed surviving stock after native representative-vintage
-    retirement. The legacy history starts in 2005, and its car powertrain shares are missing in **2005 and
-    2006**, so those products become zero in the native recipe. Its older representative vintage also
-    gives every annual segment in a bin the same lower survival fraction. The backend instead retains
+    The legacy history starts in 2005, and its missing car powertrain shares in **2005 and 2006**
+    produce zero acquisitions in those years. One representative vintage gives all annual segments
+    within a bin the same survival fraction. The backend instead retains
     annual-age survival over 2000–2025 and scales the resulting stock to [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm). None of those differences
-    is corrected away here. The adjacent columns show the actual export and the separate point-year stock.
+    is removed for comparison. The table keeps exported capacity and 2025 surviving stock side by side.
     """), display_chart(stock_comparison_chart), display_table(stock_totals[stock_table_columns].rename(columns={
         "evidence": "Build", "parameter_k_vehicles": "Native ExistingCapacity (k)",
         "surviving_k_vehicles": "Point-2025 survivors (k)", "ceud_stock_k_vehicles": "CEUD stock target (k)",
@@ -398,12 +449,13 @@ def _(CASES, CASE_COLORS, CASE_LABELS, CASE_SHAPES, CLASS_LABELS, alt, diagnosis
     calibration = diagnosis["fleet"]["backend_utilization_bridge"]
     calibration = calibration.loc[calibration.region.eq(region.value)].assign(Class=lambda frame: frame.road_class.map(CLASS_LABELS))
     mo.vstack([mo.md("""
-    ## 2. Utilization: calibration values, bounds and sensitivity
+    ## 2. How is annual vehicle utilization set?
 
-    Grey = arithmetic mean of `activity_y / (stock_y × c2a)` for observed **2017, 2018, 2019, 2022, 2023**;
+    Utilization is annual service divided by stock × capacity-to-activity (`c2a`).
+    Grey shows the mean observed ratio for **2017, 2018, 2019, 2022, 2023**;
     2020–2021 are excluded. Blue = **latest observed CEUD activity × CER real GDP(2025)/real GDP(observation year) / Σ(physical stock × c2a)**.
     The table exposes target, denominator and resulting change. Reviewed manual c2a and efficiency stay fixed.
-    This calibrates UFs to the backend's projected demand at `base_year`; later demand continues along its independent GDP trajectory.
+    This fits utilization to projected base-year demand; later demand follows the GDP trajectory.
 
     Purple triangles = **native legacy central calibration**, with a line showing its **±2.5% parameter bounds**.
     Its denominator is raw model-vintage capacity × workbook survival at **2023** × own c2a.
@@ -499,7 +551,7 @@ def _(CASES, CASE_COLORS, CASE_LABELS, CASE_SHAPES, CLASS_LABELS, alt, calibrati
     activity_energy_chart = identified_chart(activity_energy_chart, "comparison-activity-energy",
                                             "Activity and energy agreement are separate comparisons")
     mo.vstack([mo.md("""
-    ## 3. Baseline activity–energy reconciliation
+    ## 3. Can the same parameters match both activity and energy?
 
     **x = energy difference from the declared CEUD fuel boundary (%); y = activity difference from backend projected `base_year` demand (%)**.
     Differences are `100 × (model / reference − 1)`. Activity uses native CEUD observations
@@ -510,8 +562,8 @@ def _(CASES, CASE_COLORS, CASE_LABELS, CASE_SHAPES, CLASS_LABELS, alt, calibrati
     Energy retains each vehicle source's consumption boundary and counts PHEV blend input once.
     Embedded charging losses remain in vehicle electricity consumption; no extra charger-loss multiplier is applied.
     [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) secondary energy has its reported fleet/fuel boundary; unsupported fuels and composition can differ.
-    Only colored results are drawn. The upper view preserves total-energy results and their
-    boundary-sensitive interpretation. The lower view compares supported gasoline/diesel energy:
+    The upper view compares total energy, whose fuel coverage differs between methods.
+    The lower view restricts the comparison to supported gasoline/diesel energy:
     the blue square is **v2.0 w/o efficiency calibration** and the green cross is
     **v2.0 after energy calibration**, computed from final emitted efficiency evidence at
     unchanged stock, c2a and UF. The green result closes at zero; electricity and other fuels
@@ -519,17 +571,15 @@ def _(CASES, CASE_COLORS, CASE_LABELS, CASE_SHAPES, CLASS_LABELS, alt, calibrati
     so their fitted liquid boundary also covers their reported total energy.
     Legacy liquid-energy splits are unestablished, so legacy appears only in the upper view.
 
-    A common UF change with fixed composition/efficiency scales **both** totals. Collinearity of backend cases
-    is an accounting identity, not evidence of fit. If the energy-per-service ratio differs from [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm),
+    Changing utilization alone scales **both** activity and energy: the aligned backend points follow
+    from that arithmetic. If energy per unit service differs from CEUD,
     one common UF cannot meet both targets: energy closure necessarily moves activity off its target.
     The table quantifies the tradeoff. The native legacy point also loses stock between its 2023 calibration
     and 2025 evaluation, so its service need not close the original activity target.
 
-    Gaps suggest a mismatch in aggregate energy per unit service, but do not by themselves identify
-    efficiency error. Fleet composition, service units/load, cohort efficiency, supported fuels, energy
-    boundaries and the missing inherited input identity need reconciliation before recommending a new
-    efficiency or utilization calibration. The implemented optional efficiency fit establishes
-    liquid-energy closure, not independent validation of each powertrain.
+    A gap does not identify an efficiency error by itself. Check fleet composition, occupancy/payload,
+    vehicle efficiency, fuel coverage and energy definitions, as well as the missing legacy input.
+    The optional efficiency adjustment fits liquid energy; it does not independently validate each powertrain.
     """), display_chart(activity_energy_chart), display_table(cases[[
         "Class", "case", "implied_vehicle_input_pj", "implied_activity_bn", "energy_difference_percent", "activity_difference_percent",
         "energy_per_service_pj_per_bn", "ceud_energy_per_service_pj_per_bn",
@@ -598,28 +648,26 @@ def _(BUILDS, BUILD_LABELS, CLASS_LABELS, alt, class_grid, diagnosis, display_ch
     attribution = attribution.loc[attribution.region.eq(region.value)]
     car_context = matched.loc[matched.road_class.eq("cars")].set_index(["Build", "calendar_year"]).demand_bn
     mo.vstack([mo.md(f"""
-    ## 4. Demand: workbook meaning and calendar alignment
+    ## 4. Which growth index and calendar year drive demand?
 
     Both methods anchor to the same **2023 [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) observed activity**. Backend demand multiplies it by
     **[*CER CEF*](https://www.cer-rec.gc.ca/en/data-analysis/canada-energy-future/) real GDP(calendar year) / real GDP(2023)**. The active legacy `growth_rate_type='gdp'` selects
     workbook `gdp`, whose formulas are **column C / C$2**: GDP-deflator levels normalized to 2023.
-    This interpretation is checked against actual formulas and the registered [*CER CEF*](https://www.cer-rec.gc.ca/en/data-analysis/canada-energy-future/) macro source values,
-    rather than inferred from a column name or previous report.
+    Workbook formulas and registered [*CER CEF*](https://www.cer-rec.gc.ca/en/data-analysis/canada-energy-future/)
+    source values establish which index is actually used.
 
-    Specific contradiction: the compiler describes national GDP activity growth, yet calendar 2030 uses
-    **144.1 / 123 = 1.171545**, the GDP deflator. Real GDP is **2,652,642 / 2,385,443 = 1.112012**.
-    The earlier deflator characterization is confirmed; the economic description in the legacy notes is wrong.
-    The comparison preserves that executable price-index recipe without replacing its assumption.
+    At calendar 2030, the legacy factor is **144.1 / 123 = 1.171545**, a price index.
+    The backend real-GDP factor is **2,652,642 / 2,385,443 = 1.112012**, an output-volume index.
+    The legacy notes call this GDP activity growth, but its executable recipe uses the deflator;
+    that difference is preserved here.
 
     Legacy `project_demand_v` generates calendar 2025–2050, then `shift_time_period` subtracts five and
     retains model labels 2025–2045. Thus **calendar 2025 → label 2020 is dropped**; first emitted
     **label 2025 → calendar 2030**. Backend prospective demand uses the same interval-end calendar axis.
-    The earlier axis starting at 2030 hid the common origin; the first visible points were already
-    **seven years past the shared 2023 observation**. Their difference was real growth divergence,
-    not different observed starting demand. Both curves now show **black crosses at the 2023 anchor**,
-    **open diamonds at the contextual 2025 growth targets**, and circles at emitted demands from 2030 onward.
-    The 2025 diamonds are explanatory reconstructions, not additional emitted model periods.
-    The growth chart likewise starts at **2023 = 1**, rather than resetting each method to 1 in 2030.
+    **Black crosses mark the shared 2023 observation**, open diamonds show reconstructed 2025 targets,
+    and circles show compiled demands from calendar 2030 onward. The diamonds are context, not extra
+    model periods. The growth chart uses **2023 = 1** for both methods, so their divergence reflects
+    different growth indices rather than different observed starting demand.
 
     **Cars example (billion passenger-km):** both start at **{car_context.loc[(BUILDS[0], 2023)]:.4f} in 2023**. In 2025, backend real GDP
     gives **{car_context.loc[(BUILDS[0], 2025)]:.4f}** and the legacy deflator recipe gives **{car_context.loc[(BUILDS[1], 2025)]:.4f}**. At the first emitted calendar year,
@@ -654,24 +702,25 @@ def _(diagnosis, display_table, mo, region):
     })
     cost_components = diagnosis["charging"]["source_components"].copy()
     cost_components["Class"] = cost_components.charger_class.map({"ldv": "LDV", "mhdv": "MHDV"})
-    cost_components["Currency/year"] = cost_components.source_currency + cost_components.source_dollar_year.astype(str)
+    cost_components["Currency/year"] = cost_components.native_currency + cost_components.native_dollar_year.astype("Int64").astype(str)
     mo.vstack([
         mo.md("""
-        ## 5. Charger costs: power, throughput and source year
+        ## 5. How do port costs become costs per unit of charger capacity?
 
-        Costs now start from **native capex per port and rated kW for the same source year**.
+        Start with **source capital cost per port and rated kW from the same year**.
         Convert each component to CAD2020, then calculate
         **`M CAD2020/GW = Σ(count share × CAD2020/port) / Σ(count share × kW/port)`**.
         CAD/kW and million CAD/GW are numerically equal. This conserves total expenditure and
-        total rated power; it replaces the former count-weighted average of normalized rates.
+        total rated power. Averaging per-kW rates using port-count shares would not preserve both totals.
 
         The first new vintage, **model label 2025 → cost source year 2030**, uses that year's
         matched costs and powers. Existing implied capex uses the first-model-year cost proxy;
         it explains fixed costs and is not charged again as investment in existing infrastructure.
-        Fixed O&M is **1% of the corrected capital rate per year**, within the infrastructure lifetime.
+        Fixed operation and maintenance cost is **1% of the capital rate per year**, within the infrastructure lifetime.
 
-        Both existing/new LDV and MHDV annual utilization targets are **20%**. Thus the
-        throughput denominator is **`31.536 × 0.2 = 6.3072 PJ/year per GW`** for both classes.
+        Existing/new annual utilization targets are **20% for LDV** and **30% for MHDV**.
+        The throughput denominator is **`31.536 × 0.2 = 6.3072 PJ/year per GW`** for LDV
+        and **`31.536 × 0.3 = 9.4608 PJ/year per GW`** for MHDV.
         The table separates capital cost per rated GW from cost per annual energy throughput.
         Profiled LDV keeps its hourly shape and the configured annual-floor slack.
 
@@ -684,7 +733,8 @@ def _(diagnosis, display_table, mo, region):
         Power shares are derived as **`count share × rated kW / Σ(count share × rated kW)`**.
         Weighting each component's CAD/kW rate by these shares gives the same aggregate.
         The component table retains native amounts, rating trajectories and both kinds of share;
-        the report independently reconstructs the rates and checks them against SQLite.
+        the report reuses the production component calculation and reconciles its rates
+        with SQLite. That reconciliation does not independently validate the source assumptions.
 
         **Framework comparison:** [HDVCHARGE v1.2](https://theicct.github.io/HDVCHARGE-doc/versions/v1.2/#calculate-number-of-required-chargers)
         explicitly excludes costs from its calculations and outputs. Separately,
@@ -703,16 +753,16 @@ def _(diagnosis, display_table, mo, region):
             "cost_mcad_per_pj_year": "M CAD2020 per PJ/year",
         }), selection=None, pagination=False, label="One row per charger class and vintage; existing rates are implied capex proxies"),
         display_table(cost_components[[
-            "Class", "source_year", "charger_type", "source_cost_per_port", "Currency/year",
+            "Class", "backend_vintage", "source_year", "charger_type", "source_cost_per_port", "Currency/year",
             "rated_power_kw", "count_share", "power_share", "weighted_cost_per_gw",
         ]].rename(columns={
-            "source_year": "Source year", "charger_type": "Charger type",
+            "backend_vintage": "Model vintage", "source_year": "Source year", "charger_type": "Charger type",
             "source_cost_per_port": "Native capex/port",
             "rated_power_kw": "Rated kW/port", "count_share": "Port-count share",
             "power_share": "Rated-power share", "weighted_cost_per_gw": "Contribution (M CAD2020/GW)",
         }), selection=None, page_size=12, format_mapping={
             "Port-count share": "{:.2%}", "Rated-power share": "{:.2%}",
-        }, label="One row per class, cost source year and charger type; contributions sum to the capital rate above"),
+        }, label="One row per class, model vintage and charger component; contributions sum to that vintage's capital rate above"),
     ])
     return
 
@@ -757,22 +807,21 @@ def _(alt, diagnosis, display_chart, mo, pd, display_table, identified_chart):
         mo.md("""
         ### The separate legacy charger-cost variant
 
-        **Yes—the legacy line uses the supplied charger-cost variant inputs:** `CostInvest.csv`,
-        `CostFixed.csv`, and `CostVariable_ALL.csv` in `legacy_backend/legacy_variant_lih_wei_branch/`.
-        This is a **different reference from the sales-cohort
-        variant in Sections 1–4**. Its investment and fixed-cost CSV rows govern this comparison;
-        the variable-cost CSV contains no mapped charger entries, which does not imply zero operating cost.
-        `canoe_ON_16d.sqlite` is not this section's cost source. The original `canoe_on_12d_baseline.sqlite`
-        supplies non-cost context only; it does not establish the charger CSV variant's embedded utilization.
+        The supplied charger-cost variant is under `inputs/validation/transportation_reference/charger_costs/`.
+        Its investment and fixed-cost CSVs retain every source row. The source variable-cost export
+        had no mapped charger entries, so the curated file retains its header and the manifest
+        records the original coverage. Variable operating cost is unresolved for those technologies.
+        A separate extract of `canoe_on_12d_baseline.sqlite` supplies non-cost context.
+        The charger CSV variant's embedded utilization remains undocumented.
 
         **Blue = current backend; dashed orange = legacy charger-cost CSV rates converted at backend UF.**
         The table exposes the original CSV rate, the throughput conversion factor and the resulting per-GW rate.
         Both rates use **million CAD2020/GW**. Convert reference million CAD2020/(PJ/year)
         using **reference rate × c2a × backend utilization**. Here c2a = 31.536 PJ/year
-        per GW; existing/new charger utilization is 20% for both LDV and MHDV. This is equivalent to
+        per GW; existing/new charger utilization is 20% for LDV and 30% for MHDV. This is equivalent to
         dividing backend per-GW cost by utilized throughput before comparison.
 
-        The common-utilization interpretation remains conditional: reference embedded
+        The comparison at backend utilization remains conditional: reference embedded
         utilization and losses are undocumented. No extra loss multiplier is imposed.
         Source years match explicitly; reference 2025 has no backend cost-year bridge.
 
@@ -836,25 +885,21 @@ def _(diagnosis, display_table, mo, pd, region):
     charging_accounting = diagnosis["charging_metadata"]["electricity_accounting"]
     mo.vstack([
         mo.md("""
-        ## 6. Charging losses: vehicle accounting and proxy limits
+        ## 6. Where are charging losses already counted?
 
-        **The former 0.95 LDV and 0.80 MHDV factors applied charging losses twice.**
+        **The main BEV/PHEV consumption sources already include charging losses.**
         [*NLR ATB* BEV assumptions](https://atb.nlr.gov/transportation/2024/battery_electric_vehicle_assumptions)
         include onboard-charger and EVSE losses in fuel economy. The
         [LDV PHEV](https://atb.nlr.gov/transportation/2024/plug-in_hybrid) and
         [MHDV PHEV](https://atb.nlr.gov/transportation/2024/plug-in_hybrid_mdhd)
-        assumptions likewise adjust electric consumption for charging losses. The production
-        consumption/ratio calculations preserve that source boundary.
+        assumptions likewise include them. Production retains those consumption definitions,
+        so the former 0.95 LDV and 0.80 MHDV charger factors added another loss on these paths.
 
         Observed LDV BEV/PHEV rated baselines use the
         [NRCan fuel consumption ratings](https://open.canada.ca/data/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64).
         ATB still supplies PHEV range-bucket utility factors and future consumption projections.
-        [PR #12](https://github.com/CANOE-main/canoe-transportation/pull/12) reports that 1,096 of 1,250
-        BEV rows in the registered 2026-09-29 NRCan edition (model years 2012–2026) match EPA
-        `vehicles.csv` by model year, make and range within 2 km, with median deviations of +0.124%,
-        +0.028% and +0.016% for model years 2012–2016, 2017–2021 and 2022–2026. These are the PR's
-        reported results from a loose match, not a one-to-one identity proof or registered production
-        validation; the analysis was not reproduced in this reconciliation. NRCan PHEVs were not matched.
+        A published BEV comparison supports a similar interpretation for NRCan ratings, but its loose
+        matching does not establish identical vehicles. PHEVs were not matched; details remain in the audit below.
 
         [EPA label guidance](https://www.epa.gov/greenvehicles/fuel-economy-and-ev-range-testing)
         explicitly includes EVSE and onboard-charger losses in wall-metered electricity.
@@ -864,7 +909,7 @@ def _(diagnosis, display_table, mo, pd, region):
         requires recharge AC watt-hours to account for charging-system losses. Extending this boundary
         to NRCan ratings is a corroborated interpretation, including for the unmatched PHEVs.
 
-        Vehicle efficiencies are retained. Existing/new charger technologies now transfer electricity
+        Vehicle efficiencies are retained. Existing/new charger technologies transfer electricity
         at **1.0 PJ/PJ**, preserving the capacity, utilization and cost representation while applying
         no additional loss. Explicit transfer rows are required for the electricity route.
         This is an accounting factor, not a claim of physically lossless charging. Relative to the
@@ -874,7 +919,7 @@ def _(diagnosis, display_table, mo, pd, region):
         HDVCHARGE's global 0.80 includes equipment, onboard charging where applicable, and battery losses;
         it cannot be stacked on consumption that already includes those losses. Its power-delivery ratio
         describes session power, a separate concept. The reviewed ICCT factors remain unapplied audit
-        evidence. Unity rows use an internal accounting dataset, without an external DQ claim.
+        evidence. The 1.0 transfer rows document internal accounting rather than an external physical measurement.
         **Motorcycles:** their consumption does not include charging losses. With the shared unity
         LDV charger transfer, motorcycle charging losses are currently unrepresented.
         **Intercity buses:** EPRI does not disclose whether its consumption includes charging losses;
@@ -886,6 +931,14 @@ def _(diagnosis, display_table, mo, pd, region):
             "rows": "Vintage rows",
         }), selection=None, pagination=False, label="Current SQLite electricity transfers by technology in the selected region"),
         mo.accordion({
+            "Published BEV comparison and its limits": mo.md(
+                "[PR #12](https://github.com/CANOE-main/canoe-transportation/pull/12) reports that 1,096 of 1,250 "
+                "BEV rows in the registered 2026-09-29 NRCan edition (model years 2012–2026) match EPA "
+                "`vehicles.csv` by model year, make and range within 2 km. Reported median deviations are "
+                "+0.124%, +0.028% and +0.016% for model years 2012–2016, 2017–2021 and 2022–2026. "
+                "These are results of a loose match, not proof of identical configurations or registered "
+                "production validation. This reconciliation did not reproduce that analysis; NRCan PHEVs were not matched."
+            ),
             "Reviewed factors retained but not applied": display_table(
                 pd.DataFrame(charging_accounting["reviewed_efficiencies_not_applied"]),
                 selection=None, pagination=False),
@@ -899,15 +952,26 @@ def _(diagnosis, display_table, mo, pd, region):
 
 @app.cell(hide_code=True)
 def _(diagnosis, mo):
-    mo.accordion({"Captured identities and reproducibility": mo.vstack([
+    mo.vstack([mo.md("""
+    ## What do these checks establish?
+
+    Capacity comparisons require the same stock definition. Matching travel activity does not ensure
+    matching energy, and fitting energy does not validate each vehicle's consumption. Demand differences
+    must be compared at the same calendar year and traced to the actual growth index.
+
+    Charger comparisons require matched cost/power years, a declared utilization denominator and a
+    consistent electricity-loss boundary. These are the conditions the method documentation must retain;
+    the remaining source and legacy-reference gaps limit stronger conclusions.
+    """), mo.accordion({"Captured identities and reproducibility": mo.vstack([
         mo.md("CSV hashes, the live validation YAML and both reports' database/build fingerprints are checked before display. Reproduce with the commands at the top. Workbook reconstruction does not establish historical notebook execution or optimization."),
         mo.json({
             "fleet_scenario": diagnosis["fleet_metadata"]["scenario"], "fleet_revision": diagnosis["fleet_metadata"]["revision"],
             "charging_scenario": diagnosis["charging_metadata"]["scenario"], "charging_build_utc": diagnosis["charging_metadata"]["build_timestamp_utc"],
             "limitations": diagnosis["fleet_metadata"]["limitations"], "commands": diagnosis["fleet_metadata"]["commands"],
             "legacy_reconstruction": diagnosis["fleet_metadata"]["legacy_reconstruction"],
+            "historical_source_revision": (diagnosis["fleet_metadata"].get("reference_evidence") or {}).get("source_revision"),
         }),
-    ])})
+    ])})])
     return
 
 

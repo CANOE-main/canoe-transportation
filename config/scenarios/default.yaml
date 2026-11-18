@@ -13,7 +13,7 @@ geography:
   regions: ["ON", "AB", "BCT", "MB", "NB", "NL", "NS", "PE", "QC", "SK"]
 
 periods:
-  # prospective: interval-end inputs; legacy: prior timing and vintage bins.
+  # prospective: closing conditions; legacy: opening conditions and historical closing labels.
   period_mode: prospective
   base_year: 2025  # Model reference year; selected source policy handles later-than-observed inputs.
   # Existing-capacity vintages; legacy mode must include base_year.
@@ -29,8 +29,8 @@ outputs:
 
 comparison:
   # Optional comparison; integrity checks always run.
-  mode: none  # none | legacy | scenario
-  reference_sqlite: legacy_backend/canoe_on_12d_baseline.sqlite
+  mode: none  # none | scenario
+  reference_sqlite: null
   absolute_tolerance: 1.0e-9
   relative_tolerance: 1.0e-6
   include_provenance: false  # Scenario mode: also compare source IDs, DQ and notes.
@@ -41,7 +41,6 @@ sources:
   selections:
     nrcan_ceud_transport_provincial: {year: 2023}
     nrcan_ceud_transport_national: {year: 2023}
-    transport_canada_ev_dashboard: {year: 2026}
     cer_canadas_energy_future: {edition: 2026}
 
 aggregation_sources:
@@ -76,7 +75,7 @@ lifetimes:
   tail_survival_threshold: 0.005  # Surviving fraction: 0.5%, then zero the following year.
 
 existing_capacity:
-  vehicle_population_year: 2025  # MTO evidence year.
+  vehicle_population_year: null  # Follow periods.base_year; an integer explicitly selects another MTO year.
   cleanup_tolerance: 0.001  # Minimum retained capacity in each row's native unit.
 
 demand:
@@ -89,18 +88,21 @@ road_utilization:
 
 efficiencies:
   ceud_energy_calibration: false  # Optional CEUD-reported liquid-energy fit; no default promotion.
-  atb_trajectory: Mid  # Advanced | Conservative | Constant | Mid
+  atb_trajectory: Mid  # Advanced | Conservative | Mid
 
 costs:
-  atb_trajectory: Mid  # Advanced | Conservative | Constant | Mid
+  atb_trajectory: Mid  # Advanced | Conservative | Mid
 
 ev_chargers:
-  # Vehicles per charger port when estimating existing capacity.
-  ld_evs_per_port: 1.0
-  mhd_evs_per_port: 1.5
+  # Vehicles per charger port when estimating existing capacity - defaults taken from (Dunsky, 2024).
+  evs_per_port: [1.0, 1.5, 1.5]         # [LD, MD, HD] PEV classes; 1.0 for LDV, 1.5 for MDV and HDV.
+  charger_type_classes: aggregated      # aggregated | explicit; aggregated has one charger type per PEV class
+  ld_home_utilization: 0.08             # assuming 2 hours/day of active charging from telemetry evidence - https://doi.org/10.3390/en16041592
+
 
 charging_profiles:
   travel_behavior_source: nhts  # none | nhts: US travel survey | tts: Ontario GGH travel survey
+  charging_strategy: uncontrolled  # uncontrolled | night | day; Toronto local clock
   time_mapping: null  # null: hourly slices; otherwise: hour-to-slice CSV path.
 
 BEV_PHEV_range_representation:

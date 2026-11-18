@@ -1,8 +1,8 @@
 """FAA aircraft service capacity and maintenance dimensions."""
 
-import pandas as pd
 import pytest
 
+from fetching.assorted_sources import build_requests, normalize_faa
 from parameterization.offroad_capex_opex import (
     aircraft_cost_per_billion_service,
     aircraft_service_evidence,
@@ -10,16 +10,23 @@ from parameterization.offroad_capex_opex import (
 from utils import load_config_bundle, load_conversion_factors, load_harmonization_rules
 
 
-def test_faa_aggregate_passenger_and_cargo_dimensions() -> None:
+@pytest.fixture(scope="module")
+def faa_inputs():
+    """Read registered raw PDFs directly; no pre-existing interim tables are needed."""
+    bundle = load_config_bundle("config/scenarios/default.yaml")
+    rules = load_harmonization_rules(bundle, "assorted_sources")
+    requests = build_requests(bundle, rules)
+    capacity, maintenance, _, _ = normalize_faa(
+        requests["faa_section_3"], requests["faa_section_4"], rules["faa"],
+    )
+    return capacity, maintenance
+
+
+def test_faa_aggregate_passenger_and_cargo_dimensions(faa_inputs) -> None:
     bundle = load_config_bundle("config/scenarios/default.yaml")
     conversions = load_conversion_factors(bundle)
     rules = load_harmonization_rules(bundle, "costs")
-    capacity = pd.read_csv(
-        "inputs/1_interim/fetched_assorted_sources/faa_aircraft_capacity_load_speed.csv"
-    )
-    maintenance = pd.read_csv(
-        "inputs/1_interim/fetched_assorted_sources/faa_aircraft_maintenance_costs.csv"
-    )
+    capacity, maintenance = faa_inputs
     for group, speed, native_capacity, load, hours, hourly_cost in (
         ("passenger", 366, 169, 0.84, 8.5, 1005),
         ("cargo", 399, 93, 0.48, 4.6, 2815),
@@ -49,10 +56,8 @@ def test_faa_aggregate_passenger_and_cargo_dimensions() -> None:
         )
 
 
-def test_faa_rejects_missing_aggregate_daily_utilization() -> None:
-    capacity = pd.read_csv(
-        "inputs/1_interim/fetched_assorted_sources/faa_aircraft_capacity_load_speed.csv"
-    )
+def test_faa_rejects_missing_aggregate_daily_utilization(faa_inputs) -> None:
+    capacity, _ = faa_inputs
     capacity = capacity.loc[~capacity.metric.eq("average_daily_utilization")]
     with pytest.raises(ValueError, match="average_daily_utilization"):
         aircraft_service_evidence(

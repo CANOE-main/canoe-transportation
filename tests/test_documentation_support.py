@@ -115,6 +115,129 @@ def test_rejects_duplicate_mto_and_registered_stock_substitution(counts, setting
         derive_fleet_shares(mto, stock, settings)
 
 
+@pytest.fixture
+def captured_fleet(tmp_path, monkeypatch, counts, settings):
+    """A 2023 production handoff plus complete recorded history through 2025."""
+    from dataclasses import replace
+    from pathlib import Path
+    import shutil
+    from types import SimpleNamespace
+
+    from parameterization.vehicle_reference import load_vehicle_reference, reference_mto_mapping
+    from utils import harmonization_rule_paths, load_config_bundle, load_harmonization_rules
+    import validation.documentation_support as support
+
+    repository = Path(__file__).resolve().parents[1]
+    parameters = tmp_path / "capture/config/parameters"
+    parameters.mkdir(parents=True)
+    bundle = load_config_bundle(repository / "config/scenarios/notebook_diagnostics.yaml")
+    for path in (*harmonization_rule_paths(bundle), *(repository / "config/parameters" / name
+                  for name in ("vehicle_reference.csv", "vehicle_source_links.csv"))):
+        shutil.copyfile(path, parameters / path.name)
+    bundle = replace(bundle, paths=bundle.paths.model_copy(update={
+        "config": bundle.paths.config.model_copy(update={"parameters": str(parameters)}),
+    }))
+    reference = load_vehicle_reference(bundle)
+    mapping = reference_mto_mapping(
+        reference, load_harmonization_rules(bundle, "road_aggregation"),
+        load_harmonization_rules(bundle, "nrcan_fuel_consumption_ratings")["vehicle_class_harmonization"],
+    )
+    applicable = mapping.loc[mapping.model_year_from.le(2020) & mapping.model_year_to.ge(2020)]
+    identities = [applicable.loc[applicable.nrcan_vehicle_class.eq(label)].iloc[0]
+                  for label in ("Compact", "Mid-size", "Sport utility vehicle: Small")]
+    records = []
+    for year in (2023, 2025):
+        for identity, count in zip(identities, (30, 10, 70), strict=True):
+            records.append({
+                "report_year": year, "VEHICLE_CLASS": "PASSENGER",
+                "MAKE": identity.mto_make_code, "MODEL": identity.mto_model_code,
+                "MODEL_YEAR": 2020, "stock_status": "FIT_ACTIVE",
+                "native_count": count if year == 2025 else 999,
+            })
+    # A non-active stock status is never part of the presentation denominator.
+    records.append({**records[-1], "stock_status": "UNFIT", "native_count": 123456})
+    history = tmp_path / "capture/status_long.csv.gz"
+    pd.DataFrame(records).to_csv(history, index=False)
+    selected = tmp_path / "capture/mapped_fleet.csv"
+    counts[0].assign(report_year=2023, FIT_ACTIVE=999).to_csv(selected, index=False)
+    source_manifest = tmp_path / "capture/source_manifest.csv"
+    pd.DataFrame({"year": [2023, 2025]}).to_csv(source_manifest, index=False)
+    registrations = tmp_path / "capture/benchmark_statcan_new.csv"
+    counts[1].to_csv(registrations, index=False)
+    stock_manifest = tmp_path / "capture/stock_manifest.json"
+    efficiency_manifest = tmp_path / "capture/efficiency_manifest.json"
+    stock_manifest.write_text("{}", encoding="utf-8")
+    efficiency_manifest.write_text("{}", encoding="utf-8")
+    config = tmp_path / "documentation.yaml"
+    config.write_text("fixture: true\n", encoding="utf-8")
+    stock = SimpleNamespace(
+        bundle=bundle, paths={"status_long": history, "mapped_fleet": selected, "source_manifest": source_manifest},
+        metadata={"build_id": "stock-2023", "database": {"path": "stock.sqlite"}, "manifest": str(stock_manifest)},
+    )
+    efficiency = SimpleNamespace(
+        bundle=bundle, paths={"benchmark_statcan_new": registrations},
+        metadata={"build_id": "efficiency-2023", "database": {"path": "efficiency.sqlite"}, "manifest": str(efficiency_manifest)},
+    )
+    paths = SimpleNamespace(artifacts={"documentation_evidence": SimpleNamespace(path="evidence")})
+    monkeypatch.setattr(support, "_controls", lambda _: (tmp_path, paths, settings, config))
+    monkeypatch.setattr(support, "load_notebook_evidence",
+                        lambda profile, **_: {"vehicle_stock": stock, "efficiency": efficiency}[profile])
+    monkeypatch.setattr(support, "_statcan", lambda native, *_: native.copy())
+
+    def forbid_live_configuration(*_, **__):
+        raise AssertionError("Presentation must use the captured configuration bundle")
+
+    monkeypatch.setattr(support, "load_config_bundle", forbid_live_configuration)
+    read_csv = pd.read_csv
+
+    def captured_read(path, *args, **kwargs):
+        assert Path(path).resolve().is_relative_to(tmp_path), f"Uncaptured input: {path}"
+        return read_csv(path, *args, **kwargs)
+
+    monkeypatch.setattr(pd, "read_csv", captured_read)
+    return history, selected, support, tmp_path
+
+
+def test_presentation_year_uses_captured_history_and_reviewed_mapping(captured_fleet):
+    history, selected, support, root = captured_fleet
+    evidence = support.build_fleet_100(repo_root=root)
+    cars = evidence.shares.loc[evidence.shares.vehicle_group.eq("Cars") & evidence.shares.dimension.eq("Size class")]
+    assert cars.source_year.eq(2025).all()
+    assert cars.denominator.eq(40).all()
+    assert cars.set_index("category")["count"].to_dict() == {"Compact": 30, "Mid-size": 10}
+    assert cars.set_index("category").share.to_dict() == {"Compact": 0.75, "Mid-size": 0.25}
+    trucks = evidence.shares.loc[evidence.shares.vehicle_group.eq("Light trucks") & evidence.shares.dimension.eq("Size class")]
+    assert trucks.denominator.eq(70).all()
+    assert evidence.metadata["mto_mapping"]["report_year"] == 2025
+    assert evidence.metadata["stock_build"] == "stock-2023"
+    assert {
+        "mto_status_history", "mto_source_manifest", "reviewed_vehicle_reference",
+        "reviewed_vehicle_source_links", "stock_rules", "benchmark_statcan_new",
+    } <= set(evidence.metadata["input_files"])
+    assert len([name for name in evidence.metadata["input_files"] if name.startswith("stock_rules:")]) == 6
+    support.write_evidence(evidence, repo_root=root)
+    selected.write_text("changed unused selected-year handoff", encoding="utf-8")
+    pd.testing.assert_frame_equal(support.load_evidence(repo_root=root).shares, evidence.shares, check_dtype=False)
+    history.write_bytes(b"changed recorded source")
+    with pytest.raises(ValueError, match="Captured fleet presentation source changed"):
+        support.load_evidence(repo_root=root)
+
+
+@pytest.mark.parametrize("fault", ["missing_year", "duplicate", "missing_columns"])
+def test_presentation_history_keeps_coverage_guards(captured_fleet, fault):
+    history, _, support, root = captured_fleet
+    statuses = pd.read_csv(history)
+    if fault == "missing_year":
+        statuses = statuses.loc[statuses.report_year.ne(2025)]
+    elif fault == "duplicate":
+        statuses = pd.concat([statuses, statuses.loc[statuses.report_year.eq(2025) & statuses.stock_status.eq("FIT_ACTIVE")].iloc[:1]])
+    else:
+        statuses = statuses.drop(columns="stock_status")
+    statuses.to_csv(history, index=False)
+    with pytest.raises(ValueError, match="coverage is missing or duplicated|status history lacks"):
+        support.build_fleet_100(repo_root=root)
+
+
 def test_archived_new_registration_lineage_is_retained(counts, settings):
     mto, registrations = counts
     registrations["source_table"] = "20-10-0021-01"
@@ -206,9 +329,12 @@ def test_nonroad_capture_checks_database_identity_and_snapshot_is_read_only(tmp_
     report_file = tmp_path / "report.json"
     rules_file = tmp_path / "rules.yaml"
     rules_file.write_text("existing_suffix: _EX\n", encoding="utf-8")
+    rules_chunk = tmp_path / "vehicle_efficiency_and_emissions.yaml"
+    rules_chunk.write_text("nonroad_classification: fixture\n", encoding="utf-8")
     report = {"ok": True, "database": str(database), "database_sha256": file_sha256(database),
               "timestamp_utc": "2026-01-01T00:00:00Z", "config": {"scenario": {"sha256": file_sha256(scenario_file)},
-              "parameters": [{"path": str(rules_file), "sha256": file_sha256(rules_file)}]}}
+              "parameters": [{"path": str(path), "sha256": file_sha256(path)}
+                             for path in (rules_file, rules_chunk)]}}
     report_file.write_text(json.dumps(report), encoding="utf-8")
     scenario = SimpleNamespace(outputs=SimpleNamespace(sqlite_name=database.name, validation_report=report_file.name),
                                scenario=SimpleNamespace(name="fixture"),
@@ -218,10 +344,33 @@ def test_nonroad_capture_checks_database_identity_and_snapshot_is_read_only(tmp_
     monkeypatch.setattr(support, "_controls", lambda _: (tmp_path, paths, None, config_file))
     monkeypatch.setattr(support, "load_config_bundle", lambda _: SimpleNamespace(scenario=scenario))
     monkeypatch.setattr(support, "load_harmonization_rules", lambda *_: {"existing_suffix": "_EX"})
+    def rules_fingerprints(_):
+        return {path.name: file_sha256(path) for path in (rules_file, rules_chunk)}
+
+    monkeypatch.setattr(support, "harmonization_rule_fingerprints", rules_fingerprints)
     monkeypatch.setattr(support, "resolve_configured_path", lambda *_: database)
     captured = support.build_nonroad_evidence(repo_root=tmp_path)
     assert not captured.rows.tech.str.endswith("_EX").any()
     assert len(captured.rows.loc[captured.rows.tech.eq("T_OFF")]) == 2
+    original_chunk = rules_chunk.read_bytes()
+    rules_chunk.write_bytes(original_chunk + b"# changed selected rules\n")
+    with pytest.raises(ValueError, match="classification rules changed"):
+        support.build_nonroad_evidence(repo_root=tmp_path)
+    rules_chunk.write_bytes(original_chunk)
+    calls = 0
+
+    def changed_while_reading(bundle):
+        nonlocal calls
+        calls += 1
+        values = rules_fingerprints(bundle)
+        if calls > 1:
+            values[rules_chunk.name] = "0" * 64
+        return values
+
+    with monkeypatch.context() as patch:
+        patch.setattr(support, "harmonization_rule_fingerprints", changed_while_reading)
+        with pytest.raises(ValueError, match="rules changed while"):
+            support.build_nonroad_evidence(repo_root=tmp_path)
     support.write_nonroad_evidence(captured, repo_root=tmp_path)
     database.write_bytes(b"changed after capture")
     loaded = support.load_nonroad_evidence(repo_root=tmp_path)

@@ -824,6 +824,7 @@ def select_atb_consumption(
                         "powertrain": powertrain,
                         "year": item["year"],
                         "trajectory": trajectory,
+                        "source_trajectory": item.get("source_trajectory", item.get("source_scenario", item["trajectory"])),
                         "vehicle_class": item["vehicle_class"],
                         "vehicle_detail": item["vehicle_detail"],
                         "basis": basis,
@@ -986,12 +987,31 @@ class RoadEfficiencyEvidence:
         # clearing atb_value after a numerical sensitivity see that change.
         return self.atb.iloc[self._atb_positions.get((region, mode, powertrain), [])]
 
-    def atb_value(self, region: str, mode: str, powertrain: str, year: int) -> float:
+    def _atb_source_points(self, region: str, mode: str, powertrain: str, year: int) -> dict:
+        """Record the native consumption points used to evaluate an ATB year."""
+        available = self._atb_series(region, mode, powertrain)["year"]
+        before, after = available.loc[available.le(year)], available.loc[available.ge(year)]
+        if before.empty or after.empty:
+            raise ValueError(f"No ATB bracket: {region}/{mode}/{powertrain}/{year}")
+        first, last = int(before.max()), int(after.min())
+        return {
+            "projection_atb_source_years": [first] if first == last else [first, last],
+            "projection_atb_source_weights": (
+                [1.0] if first == last else [(last - year) / (last - first), (year - first) / (last - first)]
+            ),
+        }
+
+    def atb_value(
+        self, region: str, mode: str, powertrain: str, year: int, *,
+        interpolate_new_cohort: bool = False,
+    ) -> float:
         series = self._atb_series(region, mode, powertrain)
         value = observed_value(series, year, "weighted_consumption")
         if value is None:
-            if (self.rules["road_classes"][mode]["pathway"] in {"ldv", "mhdv"}
-                    and year > self.projection_reference_year):
+            if interpolate_new_cohort or (
+                self.rules["road_classes"][mode]["pathway"] in {"ldv", "mhdv"}
+                and year > self.projection_reference_year
+            ):
                 if self.rules["projection_interpolation"] != "linear_consumption":
                     raise ValueError("Unsupported ATB bridge interpolation")
                 return interpolate(series, year, "weighted_consumption")
@@ -1014,21 +1034,23 @@ class RoadEfficiencyEvidence:
 
     def period_observations(
         self, region: str, mode: str, powertrain: str, years: list[int], *,
-        allow_analogue_when_empty: bool = False,
+        allow_analogue_when_empty: bool = False, new_cohort: bool = False,
     ) -> dict[int, dict]:
         """Use observed years; a wholly empty period may use its reviewed proxy."""
         if not years or len(set(years)) != len(years):
             raise ValueError("A consumption period requires distinct source years")
         observed = {
             year: result for year in years
-            if (result := self.derive_consumption(region, mode, powertrain, year)) is not None
+            if (result := self.derive_consumption(region, mode, powertrain, year, new_cohort=new_cohort)) is not None
         }
         if observed or not allow_analogue_when_empty:
             return observed
         return {
             year: result
             for year in years
-            if (result := self.derive_consumption(region, mode, powertrain, year, allow_analogue=True)) is not None
+            if (result := self.derive_consumption(
+                region, mode, powertrain, year, allow_analogue=True, new_cohort=new_cohort,
+            )) is not None
         }
 
     def historical_rating_ratio(
@@ -1204,7 +1226,7 @@ class RoadEfficiencyEvidence:
 
     def derive_consumption(
         self, region: str, mode: str, powertrain: str, year: int, *,
-        allow_analogue: bool = False,
+        allow_analogue: bool = False, new_cohort: bool = False,
     ) -> dict | None:
         """Keep energy in the numerator until the caller's final service conversion."""
         spec, base = self.rules["road_classes"][mode], self.base_year
@@ -1214,11 +1236,14 @@ class RoadEfficiencyEvidence:
         native, native_unit, index, analogue = None, "MJ/vkm", 1.0, powertrain
         index_reference = powertrain
         source_years, projection_details = {}, {}
+        if load is not None:
+            projection_details["ceud_load_target_year"] = min(year, base)
         if pathway == "ldv":
             if year <= bridge_year:
                 observed = self.rating(mode, powertrain, year, "mj", region=region)
                 if observed is not None:
                     consumption, treatment = observed, "NRCan_observed_class_weighted"
+                    projection_details["nrcan_rating_source_year"] = year
                 else:
                     if not allow_analogue:
                         return None
@@ -1231,6 +1256,8 @@ class RoadEfficiencyEvidence:
                     baseline, _ = self.ldv_baseline(region, mode, powertrain)
                     consumption = baseline * index
                     treatment = "NRCan_missing_year_approved_analogue_index"
+                    projection_details["rating_index_target_year"] = year
+                    projection_details["rating_index_reference_year"] = bridge_year
             else:
                 anchor = self.projection_anchor(region, mode, powertrain)
                 analogue = index_reference = anchor["powertrain"]
@@ -1275,9 +1302,12 @@ class RoadEfficiencyEvidence:
                         raise ValueError("MD/HD emerging history requires its aligned observation reference year")
                     index = self.atb_value(region, mode, powertrain, reference) / self.atb_value(region, mode, fuel, reference)
                     consumption *= index
-                    projection_details["projection_reference_year"] = int(reference)
+                    projection_details.update(
+                        projection_reference_year=int(reference), atb_target_year=int(reference),
+                        atb_powertrain=powertrain, atb_reference_powertrain=fuel,
+                    )
                 analogue = fuel
-                projection_details["source_fuel"] = fuel
+                projection_details.update(source_fuel=fuel, ceud_intensity_target_year=year)
                 treatment = "CEUD_observed_fleet_consumption" if observed else "CEUD_diesel_fleet_ATB_relative_powertrain"
             else:
                 anchor = self.projection_anchor(region, mode, powertrain)
@@ -1305,6 +1335,8 @@ class RoadEfficiencyEvidence:
                 else mode
             )
             source_year = max(base, year)
+            atb_powertrain = powertrain
+            relative_multiplier = 1.0
             if pathway == "intercity" and powertrain != "hev":
                 keys = self.rules["intercity"]["source_keys"]
                 reference = self.regen.loc[
@@ -1325,16 +1357,20 @@ class RoadEfficiencyEvidence:
                 reference_consumption, reference_year = source_point(
                     reference, source_year, "consumption", year_col="source_year"
                 )
-                index = target_consumption / reference_consumption
+                relative_multiplier = target_consumption / reference_consumption
                 source_years = {"relative_source_year": target_year,
-                                "relative_reference_year": reference_year}
-                consumption = (
-                    self.atb_value(region, selected_mode, "diesel", source_year) * index
-                )
-            else:
-                consumption = self.atb_value(
-                    region, selected_mode, powertrain, source_year
-                )
+                                "relative_reference_year": reference_year,
+                                "relative_consumption_multiplier": relative_multiplier}
+                atb_powertrain = "diesel"
+            index = relative_multiplier
+            consumption = self.atb_value(
+                region, selected_mode, atb_powertrain, source_year,
+                interpolate_new_cohort=new_cohort,
+            ) * index
+            projection_details.update(
+                self._atb_source_points(region, selected_mode, atb_powertrain, source_year),
+                atb_mode=selected_mode, atb_powertrain=atb_powertrain, atb_target_year=source_year,
+            )
             if year <= base:
                 historic, reference = (
                     self._ceud_value(region, spec["intensity_table"], spec["intensity"], "MJ/Pkm", year),
@@ -1343,47 +1379,59 @@ class RoadEfficiencyEvidence:
                 base_load = self._load_value(region, mode, base)
                 index = historic / reference
                 consumption *= index * load / base_load
+                projection_details.update(
+                    ceud_intensity_target_year=year, ceud_intensity_reference_year=base,
+                    ceud_load_reference_year=base, ceud_intensity_ratio=index,
+                    ceud_load_ratio=load / base_load,
+                )
             native, treatment = (
                 consumption,
                 "ATB_bus_CEUD_service_intensity_backcast"
                 if pathway == "bus"
                 else "ATB_transit_REGEN_intercity_relative",
             )
+            if new_cohort and pathway == "bus" and year > base:
+                treatment = "ATB_bus_projected_consumption"
         elif pathway == "motorcycle":
             intensity = self._ceud_value(region, spec["intensity_table"], spec["intensity"], "MJ/Pkm", min(year, base))
-            if year > base:
+            projection_details["ceud_intensity_target_year"] = min(year, base)
+            motorcycle = self.rules["motorcycle"]
+            emerging_history = new_cohort and year <= base and powertrain != motorcycle["gasoline_fuel"]
+            if year > base or emerging_history:
                 source = self.gcam.loc[self.gcam.source_variable.eq("intensity")]
                 if set(source.source_unit) != {"MJ/vkm"}:
                     raise ValueError("Unexpected GCAM motorcycle units")
                 incumbent = source.loc[
                     source.source_technology.eq(
-                        self.rules["motorcycle"][self.rules["motorcycle"]["gasoline_fuel"]]
+                        motorcycle[motorcycle["gasoline_fuel"]]
                     )
                 ]
                 target = source.loc[
-                    source.source_technology.eq(self.rules["motorcycle"][powertrain])
+                    source.source_technology.eq(motorcycle[powertrain])
                 ]
                 target_consumption, target_year = source_point(
                     target, year, "source_value", year_col="source_year"
                 )
                 reference_consumption, reference_year = source_point(
-                    incumbent, base, "source_value", year_col="source_year"
+                    incumbent, min(year, base), "source_value", year_col="source_year"
                 )
                 index = target_consumption / reference_consumption
                 source_years = {"index_source_year": target_year, "index_reference_year": reference_year}
             native = intensity * index * load
             treatment = "CEUD_service_intensity_GCAM_vehicle_intensity_index"
+            if emerging_history:
+                treatment = "CEUD_incumbent_GCAM_relative_powertrain_proxy"
         else:
             raise ValueError(f"Unsupported road pathway: {pathway}")
         if pathway in {"ldv", "mhdv"} and year > bridge_year:
             index_powertrain = projection_details.get("projection_index_powertrain", powertrain)
-            available = self._atb_series(region, mode, index_powertrain)["year"]
-            first = int(available.loc[available.le(year)].max())
-            last = int(available.loc[available.ge(year)].min())
-            projection_source_years = [first] if first == last else [first, last]
-            weights = [1.0] if first == last else [(last - year) / (last - first), (year - first) / (last - first)]
-            projection_details["projection_atb_source_years"] = projection_source_years
-            projection_details["projection_atb_source_weights"] = weights
+            projection_details.update(self._atb_source_points(region, mode, index_powertrain, year))
+            projection_details.update(
+                atb_powertrain=index_powertrain, atb_target_year=year,
+                atb_reference_powertrain=anchor["powertrain"] if pathway == "ldv" else index_powertrain,
+                projection_anchor_weights=anchor["weights"],
+                projection_anchor_treatments={y: row["treatment"] for y, row in anchor["observations"].items()},
+            )
         if analogue != index_reference:
             self.findings.add(
                 (
@@ -1410,11 +1458,11 @@ class RoadEfficiencyEvidence:
 def prepare_bus_annual_efficiency_evidence(
     bundle: ConfigBundle, provincial: pd.DataFrame
 ) -> tuple[pd.DataFrame, tuple[Path, ...]]:
-    """Derive annual bus efficiencies from the same source-backed road calculation.
+    """Expose annual bus consumption, loads, and their source-year evidence.
 
     Capacity preparation needs annual values before the capacity-gated Efficiency
     rows can be built. This entrypoint uses the existing numerical evidence class
-    without invoking the full efficiency builder or reading its generated CSV.
+    so stock allocation and the emitted efficiency rows use the same backcast.
     """
     rules = load_harmonization_rules(bundle, "efficiencies")
     conversions = load_conversion_factors(bundle)
@@ -1509,10 +1557,16 @@ def prepare_bus_annual_efficiency_evidence(
     for region in bundle.scenario.geography.regions:
         for owner in owners.itertuples(index=False):
             for year in years:
-                consumption = evidence.derive_consumption(
+                details = evidence.derive_consumption(
                     region, owner.category, owner.sub_category, year
                 )
-                value = consumption["load_factor"] / consumption["native_intensity"]
+                if details is None or details["native_unit"] != "MJ/vkm":
+                    raise ValueError(
+                        f"Missing annual bus consumption in MJ/vkm: {(region, owner.tech, year)}"
+                    )
+                annual = details.copy()
+                consumption = annual.pop("native_intensity")
+                value = annual["load_factor"] / consumption
                 if not np.isfinite(value) or value <= 0:
                     raise ValueError(
                         f"Invalid annual bus efficiency: {(region, owner.tech, year)}"
@@ -1525,8 +1579,10 @@ def prepare_bus_annual_efficiency_evidence(
                         "tech": owner.tech,
                         "powertrain": owner.sub_category,
                         "year": year,
+                        "consumption_mj_per_vkm": consumption,
                         "efficiency": float(value),
                         "units": rules["service_units"]["passenger"],
+                        **annual,
                     }
                 )
     result = pd.DataFrame(records)

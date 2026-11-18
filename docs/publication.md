@@ -1,182 +1,189 @@
 # Reproduce the evidence and publication
 
-The website and PDF use the same substantive Markdown, equations, tables and
-prepared figures. Interactive exploration stays in the notebooks. Rendering the
-documentation does not download transport sources, change a scenario or run ETL.
+The site and PDF use the same prepared Markdown, equations, tables and selected
+figures. Routine rendering uses the checked-in assets. Regenerate evidence when
+a published result changes, and keep the evidence identity with the figure.
 
 ## Prepare model evidence explicitly
 
-!!! warning "Preparation: shared artifact paths"
-    Registered source bytes, reviewed mappings and external-model outputs must already
-    be available as described in [Getting started](getting_started.md). Run this
-    sequence serially: the scenario databases have separate names, but production
-    preparation paths are shared.
+Install the locked documentation dependencies with
+`uv sync --frozen --group docs`. For evidence regeneration, also supply the
+[registered inputs](getting_started.md#install-the-backend). Run preparation and
+exports serially. A separate output database name does not isolate the derived
+inputs, and each notebook expects the evidence from its own preparation route.
+
+### Ontario comparisons, costs and non-road parameters
 
 ```sh
-uv sync --frozen --group docs
-uv run python src/build_transport.py --scenario config/scenarios/validation_baseline.yaml --overwrite
-uv run python -m validation.transportation_research --scenario config/scenarios/validation_baseline.yaml --write-report
-uv run python -m validation.charging_cost_comparison --scenario config/scenarios/validation_baseline.yaml --write-report
-uv run python -m validation.vehicle_cost_diagnostic --scenario config/scenarios/validation_baseline.yaml --write-report
-uv run python src/build_transport.py --scenario config/scenarios/validation_energy_calibration.yaml --overwrite
-uv run python -m validation.ceud_calibration_diagnostic --baseline outputs/sqlite/validation_baseline.sqlite --baseline-report outputs/validation/validation_baseline.json --calibrated outputs/sqlite/validation_energy_calibration.sqlite
-uv run python src/build_transport.py --scenario config/scenarios/validation_energy_calibration_regions.yaml --overwrite
-uv run python src/build_transport.py --scenario config/scenarios/notebook_diagnostics.yaml --overwrite
-uv run python -m validation.documentation_support --write-report --write-nonroad-report
-uv run python scripts/export_documentation_figures.py
+uv run --offline python src/build_transport.py --scenario config/scenarios/validation_baseline.yaml --overwrite
+uv run --offline python -m validation.transportation_research --scenario config/scenarios/validation_baseline.yaml --write-report
+uv run --offline python -m validation.charging_cost_comparison --scenario config/scenarios/validation_baseline.yaml --write-report
+uv run --offline python -m validation.vehicle_cost_diagnostic --scenario config/scenarios/validation_baseline.yaml --write-report
+uv run --offline python -m validation.documentation_support --write-nonroad-report
 ```
 
-!!! note "Comparison basis: keep the builds distinct"
-    The Ontario baseline and calibrated databases use identical fleet, activity,
-    representation, currency and source selections. Their only modeling difference
-    is the explicit energy-calibration switch. The stock/efficiency notebook build
-    uses observed 2023 and [*NHTSA CAFE*](https://www.nhtsa.gov/corporate-average-fuel-economy)/[*EIA NEMS*](https://github.com/EIAgov/NEMS) survival curves for its separate diagnostic
-    purpose. It is **not** the calibration off/on comparison. Figure captions and the
-    manifest retain those distinct identities.
+The Ontario reference is prospective 2025 with fixed MOVES lifetimes and
+representative new LDV ranges. The activity and energy comparison also reads
+curated historical reference evidence. Its fitted energy view requires the
+matched calibration pair below. The cost and non-road figures can be regenerated
+from the Ontario control alone.
 
-The regional calibrated build supplies the ten-region `base_year` anchor
-heatmaps. Run it after the matched Ontario audit: its immutable diagnostic capture
-becomes the calibration notebook's selected evidence, while the saved paired audit
-continues to describe the Ontario OFF/ON databases. The regional capture's Ontario
-slice uses the same methods; broader geography is not part of the paired audit.
-`BCT` retains the backend's existing BC-plus-territories boundary.
+### Optional energy calibration comparisons
 
-The cohort notebook also recalculates both survival alternatives at reference
-2025 across the default regions, using already prepared registered inputs. It
-records those source/configuration hashes and invokes no transport build. Its
-source-based comparisons are distinct from final SQLite off/on checks.
+Build both Ontario cases in the same checkout so their evidence records the same
+input locations. Keep the control database and report. The calibrated case changes
+only the energy-calibration switch. Run the paired check before building the
+regional capture for the anchor heatmaps.
 
-!!! warning "Evidence identity: regenerate changed captures"
-    The commands capture source/configuration hashes and build/database identities.
-    Changed or missing evidence must be regenerated through its owner; editing a
-    capture hash is not a refresh. Local evidence bundles and notebook session state
-    remain ignored. Selected SVGs, their manifest and the exact Ontario share table
-    are the prepared publication inputs that travel with the documentation.
+```sh
+uv run --offline python src/build_transport.py --scenario config/scenarios/validation_energy_calibration.yaml --overwrite
+uv run --offline python -m validation.ceud_calibration_diagnostic --baseline outputs/sqlite/validation_baseline.sqlite --baseline-report outputs/validation/validation_baseline.json --calibrated outputs/sqlite/validation_energy_calibration.sqlite
+uv run --offline python src/build_transport.py --scenario config/scenarios/validation_energy_calibration_regions.yaml --overwrite
+```
 
-!!! warning "Evidence limit: uncaptured intermediate exports"
-    The paired calibration audit uses the baseline build report's database/configuration
-    hashes and 31 efficiency-input fingerprints, together with the calibrated immutable
-    capture. It verifies final uncalibrated/calibrated SQLite rows. Separate baseline
-    preaggregation annual/period exports were not captured, so it does not claim byte
-    equality of those intermediate files. The calibrated capture retains unadjusted
-    annual/period values; focused transformation tests establish common-factor
-    propagation before aggregation.
+The paired audit records input fingerprints and checks final SQLite parameters.
+The regional capture supplies plotted anchor changes for ten regions. The two
+have distinct scopes. The [energy chapter](model/energy.md#optional-ceud-energy-calibration)
+explains the fitted boundary and what the evidence establishes.
 
-## Figure identities and selections
+### Road population, efficiency and retirement
 
-Every nonexempt diagnostic plot has an analytical title and a visible stable ID.
-IDs describe the subject rather than its current cell position; repeated panels
-carry class/powertrain/unit suffixes. Use the ID when requesting a correction.
+```sh
+uv run --offline python src/build_transport.py --scenario config/scenarios/notebook_diagnostics.yaml --overwrite
+uv run --offline python -m validation.documentation_support --write-report
+```
 
-| Notebook | Identity family and purpose |
-| --- | --- |
-| `vehicle_population_diagnosis.py` | `population-*`: mapping coverage, class composition, age and apparent retention. |
-| `stock_cohort_diagnosis.py` | `cohort-*`: acquisitions, survivor calibration, vintage aggregation and retirement. |
-| `ldv_efficiency_diagnosis.py` | `ldv-eff-*`: composition, range shares, consumption bridges and comparisons. |
-| `vehicle_cost_diagnosis.py` | `vehicle-cost-1` to `vehicle-cost-5`: source prices, model investment, age-dependent M&R, service costs and range aggregation. |
-| `ceud_calibration_diagnosis.py` | `ceud-cal-1` to `ceud-cal-4`: closure, factors, coverage and trajectories; `ceud-cal-5-cars` and `ceud-cal-5-trucks`: regional `base_year` anchor heatmaps. |
-| `charging_profile_diagnosis.py` | `charging-profile-1`: the same representative week before and after production full-year utilization rescaling. |
-| `documentation_support.py` | `fleet-100-1`: Ontario marginal compositions; `nonroad-1`: final non-road efficiency parameters. |
+The diagnostic preset captures an Ontario 2023 build for population and
+efficiency. Before opening `stock_cohort_diagnosis.py`, prepare the CEUD source
+tables for all regions in the default scenario. The cohort notebook combines
+those tables with the captured Report A history, reviewed mapping and survival
+inputs, the selected Report 5, and the registered StatCan inputs.
 
-The blanket title/ID requirement exempts exactly
-`growth_constraint_diagnosis.py`, `legacy_comparison_diagnosis.py` and
-`transportation_validation_diagnosis.py`. Three selected plots in the last
-notebook nevertheless share publication IDs: `comparison-charging`,
-`comparison-charging-residual` and `comparison-activity-energy`.
+```sh
+uv run --offline python -m fetching.nrcan_ceud --scenario config/scenarios/default.yaml --no-download
+```
 
-Presentation selections live in `config/parameters/documentation.yaml`; they do
-not control model parameters. The [figure manifest](assets/figures/manifest.json)
-records exported filenames/hashes, generators, actual notebook control values,
-chart units and year domains, and captured evidence identity. It hashes plotted
-data without publishing raw tables. Selective exports use, for example,
-`uv run python scripts/export_documentation_figures.py --groups cost nonroad`;
-the other groups are `notebooks`, `calibration`, `fleet`, `comparison` and `charging`.
-Each requested figure prefix must produce a chart, and duplicate identities fail.
-Essential labels and units are visible in the static figures. Captions
-state what the evidence supports and what it cannot establish.
+The cohort notebook recalculates both survival selections against the 2025
+reference. The Ontario fleet illustration uses separately configured source
+years and reports marginal shares. See [the fleet chapter](model/vehicles.md#ontario-as-100-vehicles)
+for denominators.
 
-## Build and preview the prepared publication
+### Travel survey, charging profiles and charger infrastructure {#charging-profiles-and-charger-infrastructure}
 
-!!! note "Rendering dependency preparation"
-    Install locked dependencies, then prepare the explicitly pinned local Mermaid and
-    MathJax packages. This preparation uses network access; later rendering uses their
-    verified local bytes.
+Prepare the NHTS survey tables and the six registered RAMP runs before opening
+`travel_survey_diagnosis.py` and `ldv_charging_diagnosis.py`, respectively.
+
+```sh
+uv run --offline python -m fetching.nhts_ldv_travel --scenario config/scenarios/validation_charging_nhts_uncontrolled.yaml
+uv run --offline python -m fetching.ramp_run_profiles --scenario config/scenarios/validation_baseline.yaml
+```
+
+The RAMP command validates the frozen source bytes and writes normalized hourly
+evidence. Open `charger_infrastructure_diagnosis.py` after the Ontario control
+above prepares the Dunsky, currency and stock evidence. The [charging](model/charging.md)
+and [infrastructure](model/infrastructure.md) chapters explain the scenarios and
+interpretation limits.
+
+For an explicit charger case with `charging_profiles.travel_behavior_source: none`,
+the following optional screen uses the matching completed SQLite and build report.
+
+```sh
+uv run --offline python -m validation.charger_feasibility --scenario path/to/explicit.yaml --write-report
+```
+
+It tests annual throughput and demand envelopes under the exact equipment
+mix. It does not model hourly operation, upstream supply or cross-period
+investments.
+
+### Growth constraint research
+
+Supply the registered growth evidence, build the default scenario, and prepare
+the diagnostic before opening `growth_constraint_diagnosis.py`. The analysis
+checks that the fleet inputs belong to the selected scenario, so run it before
+building another scenario in the same artifact root.
+
+```sh
+uv run --offline python src/build_transport.py --scenario config/scenarios/default.yaml --overwrite
+uv run --offline python -m parameterization.road_adoption_constraints
+```
+
+To acquire missing evidence, run
+`uv run python -m fetching.technology_growth_evidence --download-missing`.
+Add `--papers-dir <directory>` if you need to register supplied study PDFs. The
+[adoption chapter](model/adoption.md) describes how to interpret the results.
+
+### Export selected figures
+
+```sh
+uv run --offline python scripts/export_documentation_figures.py --groups cost nonroad
+```
+
+Use additional groups `notebooks`, `calibration`, `fleet`, `comparison`,
+`charging` or `infrastructure` after preparing their evidence. Omitting
+`--groups` requests every group. Display selections live in
+[`config/parameters/documentation.yaml`](../config/parameters/documentation.yaml).
+The [figure manifest](assets/figures/manifest.json) records stable IDs, hashes,
+generators, controls, year domains and evidence identity. Use the ID in the
+caption to locate a figure's record. Static exports preserve the documented
+scope even if live notebooks or scenarios are subsequently updated.
+
+The selected SVGs, exact fleet share and non-road parameter tables, and figure
+manifest travel with the publication. Raw captures and notebook session outputs
+remain local. Regenerate changed or missing captures through their producer so
+the configuration and input hashes continue to identify the evidence.
+
+## Build and preview the site
+
+Prepare the pinned Mermaid and MathJax packages once. This is the network-enabled
+part of the documentation build.
 
 ```sh
 uv sync --frozen --group docs
 uv run --group docs python scripts/build_docs.py prepare-assets
-uv run --group docs python scripts/build_docs.py serve
+uv run --offline --group docs python scripts/build_docs.py serve
 ```
 
-Preview the project subpath printed by `serve`, including `/canoe-transportation/`.
-The server builds the preview when it starts. Leave the terminal running, edit and
-save a published Markdown file or its CSS/JavaScript, and wait for the successful
-rebuild: the browser refreshes automatically. No separate build or server restart
-is needed for these edits. The generated scenario page reads
-`config/scenarios/README.md`; edit that canonical source, which is also watched.
-Custom cover and theme templates under `scripts/docs/` are watched too.
+Open the project URL printed by `serve` under `/canoe-transportation/`. MkDocs
+watches published Markdown and assets and refreshes the browser after each
+successful rebuild. The scenario page comes from
+[`config/scenarios/README.md`](../config/scenarios/README.md). For port conflicts,
+use `serve --port 8001`. Stop the server with **Ctrl+C**. Restart after changing
+Python hooks or dependencies.
 
-Stop the server with **Ctrl+C** in its terminal. Restart it after changing Python
-hooks or dependencies. Use `serve --port 8001` if another server occupies the
-default port. The wrapper uses MkDocs' native development server; the equivalent
-direct command is `uv run --group docs mkdocs serve`.
-
-If a rebuild fails, read the error in the terminal, correct the source and save
-again. The browser updates after a successful rebuild. `mkdocs.yml` defines the
-explicit page order and file set; add a new page to `nav` there to publish it.
-Local evidence, raw notebooks, planning files and unrelated documentation are not
-copied into the site. Notebook/source links point to the repository.
-
-Live preview uses a temporary site and does not update the prepared publication
-or its build identity. When edits are ready, create the static site explicitly:
+Preview runs in a temporary site. Create and check the static publication with
+the supported build command.
 
 ```sh
-uv run --group docs python scripts/build_docs.py build
+uv run --offline --group docs python scripts/build_docs.py build
 ```
 
-This strict build checks internal links and assets and writes the configured
-publication output and build identity. Rebuild before exporting a PDF after edits;
-the PDF is not regenerated by live preview. Routine prose and styling edits need
-no transport build or figure export.
+The strict build verifies the site and its internal links and records a build
+identity. `mkdocs.yml` sets the page order and published file set. Repository
+links provide access to source files and notebook code.
 
-## Export the same content as PDF
+## Export the PDF
 
-Install the PDF browser explicitly when using Playwright's bundled Chromium:
+Install Playwright Chromium or select an installed Chrome with
+`pdf --browser-channel chrome`. Rebuild the static site after any source or
+asset edits before exporting.
 
 ```sh
 uv run --group docs playwright install chromium
-uv run --group docs python scripts/build_docs.py pdf
+uv run --offline --group docs python scripts/build_docs.py pdf
 ```
 
-An installed Chrome can instead be selected with
-`uv run --group docs python scripts/build_docs.py pdf --browser-channel chrome`.
-The exporter loads only the prepared local site, waits for equations and Mermaid,
-expands collapsible content, rejects remote requests and broken assets, and checks
-that publication inputs have not changed since the site build. Prose uses A4;
-selected wide/tall figures use A3, and large preserved Mermaid diagrams use A2
-landscape sheets for readability.
+The exporter checks the static build identity, renders the combined print page
+locally, waits for equations and diagrams, and records page review evidence.
+Open `print_page/` from the built site's root to read or print the chapters
+together.
 
-| Deliverable | Configured path |
+| Output | Configured path |
 | --- | --- |
 | Static site | `outputs/documentation/site/` |
-| Complete PDF | `outputs/documentation/canoe_transportation_report.pdf` |
-| Build/render identities and page review images | `outputs/validation/documentation/` |
-| Selected publication assets | `docs/assets/figures/` |
+| Combined PDF | `outputs/documentation/canoe_transportation_report.pdf` |
+| Build/render records and page review images | `outputs/validation/documentation/` |
+| Prepared publication assets | `docs/assets/figures/` |
 
-!!! note "Publishing is an explicit operation"
-    The manual GitHub Actions workflow builds both deliverables from committed prepared
-    assets and uploads a review artifact. Its `deploy` input defaults to false. The
-    optional publishing job targets the repository project site
-    `https://canoe-main.github.io/canoe-transportation/`; enabling Pages or dispatching
-    publication is a separate action. No transport inputs are required for routine
-    site/PDF rendering.
-
-## Interpret the checks separately
-
-!!! tip "Interpret each check on its own basis"
-    Configuration checks establish supported selections; parameter checks establish
-    keys, units, coverage and conservation; source/DQ checks establish traceability;
-    legacy comparisons establish agreement on their recorded comparison basis.
-    Calibration closure establishes agreement with fitted totals. None of those
-    checks is an optimization run or independent validation of each technology.
-    Reported residuals and unsupported coverage remain part of the research result.
+The manual documentation workflow builds the site and PDF from committed
+assets and uploads a review artifact. Deployment to GitHub Pages is a separate
+option and defaults to off.

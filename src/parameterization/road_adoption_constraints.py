@@ -30,9 +30,11 @@ from fetching.technology_growth_evidence import (
     normalize_hatch,
     registered_assets,
 )
+from parameterization.build_existing_capacity import read_capacity_evidence_fingerprints
 from utils import (
     ConfigBundle,
     file_sha256,
+    harmonization_rule_paths,
     load_config_bundle,
     load_harmonization_rules,
     load_yaml,
@@ -132,7 +134,6 @@ class GrowthDiagnosticConfig(ResearchModel):
     diagnostic_only: Literal[True]
     scenario: str
     snapshot_year: int
-    legacy_notebook: str
     source_assets: dict[str, str]
     curation: CurationControls
     metric_families: dict[str, str]
@@ -845,9 +846,12 @@ def existing_capacity_references(
             "road_existing_capacity_age_cohorts.csv",
         ),
     }
+    fingerprints = read_capacity_evidence_fingerprints(bundle, list(paths.values()))
     capacity = pd.read_csv(paths["capacity"])
     shares = pd.read_csv(paths["shares"])
     cohorts = pd.read_csv(paths["cohorts"])
+    if any(file_sha256(path) != digest for path, digest in fingerprints.items()):
+        raise ValueError("Existing-capacity evidence changed while loading adoption anchors")
     if (
         set(capacity.units) != {"k vehicles"}
         or capacity.duplicated(["region", "tech", "vintage"]).any()
@@ -856,26 +860,27 @@ def existing_capacity_references(
             "Existing road capacity has incompatible units or duplicate keys"
         )
     keys = ["region", "road_class", "tech", "vintage"]
-    uncleaned = shares.groupby(keys, as_index=False).capacity.sum()
+    uncleaned = shares.groupby(keys, as_index=False)[["capacity", "solver_capacity_k_vehicles"]].sum()
     expected = uncleaned.loc[
-        uncleaned.capacity.ge(bundle.scenario.existing_capacity.cleanup_tolerance)
-        & uncleaned.capacity.gt(0)
+        uncleaned.solver_capacity_k_vehicles.ge(bundle.scenario.existing_capacity.cleanup_tolerance)
+        & uncleaned.solver_capacity_k_vehicles.gt(0),
+        [*keys, "solver_capacity_k_vehicles"],
     ]
     reconciliation = capacity.merge(
         expected,
         on=keys,
         how="outer",
-        suffixes=("_processed", "_audit"),
         indicator=True,
+        validate="one_to_one",
     )
     if not reconciliation._merge.eq("both").all() or not np.allclose(
-        reconciliation.capacity_processed,
-        reconciliation.capacity_audit,
+        reconciliation.capacity,
+        reconciliation.solver_capacity_k_vehicles,
         rtol=0,
         atol=1e-7,
     ):
         raise ValueError(
-            "Current processed capacity differs from cleanup of the fuel-share audit"
+            "Current processed capacity differs from cleanup of the solver-capacity audit"
         )
     audited_totals = (
         uncleaned.groupby(["region", "road_class"]).capacity.sum().sort_index()
@@ -889,12 +894,16 @@ def existing_capacity_references(
         raise ValueError(
             "Current uncleaned road fuel distribution does not conserve class stock"
         )
+    # The deployment reference uses physical survivors for the published support.
+    # In curve mode, installed-equivalent capacity can exceed those survivors.
+    physical_stock = uncleaned.merge(capacity[keys], on=keys, validate="one_to_one")
     LOGGER.info(
-        "Existing capacity reconciled after documented epsilon=%s; removed %s k vehicles",
+        "Existing solver capacity reconciled after documented epsilon=%s; excluded %s k vehicles from adoption anchors",
         bundle.scenario.existing_capacity.cleanup_tolerance,
-        uncleaned.capacity.sum() - capacity.capacity.sum(),
+        uncleaned.capacity.sum() - physical_stock.capacity.sum(),
     )
-    template = pd.read_csv(resolve_input_path(bundle, "template", "technology.csv"))
+    template_path = resolve_input_path(bundle, "template", "technology.csv")
+    template = pd.read_csv(template_path)
     rules = load_harmonization_rules(bundle, "road_stocks_and_demands")[
         "existing_capacity"
     ]
@@ -903,8 +912,8 @@ def existing_capacity_references(
     member_rows = []
     for region in sorted(capacity.region.unique()):
         for road_class, spec in config.target_classes.items():
-            local = capacity.loc[
-                capacity.region.eq(region) & capacity.road_class.eq(road_class)
+            local = physical_stock.loc[
+                physical_stock.region.eq(region) & physical_stock.road_class.eq(road_class)
             ]
             total = float(local.capacity.sum())
             source_total = float(cohort_totals.loc[(region, road_class)])
@@ -1011,7 +1020,6 @@ def existing_capacity_references(
                         map(str, sorted(evidence.source_region.dropna().unique()))
                     ),
                     "proxy_geography": bool(evidence.proxy_geography.any()),
-                    "dashboard_override": bool(evidence.dashboard_override.any()),
                     "latest_existing_label": latest,
                     "latest_surviving_cohort_k": float(
                         selected.loc[selected.vintage.eq(latest), "capacity"].sum()
@@ -1041,13 +1049,8 @@ def existing_capacity_references(
     return (
         pd.DataFrame(rows),
         pd.DataFrame(member_rows).drop_duplicates(),
-        {
-            p.relative_to(bundle.repo_root).as_posix(): file_sha256(p)
-            for p in [
-                *paths.values(),
-                resolve_input_path(bundle, "template", "technology.csv"),
-            ]
-        },
+        {path.relative_to(bundle.repo_root).as_posix(): digest
+         for path, digest in (fingerprints | {template_path: file_sha256(template_path)}).items()},
     )
 
 
@@ -1494,18 +1497,30 @@ def implementation_hashes(bundle: ConfigBundle) -> dict[str, str]:
         "src/parameterization/road_adoption_constraints.py",
         "src/fetching/technology_growth_evidence.py",
         "src/validation/config_models.py",
-        "config/parameters/rules.yaml",
-        "config/sources.yaml",
-        "config/paths.yaml",
         "uv.lock",
-        bundle.scenario_path.relative_to(bundle.repo_root).as_posix(),
-        resolve_parameter_path(bundle, "technology_growth_diagnostic.yaml")
-        .relative_to(bundle.repo_root)
-        .as_posix(),
     ]
-    return {
-        name: file_sha256(resolve_repo_path(bundle.repo_root, name)) for name in files
+    fingerprints = {}
+    for name in files:
+        path = resolve_repo_path(bundle.repo_root, name)
+        if not path.is_relative_to(bundle.repo_root):
+            raise ValueError(f"Diagnostic implementation file escapes repository root: {name}")
+        fingerprints[name] = file_sha256(path)
+    rule_paths = harmonization_rule_paths(bundle)
+    controls = {
+        "rules": rule_paths[0],
+        **{f"rules:{path.name}": path for path in rule_paths[1:]},
+        "sources": bundle.sources_path,
+        "paths": bundle.paths_path,
+        "scenario": bundle.scenario_path,
+        "technology_growth_diagnostic": resolve_parameter_path(bundle, "technology_growth_diagnostic.yaml"),
     }
+    for role, path in controls.items():
+        label = (path.relative_to(bundle.repo_root).as_posix() if path.is_relative_to(bundle.repo_root)
+                 else f"configuration:{role}")
+        if label in fingerprints:
+            raise ValueError(f"Diagnostic input conflicts with a reserved configuration role: {label}")
+        fingerprints[label] = file_sha256(path)
+    return fingerprints
 
 
 def build_diagnostic(bundle: ConfigBundle) -> dict[str, pd.DataFrame]:
@@ -1687,7 +1702,7 @@ def build_diagnostic(bundle: ConfigBundle) -> dict[str, pd.DataFrame]:
     summary["unresolved"] = [
         "Candidate values are diagnostic: review analogue transfer, mature HEV/diesel scope and class boundaries.",
         "Absent FCEV/CNG existing stock is missing representation, not a measured zero.",
-        "MHDV 23-10-0308 is registered stock, not new sales; dashboard override is a different-year sales share.",
+        "23-10-0308 is registered stock, not new sales; its configured lower medium-weight group proxies the full CEUD medium-truck fuel mix, while heavy trucks retain diesel-only production stock.",
         "Pooled light-truck registrations cannot be independently assigned to passenger and freight model classes.",
         "Temoa rates are direct transitions; unequal periods/first-period reference years need an upstream contract.",
         "Temoa EX/N group identity and lifetime-weighted first capacity reference require review before promotion.",

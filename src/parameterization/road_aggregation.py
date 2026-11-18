@@ -791,7 +791,7 @@ def mapping_coverage(mapped: pd.DataFrame) -> pd.DataFrame:
 
 def unresolved_mapping_reasons(
     mapped: pd.DataFrame,
-    candidates: pd.DataFrame,
+    candidates: pd.DataFrame | None,
     mapping: pd.DataFrame,
     manual_evidence: pd.DataFrame | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -826,7 +826,17 @@ def unresolved_mapping_reasons(
             ]
         )
 
-    ranked = candidates.copy()
+    candidate_columns = [
+        "mto_make_code", "mto_model_code", "candidate_status", "canonical_make",
+        "canonical_model", "nrcan_vehicle_class", "nlr_atb_class", "match_method",
+        "model_similarity", "rating_model_year_from", "rating_model_year_to",
+        "overlap_years", "rating_model_labels",
+    ]
+    ranked = (
+        candidates.copy()
+        if candidates is not None
+        else pd.DataFrame(columns=[*candidate_columns, "candidate_rank"])
+    )
     if "rating_model_labels" not in ranked.columns:
         ranked["rating_model_labels"] = pd.NA
     ranked["_candidate_rank"] = pd.to_numeric(
@@ -848,24 +858,7 @@ def unresolved_mapping_reasons(
             dropna=False,
         )
         .head(1)
-        .loc[
-            :,
-            [
-                "mto_make_code",
-                "mto_model_code",
-                "candidate_status",
-                "canonical_make",
-                "canonical_model",
-                "nrcan_vehicle_class",
-                "nlr_atb_class",
-                "match_method",
-                "model_similarity",
-                "rating_model_year_from",
-                "rating_model_year_to",
-                "overlap_years",
-                "rating_model_labels",
-            ],
-        ]
+        .loc[:, candidate_columns]
         .rename(
             columns={
                 "canonical_make": "candidate_canonical_make",
@@ -966,6 +959,12 @@ def unresolved_mapping_reasons(
         "no_applicable_reviewed_interval",
         interval_details,
     )
+    if candidates is None:
+        assign(
+            unresolved["unresolved_reason"].eq(""),
+            "no_reviewed_source_link",
+            "No captured reviewed link establishes the identity and class for this source key and model year.",
+        )
     promotion_eligible = (
         unresolved["manual_promotion_eligible"]
         .fillna(False)
@@ -1441,7 +1440,7 @@ def load_wards_legacy_comparison(bundle: ConfigBundle) -> pd.DataFrame:
 
 
 def build_road_aggregation_artifacts(
-    scenario_path: str | Path,
+    scenario_path: str | Path | ConfigBundle,
 ) -> Path:
     """Apply the reviewed mapping and publish runtime aggregation products."""
     bundle = load_config_bundle(scenario_path)
@@ -1498,58 +1497,45 @@ def build_road_aggregation_artifacts(
     return output_dir
 
 
-def build_mapping_diagnostic_artifacts(scenario_path: str | Path) -> Path:
-    """Explicitly regenerate mapping candidates and review diagnostics."""
+def build_mapping_diagnostic_artifacts(
+    scenario_path: str | Path | ConfigBundle, *, include_candidates: bool = True,
+) -> Path:
+    """Publish mapping review views, optionally running development-only candidate search."""
     bundle = load_config_bundle(scenario_path)
     rules = module_rules(bundle)
     ontario_rules = load_harmonization_rules(bundle, ONTARIO_RULE_KEY)
     rating_rules = load_harmonization_rules(bundle, RATINGS_RULE_KEY)
     source_dir = resolve_artifact_path(bundle, "ontario_vehicle_population")
     output_dir = resolve_artifact_path(bundle, "vehicle_mapping_review")
-    current_stock = pd.read_csv(
-        source_dir / str(ontario_rules["current_stock_file"]),
-        low_memory=False,
-    )
     mapping = reference_mto_mapping(
         load_vehicle_reference(bundle), rules, rating_rules["vehicle_class_harmonization"],
     )
     ratings = load_rating_evidence(bundle, rules=rules)
-    candidates = generate_mapping_candidates(
-        current_stock,
-        ratings,
-        composition_rules=load_harmonization_rules(bundle, "efficiencies")["ratings"]["composition"],
-        candidates_per_key=int(
-            rules["mapping_bootstrap"]["candidate_rows_per_key"]
-        ),
-        similarity_scores={
-            str(name): float(score)
-            for name, score in rules["mapping_bootstrap"][
-                "candidate_similarity_scores"
-            ].items()
-        },
-        canonical_aliases={
-            str(source): str(target)
-            for source, target in rules["canonical_aliases"].items()
-        },
-    )
-    mapped = apply_vehicle_mapping(
-        current_stock,
-        mapping,
-        accepted_statuses={
-            str(status) for status in rules["accepted_mapping_statuses"]
-        },
-    )
+    composition_rules = load_harmonization_rules(bundle, "efficiencies")["ratings"]["composition"]
+    current_stock = pd.read_csv(source_dir / str(ontario_rules["current_stock_file"]), low_memory=False)
+    mapped = apply_vehicle_mapping(current_stock, mapping, accepted_statuses=set(rules["accepted_mapping_statuses"]))
     coverage = mapping_coverage(mapped)
-    # Residual inference evidence is optional development context. It cannot
-    # establish or replace a runtime identity from the reviewed crosswalk.
+    candidates = None
     manual_evidence = None
-    manual_filename = rules["mapping_bootstrap"].get("manual_evidence_file")
-    if manual_filename:
-        manual_path = resolve_input_path(bundle, "manual", str(manual_filename))
-        if manual_path.is_file():
-            manual_evidence = pd.read_csv(manual_path, dtype=str, keep_default_na=False)
-        else:
-            logging.info("Skipped unavailable development-only MTO residual evidence: %s", manual_path)
+    if include_candidates:
+        candidates = generate_mapping_candidates(
+            current_stock, ratings, composition_rules=composition_rules,
+            candidates_per_key=int(rules["mapping_bootstrap"]["candidate_rows_per_key"]),
+            similarity_scores={
+                str(name): float(score)
+                for name, score in rules["mapping_bootstrap"]["candidate_similarity_scores"].items()
+            },
+            canonical_aliases={str(source): str(target) for source, target in rules["canonical_aliases"].items()},
+        )
+        manual_filename = rules["mapping_bootstrap"].get("manual_evidence_file")
+        if manual_filename:
+            manual_path = resolve_input_path(bundle, "manual", str(manual_filename))
+            if manual_path.is_file():
+                manual_evidence = pd.read_csv(manual_path, dtype=str, keep_default_na=False)
+            else:
+                logging.info("Skipped unavailable development-only MTO residual evidence: %s", manual_path)
+    else:
+        logging.info("Attributing unresolved MTO stock using reviewed links and source observations")
     unresolved_detail, unresolved_summary = unresolved_mapping_reasons(mapped, candidates, mapping, manual_evidence)
     unresolved = (
         mapped.loc[mapped["mapping_outcome"].eq("unmapped")]
@@ -1582,7 +1568,6 @@ def build_mapping_diagnostic_artifacts(scenario_path: str | Path) -> Path:
         .head(int(rules["top_observations_per_ceud_class"]))
     )
     outputs = {
-        rules["candidate_file"]: candidates,
         rules["coverage_file"]: coverage,
         rules["unresolved_file"]: unresolved,
         rules["unresolved_reason_detail_file"]: unresolved_detail,
@@ -1593,10 +1578,12 @@ def build_mapping_diagnostic_artifacts(scenario_path: str | Path) -> Path:
         rules["vehicle_class_evidence_file"]: build_rating_model_catalog(
             ratings,
             mapping_columns=[str(column) for column in rules["mapping_columns"]],
-            composition_rules=load_harmonization_rules(bundle, "efficiencies")["ratings"]["composition"],
+            composition_rules=composition_rules,
         ),
         rules["top_observations_file"]: top,
     }
+    if candidates is not None:
+        outputs[rules["candidate_file"]] = candidates
     for filename, frame in outputs.items():
         write_dataframe_atomic(frame, output_dir / str(filename))
     return output_dir

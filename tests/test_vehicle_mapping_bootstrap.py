@@ -4,6 +4,7 @@ import sys
 import pandas as pd
 import pytest
 
+from fetching import fueleconomy_vehicles
 import parameterization.road_aggregation as road_aggregation
 from parameterization.vehicle_reference import load_vehicle_reference, reference_mto_mapping
 from parameterization.vehicle_mapping_bootstrap import (
@@ -29,7 +30,7 @@ from utils import (
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SCENARIO = "config/scenarios/legacy_comparison.yaml"
+SCENARIO = "config/scenarios/validation_opening_periods.yaml"
 
 
 def _bootstrap_rules() -> dict[str, object]:
@@ -755,9 +756,9 @@ def test_bootstrap_accepts_short_alphanumeric_model_with_mto_suffix() -> None:
 
 
 def test_runtime_reads_but_does_not_overwrite_reviewed_mapping(
-    monkeypatch,
+    monkeypatch, isolated_legacy_bundle,
 ) -> None:
-    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    bundle = isolated_legacy_bundle
     rules = road_aggregation.module_rules(bundle)
     reference = load_vehicle_reference(bundle)
     before = {path: path.read_bytes() for path in reference.paths}
@@ -785,7 +786,7 @@ def test_runtime_reads_but_does_not_overwrite_reviewed_mapping(
             ),
         )
 
-    road_aggregation.build_road_aggregation_artifacts(SCENARIO)
+    road_aggregation.build_road_aggregation_artifacts(bundle)
 
     assert all(path.read_bytes() == content for path, content in before.items())
     assert not set(path.resolve() for path in reference.paths).intersection(written_paths)
@@ -833,12 +834,33 @@ def test_bootstrap_cannot_write_parameter_configuration(filename, monkeypatch):
     from types import SimpleNamespace
     from parameterization import vehicle_mapping_bootstrap as bootstrap
 
+    monkeypatch.chdir(REPO_ROOT)
     monkeypatch.setattr(bootstrap, "parse_args", lambda: SimpleNamespace(
         scenario=SCENARIO, output=REPO_ROOT / "config/parameters" / filename,
     ))
     monkeypatch.setattr(bootstrap, "build_bootstrap_mapping", lambda *_args: pytest.fail("proposal processing before output safety check"))
     with pytest.raises(ValueError, match="proposals only"):
         bootstrap.main()
+
+
+def test_bootstrap_protects_selected_external_parameter_directory_without_reading_rule_files(monkeypatch, tmp_path):
+    from dataclasses import replace
+    from types import SimpleNamespace
+    from parameterization import vehicle_mapping_bootstrap as bootstrap
+
+    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    controls = tmp_path / "selected-parameters"
+    bundle = replace(bundle, paths=bundle.paths.model_copy(update={
+        "config": bundle.paths.config.model_copy(update={"parameters": str(controls)}),
+    }))
+    monkeypatch.setattr(bootstrap, "load_config_bundle", lambda *_: bundle)
+    monkeypatch.setattr(bootstrap, "parse_args", lambda: SimpleNamespace(
+        scenario=SCENARIO, output=controls / "transport_costs.yaml",
+    ))
+    monkeypatch.setattr(bootstrap, "build_bootstrap_mapping", lambda *_args: pytest.fail("proposal before output guard"))
+    with pytest.raises(ValueError, match="proposals only"):
+        bootstrap.main()
+    assert not controls.exists()
 
 
 def test_bootstrap_default_scenario_is_a_supported_existing_entrypoint(monkeypatch) -> None:
@@ -869,8 +891,20 @@ def test_rebuild_preserves_unresolved_identity_intervals_and_rejects_positive_pr
     assert remaining.loc[remaining.mto_model_code.eq("CRV"), "model_year"].tolist() == [2020]
 
 
-def test_repository_mapping_has_material_scale_and_all_ldv_classes() -> None:
-    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+def test_repository_mapping_has_material_scale_and_all_ldv_classes(
+    isolated_legacy_bundle, tmp_path, monkeypatch,
+) -> None:
+    bundle = isolated_legacy_bundle
+    fuel_subdir = fueleconomy_vehicles.module_rules(bundle)["interim_subdir"]
+
+    def private_fuel_path(configured, key, *parts):
+        if key == "interim" and parts and str(parts[0]) == fuel_subdir:
+            return tmp_path.joinpath("fuel_classes", *parts[1:])
+        return resolve_input_path(configured, key, *parts)
+
+    monkeypatch.setattr(fueleconomy_vehicles, "resolve_input_path", private_fuel_path)
+    monkeypatch.setattr(road_aggregation, "resolve_input_path", private_fuel_path)
+    fueleconomy_vehicles.fetch_and_normalize(bundle, download=False)
     rules = road_aggregation.module_rules(bundle)
     rating_rules = load_harmonization_rules(
         bundle,
@@ -931,91 +965,8 @@ def test_repository_mapping_has_material_scale_and_all_ldv_classes() -> None:
         ),
         low_memory=False,
     )
-    reaudit_keys, reaudit_cutoff, _ = latest_stock_reaudit_keys(
-        current_stock,
-        minimum_model_year=None,
-        quantile=float(
-            rules["mapping_bootstrap"]["high_stock_reaudit_quantile"]
-        ),
-    )
-    assert reaudit_cutoff == 932
-    assert len(reaudit_keys) == 983
-
-    bootstrap = pd.read_csv(
-        resolve_artifact_path(
-            bundle,
-            "vehicle_mapping_review",
-            rules["bootstrap_evidence_file"],
-        ),
-        low_memory=False,
-    )
-    bootstrap_keys = pd.Series(
-        list(zip(bootstrap["mto_make_code"], bootstrap["mto_model_code"])),
-        index=bootstrap.index,
-    )
-    temporal_floor = int(
-        rules["mapping_bootstrap"]["temporal_validation_minimum_model_year"]
-    )
-    upper_half_temporal_scope = bootstrap.loc[
-        bootstrap_keys.isin(reaudit_keys)
-        & bootstrap["model_year"].ge(temporal_floor)
-    ]
-    assert not upper_half_temporal_scope.empty
-    assert (
-        upper_half_temporal_scope["year_resolution"].eq("exact_mto_model_year")
-        | upper_half_temporal_scope["temporal_validation_status"].eq("confirmed")
-        | upper_half_temporal_scope["year_resolution"].eq(
-            "approved_current_candidate_similarity"
-        )
-    ).all()
-    assert not upper_half_temporal_scope["model_match_method"].str.contains(
-        "manual", case=False, na=False
-    ).any()
-    approved_similarity = bootstrap.loc[
-        bootstrap["year_resolution"].eq(
-            "approved_current_candidate_similarity"
-        )
-    ]
-    assert not approved_similarity.empty
-    assert approved_similarity["candidate_model_similarity"].ge(
-        float(
-            rules["mapping_bootstrap"]["accepted_candidate_model_similarity"]
-        )
-    ).all()
-    assert approved_similarity["candidate_match_method"].notna().all()
-
-    superseded_amg_gt_codes = {
-        "FBG",
-        "4MG",
-        "0GG",
-        "KMG",
-        "ZFG",
-        "5JG",
-        "AFG",
-        "3GG",
-        "0JG",
-        "3FG",
-        "YCG",
-        "V0G",
-    }
-    retained_amg_gt = bootstrap.loc[
-        bootstrap["canonical_model"].str.contains("AMG GT", case=False, na=False)
-    ]
-    assert superseded_amg_gt_codes.isdisjoint(
-        set(retained_amg_gt["mto_model_code"])
-    )
-    retained_amg_gt_temporal_scope = retained_amg_gt.loc[
-        retained_amg_gt["model_year"].ge(temporal_floor)
-    ]
-    assert (
-        retained_amg_gt_temporal_scope["year_resolution"].eq(
-            "exact_mto_model_year"
-        )
-        | retained_amg_gt_temporal_scope["temporal_validation_status"].eq(
-            "confirmed"
-        )
-    ).all()
-
+    # Production consumes the reviewed identity bank. Generated bootstrap
+    # proposals and historical review counts remain explicit review operations.
     mapped = road_aggregation.apply_vehicle_mapping(
         current_stock,
         mapping,

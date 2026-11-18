@@ -31,8 +31,8 @@ from utils import (
     load_config_bundle,
     load_harmonization_rules,
     resolve_artifact_path,
+    resolve_configured_path,
     resolve_input_path,
-    resolve_parameter_path,
     write_dataframe_atomic,
 )
 from utils.vehicle_labels import (
@@ -44,7 +44,7 @@ from utils.vehicle_labels import (
 LOGGER = logging.getLogger(__name__)
 RATINGS_RULE_KEY = "nrcan_fuel_consumption_ratings"
 VPIC_MODEL_YEAR_RULE_KEY = "vpic_model_years"
-DEFAULT_SCENARIO = "config/scenarios/legacy_comparison.yaml"
+DEFAULT_SCENARIO = "config/scenarios/validation_opening_periods.yaml"
 MANUAL_DERIVED_COLUMNS = [
     "canonical_make",
     "candidate_pass_agreement",
@@ -1739,7 +1739,7 @@ def main() -> None:
     args = parse_args()
     bundle = load_config_bundle(args.scenario)
     output_path = (args.output if args.output.is_absolute() else bundle.repo_root / args.output).resolve()
-    parameters = resolve_parameter_path(bundle, "rules.yaml").parent.resolve()
+    parameters = resolve_configured_path(bundle, "config", "parameters").resolve()
     if output_path.is_relative_to(parameters):
         raise ValueError("Mapping bootstrap emits proposals only; it cannot write authoritative parameter configuration")
     (

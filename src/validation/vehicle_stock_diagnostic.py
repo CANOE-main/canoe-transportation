@@ -48,8 +48,11 @@ def _historical_mapping_evidence(
         "candidate_model_similarity": "model_similarity", "rating_model_year_from": "rating_model_year_from",
         "rating_model_year_to": "rating_model_year_to", "overlap_years": "overlap_years",
         "rating_model_labels": "rating_model_labels"}
-    candidates = latest_detail.reindex(columns=list(names)).rename(columns=names)
-    candidates = candidates.drop_duplicates(["mto_make_code", "mto_model_code"]).assign(candidate_rank=1)
+    candidates = None
+    if "candidate_status" in latest_detail and latest_detail.candidate_status.notna().any():
+        # Earlier captures may include advisory development candidate evidence.
+        candidates = latest_detail.reindex(columns=list(names)).rename(columns=names)
+        candidates = candidates.drop_duplicates(["mto_make_code", "mto_model_code"]).assign(candidate_rank=1)
     detail, _ = unresolved_mapping_reasons(mapped, candidates, mapping)
     detail = detail.reindex(columns=list(dict.fromkeys([
         *detail.columns, "unresolved_reason", "unresolved_reason_detail",

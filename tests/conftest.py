@@ -26,7 +26,7 @@ def legacy_bundle():
     from utils import load_config_bundle
     from validation.config_models import ScenarioConfig
 
-    bundle = load_config_bundle("config/scenarios/legacy_comparison.yaml", repo_root=REPO_ROOT)
+    bundle = load_config_bundle("config/scenarios/validation_opening_periods.yaml", repo_root=REPO_ROOT)
     payload = bundle.scenario.model_dump(mode="python")
     payload["periods"].update(period_mode="legacy", existing=[2000, 2005, 2010, 2015, 2020, 2023])
     payload["lifetimes"].update(survival_curves=False)
@@ -73,7 +73,7 @@ def isolated_legacy_bundle(legacy_bundle, tmp_path_factory):
         yaml.safe_dump(isolated.scenario.model_dump(mode="json", by_alias=True)),
         encoding="utf-8",
     )
-    for section in ("inputs", "outputs", "legacy", "config"):
+    for section in ("inputs", "outputs", "config"):
         for key in getattr(isolated.paths, section).model_dump():
             assert resolve_configured_path(isolated, section, key).is_relative_to(directory)
     for family in isolated.paths.artifacts:

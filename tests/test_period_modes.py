@@ -13,7 +13,7 @@ from pydantic import ValidationError
 
 from validation.config_models import ScenarioPeriods
 import build_transport
-from utils import resolve_artifact_path
+from utils import load_config_bundle, resolve_artifact_path
 
 
 def grid(mode: str = "prospective", **updates) -> ScenarioPeriods:
@@ -59,12 +59,22 @@ def test_irregular_existing_labels_partition_observations_without_repeating_year
         assert all(periods.existing_vintage(year) == vintage for year in periods.historical_years(vintage))
 
 
-@pytest.mark.parametrize("period,end", [(2025, 2030), (2045, 2050)])
-def test_future_projection_years_preserve_the_mixed_legacy_path(period, end):
-    assert grid().projection_year(period, legacy_at_end=True) == end
-    assert grid().projection_year(period, legacy_at_end=False) == end
-    assert grid("legacy").projection_year(period, legacy_at_end=True) == end
-    assert grid("legacy").projection_year(period, legacy_at_end=False) == period
+@pytest.mark.parametrize("period,end", [(2025, 2030), (2030, 2035), (2045, 2050)])
+def test_future_conditions_use_one_scenario_target(period, end):
+    prospective, legacy = grid(), grid("legacy")
+    assert prospective.evaluation_year(period) == end
+    assert legacy.evaluation_year(period) == period
+    assert prospective.period_end(period) == legacy.period_end(period) == end
+    assert list(legacy.evaluation_window(period)) == list(range(period - 4, period + 1))
+    assert prospective.audit()["new_road_efficiency_years"][str(period)] == [end]
+
+
+def test_trailing_window_uses_configured_step_and_rejects_unmodelled_years():
+    periods = grid("legacy", model=[2025, 2028], step=3)
+    assert list(periods.evaluation_window(2025)) == [2023, 2024, 2025]
+    assert periods.end_of_horizon == 2031
+    with pytest.raises(ValueError, match="Unknown model period"):
+        periods.evaluation_year(periods.end_of_horizon)
 
 
 def test_period_modes_reject_unusable_or_ambiguous_grids():
@@ -80,11 +90,37 @@ def test_period_modes_reject_unusable_or_ambiguous_grids():
         ScenarioPeriods.model_validate(payload)
 
 
+@pytest.mark.parametrize("mode", ["legacy", "prospective"])
+def test_standalone_grid_follows_scenario_instead_of_baseline_template(tmp_path, mode):
+    bundle = load_config_bundle("config/scenarios/default.yaml")
+    existing = [2000, 2022] + ([2023] if mode == "legacy" else [])
+    periods = grid(mode, existing=existing, model=[2025, 2028], step=3)
+    bundle = replace(bundle, scenario=bundle.scenario.model_copy(update={"periods": periods}))
+    (tmp_path / "time_period.csv").write_text(
+        "sequence,period,flag\n6,2000,e\n7,2021,e\n8,2023,e\n10,2025,f\n11,2030,f\n14,2050,f\n",
+        encoding="utf-8",
+    )
+    specification = next(row for row in build_transport.STANDALONE_BASE_TABLES if row.table == "time_period")
+    with sqlite3.connect(":memory:") as connection:
+        build_transport.create_v4_schema(connection)
+        rows, report = build_transport._prepare_base_table(
+            connection, specification, tmp_path, bundle, "test-structure",
+        )
+    expected = [(year, "e") for year in existing] + [(2025, "f"), (2028, "f"), (2031, "f")]
+    assert [(row.period, row.flag) for row in rows] == expected
+    assert report.inserted_rows == len(expected)
+    assert [row.sequence for row in rows] == (
+        [6, None, 8, 10, None, None] if mode == "legacy" else [None, None, 0, 1, 2]
+    )
+
+
 @pytest.fixture(scope="module")
-def prepared_modes(tmp_path_factory, legacy_bundle):
+def prepared_modes(isolated_legacy_bundle):
     """Exercise both complete offline database paths with isolated artifacts."""
-    root = Path(__file__).resolve().parents[1]
-    directory = tmp_path_factory.mktemp("period_parameter_paths")
+    legacy_bundle = isolated_legacy_bundle
+    root = legacy_bundle.repo_root
+    directory = root / "period_parameter_paths"
+    directory.mkdir()
     normalized = directory / "normalized_inputs"
     shutil.copytree(root / "inputs/1_interim", normalized)
     results = {}
@@ -114,7 +150,7 @@ def prepared_modes(tmp_path_factory, legacy_bundle):
             }))
             destination = directory / mode
             processed = destination / "processed"
-            shutil.copytree(root / "inputs/2_processed", processed)
+            processed.mkdir(parents=True)
             routes = {}
             for name, route in bundle.paths.artifacts.items():
                 if route.layer == "processed":
@@ -145,6 +181,9 @@ def prepared_modes(tmp_path_factory, legacy_bundle):
                 if route.layer in {"processed", "interim", "input_validation", "output_validation", "logs", "database"}:
                     assert Path(route.path).is_relative_to(directory)
             bundle = replace(bundle, paths=paths)
+            # Rebuild prerequisite parameter families (including road aggregation)
+            # into this mode's empty output routes before preparing contributions.
+            build_transport.prepare_scenario_inputs(bundle, download=False)
             report = build_transport.bootstrap_database(
                 bundle=bundle, template_dir=root / "inputs/0_canoe_template",
                 database_path=destination / "transport.sqlite",
@@ -188,10 +227,13 @@ def test_all_future_purchase_paths_use_end_conditions_in_prospective_mode(prepar
     for tech in ("T_LDV_C_GSL_N", "T_LDV_C_BEV150_N", "T_LDV_M_GSL_N"):
         assert by_mode["prospective"][tech, 2025] == pytest.approx(by_mode["legacy"][tech, 2030])
     for mode, (bundle, contribution) in prepared_modes.items():
-        assert contribution.cost_audit["period_mapping"]["cost_and_charger_years"]["2025"] == (2030 if mode == "prospective" else 2025)
+        target = 2030 if mode == "prospective" else 2025
+        assert contribution.cost_audit["period_mapping"]["evaluation_years"]["2025"] == target
         assert contribution.efficiency_rows
         source = pd.read_csv(resolve_artifact_path(bundle, "efficiencies_interim") / "annual_efficiency_evidence.csv")
-        assert set(source.loc[source.vintage.eq(2025), "source_year"]) == {2030}
+        assert set(source.loc[source.vintage.eq(2025), "source_year"]) == (
+            {2030} if mode == "prospective" else {2021, 2022, 2023, 2024, 2025}
+        )
 
 
 def test_charger_vintages_costs_and_utilization_follow_the_selected_mode(prepared_modes):
@@ -211,14 +253,18 @@ def test_charger_vintages_costs_and_utilization_follow_the_selected_mode(prepare
     assert prospective.to_dict() == legacy.to_dict()
 
 
-def test_prospective_sqlite_contains_the_configured_grid_and_horizon_marker(prepared_modes):
+def test_sqlite_contains_the_configured_grid_and_horizon_marker(prepared_modes):
     for mode, (bundle, _) in prepared_modes.items():
         processed = resolve_artifact_path(bundle, "ev_chargers_processed").parent
         with sqlite3.connect(processed.parent / "transport.sqlite") as connection:
             assert connection.execute("PRAGMA integrity_check").fetchall() == [("ok",)]
             assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
-            periods = connection.execute("SELECT period, flag FROM time_period ORDER BY period").fetchall()
-        if mode == "prospective":
-            expected = [(year, "e") for year in bundle.scenario.periods.existing]
-            expected += [(year, "f") for year in [*bundle.scenario.periods.model, 2050]]
-            assert periods == expected
+            periods = connection.execute("SELECT period, flag, sequence FROM time_period ORDER BY period").fetchall()
+            assert connection.execute(
+                "SELECT COUNT(*) FROM existing_capacity WHERE vintage = 2021"
+            ).fetchone() == (0,)
+            assert connection.execute("SELECT COUNT(*) FROM demand WHERE period = 2050").fetchone() == (0,)
+        expected = [(year, "e", None) for year in bundle.scenario.periods.existing]
+        expected += [(year, "f", index if mode == "prospective" else None)
+                     for index, year in enumerate([*bundle.scenario.periods.model, 2050])]
+        assert periods == sorted(expected)

@@ -1,5 +1,7 @@
 import hashlib
+import io
 from pathlib import Path
+from zipfile import BadZipFile
 
 import pandas as pd
 import pytest
@@ -82,6 +84,175 @@ def test_render_ceud_url_uses_year_region_and_table_id() -> None:
     assert url.endswith("/2021/tran_on_e_20.xls")
 
 
+@pytest.mark.parametrize("invalid", [b"", b"<html>Temporary publisher outage</html>", b"PK\x03\x04truncated"])
+def test_ceud_failed_download_does_not_poison_cache(tmp_path, monkeypatch, invalid):
+    request = iter_table_requests(
+        load_config_bundle(SCENARIO, repo_root=REPO_ROOT), regions=["ON"], include_national=False
+    )[0].model_copy(update={"cache_path": tmp_path / "table.xls"})
+
+    class Response:
+        content = invalid
+
+        def raise_for_status(self):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            pass
+
+    response = Response()
+    monkeypatch.setattr(nrcan_ceud.requests.Session, "get", lambda *_args, **_kwargs: response)
+    with pytest.raises((ValueError, OSError, BadZipFile)):
+        nrcan_ceud.fetch_to_cache(request)
+    assert not request.cache_path.exists()
+    assert list(tmp_path.iterdir()) == []
+
+    # The same path can recover on the next request without manual cache removal.
+    workbook = io.BytesIO()
+    pd.DataFrame({"Series": ["Energy use"], 2023: [1]}).to_excel(workbook, index=False)
+    response.content = workbook.getvalue()
+    assert nrcan_ceud.fetch_to_cache(request) == "downloaded"
+    assert request.cache_path.read_bytes() == workbook.getvalue()
+    assert list(tmp_path.iterdir()) == [request.cache_path]
+
+
+def test_ceud_http_failure_removes_only_private_staging_file(tmp_path, monkeypatch):
+    request = iter_table_requests(
+        load_config_bundle(SCENARIO, repo_root=REPO_ROOT), regions=["ON"], include_national=False
+    )[0].model_copy(update={"cache_path": tmp_path / "table.xls"})
+    unrelated = tmp_path / "other.xls"
+    unrelated.write_bytes(b"registered evidence")
+
+    class Response:
+        def raise_for_status(self):
+            raise nrcan_ceud.requests.HTTPError("503 unavailable")
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            pass
+
+    monkeypatch.setattr(nrcan_ceud.requests.Session, "get", lambda *_args, **_kwargs: Response())
+    with pytest.raises(nrcan_ceud.requests.HTTPError, match="503"):
+        nrcan_ceud.fetch_to_cache(request)
+    assert not request.cache_path.exists()
+    assert list(tmp_path.iterdir()) == [unrelated]
+    assert unrelated.read_bytes() == b"registered evidence"
+
+
+@pytest.mark.parametrize("failure", ["connection", "header_read", 429, 500, 502, 503, 504])
+def test_ceud_retries_transient_get_failures(tmp_path, monkeypatch, caplog, failure):
+    from urllib3.connectionpool import HTTPConnectionPool
+    from urllib3.exceptions import ProtocolError, ReadTimeoutError
+    from urllib3.response import HTTPResponse
+
+    request = iter_table_requests(
+        load_config_bundle(SCENARIO, repo_root=REPO_ROOT), regions=["ON"], include_national=False
+    )[0].model_copy(update={"cache_path": tmp_path / "table.xls", "retry_backoff_seconds": 0})
+    workbook = io.BytesIO()
+    pd.DataFrame({"Series": ["Energy use"], 2023: [1]}).to_excel(workbook, index=False)
+    calls = []
+
+    def response(pool, *_args, **_kwargs):
+        calls.append(True)
+        if len(calls) == 1:
+            if failure == "connection":
+                raise ProtocolError("Remote host reset the connection")
+            if failure == "header_read":
+                raise ReadTimeoutError(pool, request.url, "Read timed out")
+            return HTTPResponse(body=io.BytesIO(b"temporary failure"), status=failure, preload_content=False)
+        return HTTPResponse(
+            body=io.BytesIO(workbook.getvalue()), status=200,
+            preload_content=False, retries=_kwargs.get("retries"),
+        )
+
+    monkeypatch.setattr(HTTPConnectionPool, "_make_request", response)
+    monkeypatch.setattr(nrcan_ceud.requests.sessions, "get_environ_proxies", lambda *_args, **_kwargs: {})
+    assert nrcan_ceud.fetch_to_cache(request) == "downloaded"
+    assert len(calls) == 2
+    assert request.cache_path.read_bytes() == workbook.getvalue()
+    assert "recovered after 1 transient HTTP retries" in caplog.text
+
+
+def test_ceud_body_loss_fails_closed_without_retry_or_cache(tmp_path, monkeypatch):
+    """Header retries do not recover a dropped body after an HTTP 200 response."""
+    from urllib3.connectionpool import HTTPConnectionPool
+    from urllib3.exceptions import ProtocolError
+    from urllib3.response import HTTPResponse
+
+    request = iter_table_requests(
+        load_config_bundle(SCENARIO, repo_root=REPO_ROOT), regions=["ON"], include_national=False
+    )[0].model_copy(update={"cache_path": tmp_path / "table.xls", "retry_backoff_seconds": 0})
+    calls, body_reads = [], []
+
+    class InterruptedBody(io.BytesIO):
+        def read(self, *_args, **_kwargs):
+            body_reads.append(True)
+            raise ProtocolError("Connection lost while consuming the response body")
+
+    def response(_pool, *_args, **kwargs):
+        calls.append(True)
+        return HTTPResponse(
+            body=InterruptedBody(b"incomplete workbook"), status=200,
+            preload_content=False, retries=kwargs.get("retries"),
+        )
+
+    monkeypatch.setattr(HTTPConnectionPool, "_make_request", response)
+    monkeypatch.setattr(nrcan_ceud.requests.sessions, "get_environ_proxies", lambda *_args, **_kwargs: {})
+    with pytest.raises(nrcan_ceud.requests.exceptions.ChunkedEncodingError, match="response body"):
+        nrcan_ceud.fetch_to_cache(request)
+    assert len(calls) == len(body_reads) == 1
+    assert not request.cache_path.exists()
+    assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize("status,attempts", [(200, 1), (401, 1), (403, 1), (404, 1), (503, 4)])
+def test_ceud_permanent_or_exhausted_failures_leave_no_cache(tmp_path, monkeypatch, status, attempts):
+    from urllib3.connectionpool import HTTPConnectionPool
+    from urllib3.response import HTTPResponse
+
+    request = iter_table_requests(
+        load_config_bundle(SCENARIO, repo_root=REPO_ROOT), regions=["ON"], include_national=False
+    )[0].model_copy(update={"cache_path": tmp_path / "table.xls", "retry_backoff_seconds": 0})
+    calls = []
+
+    def response(*_args, **_kwargs):
+        calls.append(True)
+        return HTTPResponse(body=io.BytesIO(b"publisher failure"), status=status, preload_content=False)
+
+    monkeypatch.setattr(HTTPConnectionPool, "_make_request", response)
+    monkeypatch.setattr(nrcan_ceud.requests.sessions, "get_environ_proxies", lambda *_args, **_kwargs: {})
+    with pytest.raises((nrcan_ceud.requests.RequestException, ValueError)):
+        nrcan_ceud.fetch_to_cache(request)
+    assert len(calls) == attempts
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_cached_ceud_does_not_create_a_network_session(tmp_path, monkeypatch):
+    request = iter_table_requests(
+        load_config_bundle(SCENARIO, repo_root=REPO_ROOT), regions=["ON"], include_national=False
+    )[0].model_copy(update={"cache_path": tmp_path / "table.xls"})
+    request.cache_path.write_bytes(b"registered bytes remain subject to downstream physical validation")
+
+    def reject_session():
+        pytest.fail("Cached/offline CEUD acquisition must not create a session")
+
+    monkeypatch.setattr(nrcan_ceud.requests, "Session", reject_session)
+    assert nrcan_ceud.fetch_to_cache(request) == "cached"
+
+
+@pytest.mark.parametrize("backoff", [float("nan"), float("inf"), -1])
+def test_ceud_retry_backoff_requires_finite_nonnegative_configuration(backoff):
+    request = iter_table_requests(
+        load_config_bundle(SCENARIO, repo_root=REPO_ROOT), regions=["ON"], include_national=False
+    )[0]
+    with pytest.raises(ValidationError):
+        CeudTableRequest.model_validate({**request.model_dump(), "retry_backoff_seconds": backoff})
+
+
 def test_iter_table_requests_uses_raw_cache_names() -> None:
     bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
 
@@ -148,6 +319,8 @@ def test_request_validation_rejects_before_file_or_network_io(tmp_path: Path) ->
     with pytest.raises(ValidationError, match="URL"):
         CeudTableRequest(
             source_id="nrcan_ceud_transport_provincial",
+            retry_attempts=0,
+            retry_backoff_seconds=0,
             region="on",
             output_region="ON",
             year=2021,
@@ -159,6 +332,8 @@ def test_request_validation_rejects_before_file_or_network_io(tmp_path: Path) ->
 
     valid = CeudTableRequest(
         source_id="nrcan_ceud_transport_provincial",
+        retry_attempts=0,
+        retry_backoff_seconds=0,
         region="on",
         output_region="ON",
         year=2021,
@@ -397,6 +572,8 @@ def test_normalize_ceud_dataframe_drops_noise_and_preserves_provenance() -> None
     )
     request = CeudTableRequest(
         source_id="nrcan_ceud_transport_provincial",
+        retry_attempts=0,
+        retry_backoff_seconds=0,
         region="on",
         output_region="ON",
         year=2021,
@@ -453,6 +630,8 @@ def test_table_7_total_energy_use_can_be_value_and_group_header() -> None:
     )
     request = CeudTableRequest(
         source_id="nrcan_ceud_transport_provincial",
+        retry_attempts=0,
+        retry_backoff_seconds=0,
         region="on",
         output_region="ON",
         year=2021,

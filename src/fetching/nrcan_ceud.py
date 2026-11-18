@@ -6,7 +6,9 @@ import argparse
 import hashlib
 import logging
 import math
+import os
 import re
+import tempfile
 import unicodedata
 from pathlib import Path
 from typing import Any, Literal
@@ -14,7 +16,9 @@ from urllib.parse import urlparse
 
 import pandas as pd
 import requests
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from utils import (
     ConfigBundle,
@@ -47,6 +51,8 @@ class CeudTableRequest(BaseModel):
     url: str
     cache_path: Path
     output_region: str
+    retry_attempts: int = Field(ge=0)
+    retry_backoff_seconds: float = Field(ge=0, allow_inf_nan=False)
 
     @model_validator(mode="after")
     def validate_request(self) -> "CeudTableRequest":
@@ -330,6 +336,8 @@ def iter_table_requests(
                     year=provincial_year,
                     table_id=table_id_int,
                     table_meta=table_meta,
+                    retry_attempts=provincial.adapter["retry_attempts"],
+                    retry_backoff_seconds=provincial.adapter["retry_backoff_seconds"],
                     url=render_ceud_url(provincial, year=provincial_year, region=region, table_id=table_id_int),
                     cache_path=render_cache_path(
                         bundle,
@@ -354,6 +362,8 @@ def iter_table_requests(
                     year=national_year,
                     table_id=table_id_int,
                     table_meta=table_meta,
+                    retry_attempts=national.adapter["retry_attempts"],
+                    retry_backoff_seconds=national.adapter["retry_backoff_seconds"],
                     url=render_ceud_url(national, year=national_year, region="ca", table_id=table_id_int),
                     cache_path=render_cache_path(
                         bundle,
@@ -369,13 +379,44 @@ def iter_table_requests(
 
 
 def fetch_to_cache(request: CeudTableRequest, *, timeout: int = 60) -> str:
-    """Download a CEUD table unless it already exists in the raw cache."""
+    """Publish a complete, readable CEUD workbook without caching failed responses."""
     if request.cache_path.exists():
         return "cached"
     request.cache_path.parent.mkdir(parents=True, exist_ok=True)
-    response = requests.get(request.url, timeout=timeout)
-    response.raise_for_status()
-    request.cache_path.write_bytes(response.content)
+    with tempfile.NamedTemporaryFile(
+        dir=request.cache_path.parent, suffix=".xls", delete=False
+    ) as handle:
+        temporary = Path(handle.name)
+    try:
+        retries = Retry(
+            total=request.retry_attempts,
+            connect=request.retry_attempts,
+            read=request.retry_attempts,
+            status=request.retry_attempts,
+            backoff_factor=request.retry_backoff_seconds,
+            allowed_methods=frozenset({"GET"}),
+            status_forcelist=(429, 500, 502, 503, 504),
+        )
+        with requests.Session() as session:
+            adapter = HTTPAdapter(max_retries=retries)
+            session.mount("https://", adapter)
+            session.mount("http://", adapter)
+            with session.get(request.url, timeout=timeout) as response:
+                response.raise_for_status()
+                temporary.write_bytes(response.content)
+                raw = getattr(response, "raw", None)
+                history = getattr(getattr(raw, "retries", None), "history", ())
+                if history:
+                    logging.warning(
+                        "CEUD %s recovered after %s transient HTTP retries", request.url, len(history)
+                    )
+        # A publisher/proxy can return an HTML error page with status 200. Do not
+        # leave those bytes at the immutable cache path and poison every rerun.
+        with pd.ExcelFile(temporary):
+            pass
+        os.replace(temporary, request.cache_path)
+    finally:
+        temporary.unlink(missing_ok=True)
     return "downloaded"
 
 
@@ -485,8 +526,10 @@ def read_rating_csv(
 def normalize_rating_dataframe(
     raw: pd.DataFrame,
     request: FuelConsumptionRatingRequest,
+    *,
+    enforce_coverage: bool = True,
 ) -> pd.DataFrame:
-    """Validate and source-normalize one Fuel Consumption Ratings resource."""
+    """Validate ratings; only explicit updater review may discover new coverage."""
     if raw.empty:
         raise ValueError(f"{request.component_key} contains no data rows")
 
@@ -520,7 +563,7 @@ def normalize_rating_dataframe(
     actual_model_years = tuple(
         sorted(normalized["Model year"].drop_duplicates().tolist())
     )
-    if actual_model_years != request.expected_model_years:
+    if enforce_coverage and actual_model_years != request.expected_model_years:
         raise ValueError(
             f"{request.component_key} covers model years {actual_model_years}; "
             f"expected {request.expected_model_years}"
@@ -725,7 +768,7 @@ def write_outputs(
 
 
 def fetch_and_normalize(
-    scenario_path: str | Path,
+    scenario_path: str | Path | ConfigBundle,
     *,
     regions: list[str] | None = None,
     include_national: bool = True,
@@ -811,7 +854,7 @@ def write_rating_outputs(
 
 
 def fetch_and_normalize_ratings(
-    scenario_path: str | Path,
+    scenario_path: str | Path | ConfigBundle,
     *,
     download: bool = True,
 ) -> Path:

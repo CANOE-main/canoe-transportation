@@ -31,6 +31,12 @@ def git(root: Path, *args: str) -> bytes:
 @pytest.fixture(scope="module")
 def registered_blobs() -> dict[str, tuple[bytes, str]]:
     """Resolve the byte-pinned, versioned sources from their owning registry."""
+    try:
+        checkout_root = Path(git(REPO_ROOT, "rev-parse", "--show-toplevel").decode("utf-8").strip()).resolve()
+    except subprocess.CalledProcessError:
+        pytest.skip("Checkout conversion requires this repository's Git index; this source copy has no Git checkout")
+    if checkout_root != REPO_ROOT:
+        pytest.skip("Checkout conversion requires this repository's Git index; the enclosing checkout owns a different root")
     sources = yaml.safe_load((REPO_ROOT / "config/sources.yaml").read_text(encoding="utf-8"))["sources"]
     tracked = set(git(REPO_ROOT, "ls-files").decode("utf-8").splitlines())
     pins: dict[str, str] = {}
@@ -41,6 +47,7 @@ def registered_blobs() -> dict[str, tuple[bytes, str]]:
         for adapter in adapters:
             for path_key, hash_key in (
                 ("registered_path", "expected_sha256"),
+                ("metadata_path", "metadata_sha256"),
                 ("extract_path", "expected_sha256"),
                 ("parent_path", "parent_sha256"),
                 ("notebook_path", "notebook_sha256"),
@@ -56,8 +63,38 @@ def registered_blobs() -> dict[str, tuple[bytes, str]]:
                            and Path(path).name == Path(asset["cache_path"]).name]
                 for path in matches:
                     pins[path] = asset["sha256"]
-    assert len(pins) == 9, "Reconcile newly registered versioned byte contracts"
-    return {path: (git(REPO_ROOT, "show", f"HEAD:{path}"), digest) for path, digest in pins.items()}
+    # Production profiles, run metadata, diagnostic companions and the compact
+    # OMEGA extract are versioned inputs: exercise their complete byte contracts.
+    # Optional parent/notebook and HATCH evidence are not necessarily tracked.
+    profile_components = sources["legacy_charging_profiles"]["components"]
+    required_components = {
+        f"{survey}_{strategy}"
+        for survey in ("nhts", "tts")
+        for strategy in ("uncontrolled", "night", "day")
+    }
+    assert set(profile_components) == required_components, "Reconcile the supported registered charging profiles"
+    required_paths = {
+        profile_components[name]["adapter"][path_key]
+        for name in required_components
+        for path_key in ("registered_path", "metadata_path")
+    }
+    diagnostic_profiles = sources["legacy_charging_profiles"]["adapter"]["diagnostic_profiles"]
+    assert set(diagnostic_profiles) == required_components, "Reconcile the supported diagnostic profile companions"
+    for companions in diagnostic_profiles.values():
+        assert set(companions) == {"mobility", "usage"}
+        for adapter in companions.values():
+            path = adapter["registered_path"]
+            required_paths.add(path)
+            if path in tracked:
+                pins[path] = adapter["expected_sha256"]
+    required_paths.add(sources["epa_omega_baseline"]["components"]["baseline_sales_ranges"]["adapter"]["extract_path"])
+    assert required_paths <= pins.keys(), f"Required registered byte contracts are not versioned/pinned: {sorted(required_paths - pins.keys())}"
+    for path, digest in pins.items():
+        assert hashlib.sha256((REPO_ROOT / path).read_bytes()).hexdigest() == digest, f"Registered working source changed: {path}"
+    # Use actual stored blobs, not local files whose cached Git statistics may
+    # hide a conversion mismatch. The current attributes must restore registered
+    # native serialization from the bytes collaborators will check out.
+    return {path: (git(REPO_ROOT, "show", f":{path}"), digest) for path, digest in pins.items()}
 
 
 @pytest.mark.parametrize("autocrlf", ["false", "true", "input"])

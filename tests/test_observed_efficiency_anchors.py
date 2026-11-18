@@ -91,6 +91,34 @@ def test_extended_base_projects_2024_2025_without_sparse_later_rating_bias(rules
     assert inputs.derive_consumption("ON", "cars", "gasoline", 2030)["native_intensity"] == pytest.approx(26 * 80 / 150)
 
 
+def test_trailing_new_vintage_keeps_own_observations_and_does_not_backfill_emerging_ranges(rules):
+    from parameterization.build_efficiencies import aggregate_consumption_period
+    from validation.config_models import ScenarioPeriods
+
+    periods = ScenarioPeriods(period_mode="legacy", base_year=2023, existing=[2020, 2023],
+                             model=[2025, 2030], step=5)
+    target, anchor = "bev_150_miles", "bev_300_miles"
+    inputs = evidence(rules, ratings={target: {2023: 40, 2024: .001}, anchor: {2021: 10, 2022: 20, 2023: 30}},
+                      counts={"bev": {2021: 1, 2022: 2, 2023: 7}},
+                      atb={target: {2023: 120, 2025: 80, 2030: 60}, anchor: {2023: 100}})
+    window = list(periods.evaluation_window(2025))
+    observations = inputs.period_observations(
+        "ON", "cars", target, window, allow_analogue_when_empty=True, new_cohort=True,
+    )
+    assert window == [2021, 2022, 2023, 2024, 2025]
+    assert list(observations) == [2023, 2024, 2025]
+    assert observations[2023]["nrcan_rating_source_year"] == 2023
+    assert observations[2024]["projection_atb_source_years"] == [2023, 2025]
+    assert observations[2024]["projection_anchor_weights"] == {2021: .1, 2022: .2, 2023: .7}
+    assert [row["native_intensity"] for row in observations.values()] == pytest.approx([40, 26, 20.8])
+    result = aggregate_consumption_period(list(observations.values()), [1 / 3] * 3)
+    assert result["efficiency"] == pytest.approx((3 + 2.6 + 2.6) / (40 + 26 + 20.8))
+
+    later = inputs.period_observations("ON", "cars", target, list(periods.evaluation_window(2030)), new_cohort=True)
+    assert later[2026]["projection_atb_source_years"] == [2025, 2030]
+    assert [row["native_intensity"] for row in later.values()] == pytest.approx([26 * value / 100 for value in [76, 72, 68, 64, 60]])
+
+
 def test_projection_reference_cannot_reintroduce_first_model_period_anchor(rules):
     with pytest.raises(ValueError, match="configured observation year"):
         evidence(rules, reference=2025)

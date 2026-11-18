@@ -6,13 +6,14 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
+from fetching import cer_enerfuture
 from parameterization.build_demand import prepare_demand_rows, real_gdp_indices
 from parameterization.offroad_stocks_and_demands import derive_offroad_baseline_demand
 from parameterization.road_stocks_and_demands import (
     derive_road_baseline_demand,
     extrapolate_passenger_ldv_demand,
 )
-from utils import load_config_bundle, load_harmonization_rules, resolve_artifact_path
+from utils import load_config_bundle, load_harmonization_rules, resolve_artifact_path, resolve_input_path
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -72,7 +73,7 @@ def test_energy_only_baseline_rejects_bad_source_values(change):
 
 
 def test_new_energy_demand_preserves_existing_rows_and_uses_regional_provenance(monkeypatch):
-    bundle = load_config_bundle("config/scenarios/legacy_comparison.yaml", repo_root=ROOT)
+    bundle = load_config_bundle("config/scenarios/validation_opening_periods.yaml", repo_root=ROOT)
     new_rows, contexts, audit = prepare_demand_rows(bundle)
     energy = [row for row in new_rows if row.commodity == "T_D_pj_off"]
     assert len(energy) == 10 * 5
@@ -135,17 +136,19 @@ def test_road_and_offroad_baselines_use_native_ceud_units() -> None:
                                        regions=["ON"], base_year=2023, rules=rules)
 
 
-def test_real_gdp_maps_start_period_to_end_year_and_rejects_gaps() -> None:
+def test_real_gdp_indexes_requested_years_and_rejects_gaps() -> None:
     macro = pd.DataFrame([
         {"scenario": "Current Measures", "region": "Canada", "variable_key": "real_gdp",
          "year": year, "value": value, "unit": "$2017 Millions"}
         for year, value in [(2023, 100.0), (2025, 105.0), (2030, 120.0), (2035, 150.0)]
     ])
-    assert real_gdp_indices(macro, scenario="Current Measures", base_year=2023,
-                            periods=[2025, 2030], step=5) == {2025: 1.2, 2030: 1.5}
-    with pytest.raises(ValueError, match="lacks base or period-end"):
+    assert real_gdp_indices(macro, scenario="Current Measures", anchor_year=2023,
+                            evaluation_years=[2025, 2030]) == {2025: 1.05, 2030: 1.2}
+    assert real_gdp_indices(macro, scenario="Current Measures", anchor_year=2023,
+                            evaluation_years=[2030, 2035]) == {2030: 1.2, 2035: 1.5}
+    with pytest.raises(ValueError, match="lacks evaluation years"):
         real_gdp_indices(macro.loc[macro.year.ne(2035)], scenario="Current Measures",
-                         base_year=2023, periods=[2025, 2030], step=5)
+                         anchor_year=2023, evaluation_years=[2030, 2035])
 
 
 def test_real_gdp_extends_from_observation_through_base_and_projection_years() -> None:
@@ -157,20 +160,25 @@ def test_real_gdp_extends_from_observation_through_base_and_projection_years() -
     # A price deflator cannot substitute for the real GDP growth driver.
     macro = pd.concat([macro, macro.assign(variable_key="gdp_deflator", value=999.0)])
     assert real_gdp_indices(
-        macro, scenario="Current Measures", base_year=2025, observed_year=2023,
-        periods=[2025, 2030], step=5,
-    ) == {2025: 1.2, 2030: 1.5}
+        macro, scenario="Current Measures", anchor_year=2023,
+        evaluation_years=[2025, 2030, 2035],
+    ) == {2025: 1.05, 2030: 1.2, 2035: 1.5}
     for missing_year in [2023, 2025, 2035]:
         with pytest.raises(ValueError, match="observation anchor"):
             real_gdp_indices(
                 macro.loc[macro.year.ne(missing_year)], scenario="Current Measures",
-                base_year=2025, observed_year=2023, periods=[2025, 2030], step=5,
+                anchor_year=2023, evaluation_years=[2025, 2030, 2035],
             )
 
 
 @pytest.mark.parametrize("future_car_demand", ["GDP-indexed", "extrapolated"])
-def test_demand_uses_observation_anchor_independently_of_ceud_tail_policy(future_car_demand):
-    bundle = load_config_bundle("config/scenarios/default.yaml", repo_root=ROOT)
+@pytest.mark.parametrize(("scenario_name", "base_year", "target", "target_gdp"), [
+    ("validation_opening_periods", 2023, 2025, 2445644), ("default", 2025, 2030, 2652642),
+])
+def test_demand_uses_observation_anchor_independently_of_ceud_tail_policy(
+    future_car_demand, scenario_name, base_year, target, target_gdp,
+):
+    bundle = load_config_bundle(f"config/scenarios/{scenario_name}.yaml", repo_root=ROOT)
     payload = bundle.scenario.model_dump(mode="python")
     payload["geography"]["regions"] = ["ON"]
     payload["demand"]["future_car_demand"] = future_car_demand
@@ -187,16 +195,22 @@ def test_demand_uses_observation_anchor_independently_of_ceud_tail_policy(future
             assert values == baseline_rows
             assert data_ids == baseline_ids
         assert audit["ceud_observed_year"] == 2023
-        assert audit["base_year"] == 2025
-        assert audit["base_year_gdp_index"] == pytest.approx(2445644 / 2385443)
-        assert audit["gdp_index_by_period"][2025] == pytest.approx(2652642 / 2385443)
+        assert audit["base_year"] == base_year
+        base_index = 1.0 if base_year == 2023 else 2445644 / 2385443
+        assert audit["base_year_gdp_index"] == pytest.approx(base_index)
+        assert audit["gdp_evaluation_year_by_period"][2025] == target
+        assert audit["gdp_index_by_period"][2025] == pytest.approx(target_gdp / 2385443)
         observed = {item["service"]: item for item in audit["observed_ceud_baselines"]}
         assert observed["cars"]["baseline_demand"] == pytest.approx(84.208902285)
-        assert observed["cars"]["gdp_indexed_base_year_demand"] == pytest.approx(84.208902285 * 2445644 / 2385443)
+        assert observed["cars"]["gdp_indexed_base_year_demand"] == pytest.approx(84.208902285 * base_index)
         assert observed["passenger_air"]["ceud_observed_year"] == 2023
-        assert values["ON", 2025, "T_D_pj_off"] == pytest.approx(49.69 * 2652642 / 2385443)
+        assert values["ON", 2025, "T_D_pj_off"] == pytest.approx(49.69 * target_gdp / 2385443)
         car, truck = (values["ON", 2025, commodity] for commodity in ["T_D_pkm_ldv_c", "T_D_pkm_ldv_t"])
-        assert car + truck == pytest.approx((84.208902285 + 121.867879338) * 2652642 / 2385443)
+        assert car + truck == pytest.approx((84.208902285 + 121.867879338) * target_gdp / 2385443)
+        if future_car_demand == "extrapolated":
+            record = next(item for item in audit["car_extrapolation"]["rows"] if item["period"] == 2025)
+            assert record["projection_year"] == target
+            assert car == pytest.approx(84.208902285 * (1 + record["annual_car_cagr"]) ** (target - 2023))
 
 
 def test_car_cagr_stays_positive_and_preserves_passenger_ldv_total() -> None:
@@ -218,7 +232,7 @@ def test_car_cagr_stays_positive_and_preserves_passenger_ldv_total() -> None:
     }
     projected, audit = extrapolate_passenger_ldv_demand(
         provincial, baseline, regions=["ON"], base_year=2023,
-        periods=[2025, 2045], step=5,
+        evaluation_years={2025: 2030, 2045: 2050},
         gdp_indices={2025: 1.2, 2045: 1.5}, rules=rules,
     )
     assert projected["ON", 2025, "cars"] == pytest.approx(50 * 0.5**(7 / 10))
@@ -229,24 +243,24 @@ def test_car_cagr_stays_positive_and_preserves_passenger_ldv_total() -> None:
     with pytest.raises(ValueError, match="endpoints must be finite and positive"):
         extrapolate_passenger_ldv_demand(
             provincial.assign(value=0.0), baseline, regions=["ON"],
-            base_year=2023, periods=[2025], step=5,
+            base_year=2023, evaluation_years={2025: 2030},
             gdp_indices={2025: 1.2}, rules=rules,
         )
     with pytest.raises(ValueError, match="CAGR lacks positive consecutive"):
         extrapolate_passenger_ldv_demand(
             provincial.loc[provincial.year.eq(2023)], baseline, regions=["ON"],
-            base_year=2023, periods=[2025], step=5,
+            base_year=2023, evaluation_years={2025: 2030},
             gdp_indices={2025: 1.2}, rules=rules,
         )
     with pytest.raises(ValueError, match="exceeds GDP-indexed"):
         extrapolate_passenger_ldv_demand(
             provincial, baseline, regions=["ON"], base_year=2023,
-            periods=[2025], step=5, gdp_indices={2025: 0.1}, rules=rules,
+            evaluation_years={2025: 2030}, gdp_indices={2025: 0.1}, rules=rules,
         )
 
 
 def test_extrapolated_selector_only_reallocates_car_and_passenger_light_trucks() -> None:
-    bundle = load_config_bundle("config/scenarios/legacy_comparison.yaml", repo_root=ROOT)
+    bundle = load_config_bundle("config/scenarios/validation_opening_periods.yaml", repo_root=ROOT)
     gdp_rows, _, gdp_audit = prepare_demand_rows(bundle)
     selected = replace(bundle, scenario=bundle.scenario.model_validate({
         **bundle.scenario.model_dump(mode="python"),
@@ -282,14 +296,37 @@ def test_extrapolated_selector_only_reallocates_car_and_passenger_light_trucks()
     (2023, "Global Net-zero"),
 ])
 def test_registered_cer_scenarios_produce_deterministic_coverage(
-    edition: int, cer_scenario: str,
+    edition: int, cer_scenario: str, tmp_path, monkeypatch,
 ) -> None:
-    bundle = load_config_bundle("config/scenarios/legacy_comparison.yaml", repo_root=ROOT)
+    bundle = load_config_bundle("config/scenarios/validation_opening_periods.yaml", repo_root=ROOT)
     payload = bundle.scenario.model_dump(mode="python")
     payload["demand"]["cer_scenario"] = cer_scenario
     payload["sources"]["selections"]["cer_canadas_energy_future"]["edition"] = edition
     scenario = bundle.scenario.model_validate(payload)
     selected = replace(bundle, scenario=scenario)
+    # Edition selection must not depend on another run having prepared that
+    # edition in the shared interim tree. Parse its registered raw macro input
+    # into this test's own namespace using the production validation boundary.
+    cer_rules = cer_enerfuture.module_rules(selected)
+    request = next(
+        item for item in cer_enerfuture.build_requests(selected)
+        if item.component_id == "macro-indicators"
+    )
+    macro = cer_enerfuture.normalize_component(
+        cer_enerfuture.read_and_validate_source(request), request,
+        region_labels=cer_enerfuture.scenario_region_labels(selected, None), rules=cer_rules,
+    )
+    private_cer = tmp_path / "cer" / str(edition)
+    private_cer.mkdir(parents=True)
+    macro.to_csv(private_cer / request.output_file, index=False)
+    cer_subdir = str(cer_rules["interim_subdir_template"]).format(edition=edition)
+
+    def selected_edition_path(configured, key, *parts):
+        if key == "interim" and parts and str(parts[0]) == cer_subdir:
+            return private_cer.joinpath(*parts[1:])
+        return resolve_input_path(configured, key, *parts)
+
+    monkeypatch.setattr("parameterization.build_demand.resolve_input_path", selected_edition_path)
     rows, contexts, audit = prepare_demand_rows(selected)
     assert len(rows) == 10 * 15 * 5
     assert len(contexts) == 15

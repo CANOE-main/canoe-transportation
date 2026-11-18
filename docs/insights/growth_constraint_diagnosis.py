@@ -70,10 +70,83 @@ def _():
 
 
 @app.cell
-def _(load_config_bundle, load_diagnostic_config, load_diagnostic_tables):
+def growth_introduction(mo):
+    mo.md(r"""
+    # What evidence can bound vehicle deployment growth?
+
+    **Research diagnostic · provisional rates and seeds**
+
+    Compare observed growth, fitted curves and Canadian stock/registration references
+    before choosing a deployment bound. Constant rates describe a growth allowance;
+    they do not predict saturation or its timing. No candidate here is an accepted
+    production parameter.
+
+    Follow **registered observations → screening and fits → Canadian references →
+    candidate rates and seeds → constraint behavior**. Controls read prepared tables;
+    they do not fetch data or refit curves. Complete observations are in
+    `inputs/1_interim/technology_growth/`; audits and candidate tables are in
+    `inputs/validation/technology_growth/`. Table captions identify previews.
+
+    Prepare explicitly from the repository root:
+
+    ```powershell
+    # Acquire missing registered snapshots only when needed:
+    uv run python -m fetching.technology_growth_evidence --download-missing --papers-dir '<supplied PDF directory>'
+    # Verify and analyze registered local evidence:
+    uv run --offline python -m parameterization.road_adoption_constraints
+    uv run --offline marimo run docs/insights/growth_constraint_diagnosis.py
+    ```
+
+    Before preparing this analysis, run the selected scenario's build or prerequisite
+    and existing-capacity preparation. Shared stock, fuel-share and cohort tables must
+    match that scenario. This optional analysis uses development dependencies and remains
+    separate from scenario preparation. Changed source hashes require registry review;
+    rebuild stale evidence explicitly rather than changing its recorded identity.
+    """)
+    return
+
+
+@app.cell
+def growth_evidence(load_config_bundle, load_diagnostic_config, load_diagnostic_tables, mo):
     growth_bundle = load_config_bundle("config/scenarios/default.yaml")
     growth_config = load_diagnostic_config(growth_bundle)
-    growth_tables = load_diagnostic_tables(growth_bundle)
+    preparation_error = None
+    try:
+        growth_tables = load_diagnostic_tables(growth_bundle)
+    except FileNotFoundError as error:
+        preparation_error = str(error)
+    except ValueError as error:
+        if not str(error).startswith((
+            "Stale growth diagnostic handoff:",
+            "Changed growth diagnostic artifact:",
+            "Missing/changed registered evidence:",
+        )):
+            raise
+        preparation_error = str(error)
+    mo.stop(
+        preparation_error is not None,
+        mo.callout(mo.md(f"""
+        ## Evidence preparation required
+
+        The prepared growth evidence is unavailable or does not match the current
+        registered inputs and configuration. No diagnostic results are shown.
+
+        ```text
+        {preparation_error}
+        ```
+
+        After preparing matching source and existing-capacity inputs for
+        `config/scenarios/default.yaml`, run the owning offline analysis:
+
+        ```powershell
+        uv run --offline python -m parameterization.road_adoption_constraints
+        ```
+
+        Then reopen this notebook. Incomplete or incompatible prerequisites must be
+        resolved by their owning preparation; changing recorded hashes or using
+        stale tables would not reproduce the analysis.
+        """), kind="warn"),
+    )
     return growth_bundle, growth_config, growth_tables
 
 
@@ -86,45 +159,6 @@ def _(growth_bundle, growth_tables, json, mo, resolve_artifact_path):
     )
     mo.vstack(
         [
-            mo.md(
-                r"""
-                # Technology growth constraints: evidence and calibration
-
-                **Research diagnostic · provisional rates and seeds**
-
-                Explore bounds on deployment using observed growth, curve fits and
-                Canadian stock or registration references. Constant-rate bounds do not
-                prescribe eventual saturation or the timing of an S-curve. Candidate
-                values require review before use in a production scenario.
-
-                The evidence chain is **registered files → native observations →
-                curation and fits → Canadian references → candidate rates and seeds**.
-                Widgets read persisted tables; they do not fetch data or refit curves.
-                Full normalized tables are in `inputs/1_interim/technology_growth/`;
-                audits and calibration tables are in `inputs/validation/technology_growth/`.
-                Captions identify bounded previews.
-
-                Reproduce from the repository root:
-
-                ```powershell
-                # Explicit acquisition of missing registered snapshots only:
-                uv run python -m fetching.technology_growth_evidence --download-missing --papers-dir '<supplied PDF directory>'
-                # Default acquisition verification and all analysis are offline:
-                uv run python -m parameterization.road_adoption_constraints
-                uv run marimo run docs/insights/growth_constraint_diagnosis.py
-                ```
-
-                Before refreshing, run the normal scenario build or its prerequisite
-                and existing-capacity preparation for the selected scenario. Shared
-                stock, fuel-share and cohort tables must match that scenario; another
-                scenario's processed outputs are incompatible.
-
-                Checksums fix the source editions. Refreshing them requires a reviewed
-                registry update; changed caches are rejected. Rebuild a stale handoff
-                explicitly. This optional analysis uses the development dependency group
-                and runs separately from scenario preparation.
-                """
-            ),
             mo.hstack(
                 [
                     mo.stat(
@@ -160,11 +194,11 @@ def _(growth_tables, inspect_table, mo):
         [
             mo.md(
                 """
-                ## Source identity and literature definitions
+                ## 1. What quantity and growth definition does each source measure?
 
-                The manifest identifies each registered file, hash and access route.
-                [*HATCH*](https://zenodo.org/records/10231865) national series and aggregate estimates have different grains;
-                an aggregate estimate cannot stand in for every national series.
+                The manifest records files, hashes and access routes. HATCH country series and
+                aggregate estimates describe different populations; an aggregate estimate cannot
+                represent every country. The definitions below establish which rates can be compared.
                 """
             ),
             inspect_table(growth_tables["source_manifest"], 100),
@@ -245,29 +279,24 @@ def _(growth_tables, inspect_table, mo, pd):
         [
             mo.md(
                 """
-                ## Original versus extended [*HATCH*](https://zenodo.org/records/10231865)
+                ## 2. Do the original and extended HATCH releases measure the same thing?
 
-                [Original release 10231865](https://zenodo.org/records/10231865) and
-                [extended release 19579793](https://zenodo.org/records/19579793) are both
-                retained. Pairing below requires a unique country/technology/native-source/
-                unit identity, allowing changed IDs and metric names. Ambiguous identities
-                are not forced into pairs; use the full inventory to inspect them.
+                Both the [original release](https://zenodo.org/records/10231865) and
+                [extended release](https://zenodo.org/records/19579793) are retained. Pairing requires
+                one country/technology/source/unit match. Changed IDs are allowed; ambiguous matches
+                remain unpaired in the inventory.
 
-                The extended release is current evidence for its definitions, characteristics
-                and estimates. It is not a universal replacement for the original quantities.
-                Its SI reports conversion of 329 number-of-units series to cumulative
-                calculations, removal of 95 global series, and battery-capacity substitutions.
-                Summing a stock series over years measures stock-years; summing additions
-                measures cumulative installations before retirement. Either differs from
-                active capacity. The native definition must settle the distinction.
-                Added nonmissing cells after standardization are not necessarily new
-                measurements. Native zero/missing flags describe cells, rather than
-                certifying that zero deployment was observed.
+                The extension adds definitions, characteristics and estimates, but also transforms
+                quantities: its SI reports cumulative conversion of 329 unit-count series, removal
+                of 95 global series and battery-capacity substitutions. Summed annual stock measures
+                **stock-years**; summed additions measure installations before retirement. Neither
+                automatically measures active stock. Extra nonmissing cells after standardization
+                are not necessarily new observations, and zero/missing flags alone do not prove
+                observed zero deployment.
 
-                The main paper, SI and files report different series/filter counts. The
-                inventory has four CO₂-pipeline series without published characteristics;
-                the notebook uses audited file counts rather than silently reconciling the
-                reported 1,555/main and 1,750/SI retained samples.
+                File and paper sample counts differ. Four CO₂-pipeline series lack published
+                characteristics; this notebook reports audited file counts rather than forcing
+                agreement with the main-paper 1,555 or SI 1,750 retained samples.
                 """
             ),
             mo.hstack(
@@ -341,15 +370,14 @@ def _(alt, chart_ui, growth_tables, inspect_table, mo):
             chart_ui(release_vehicle_plot),
             mo.md(
                 """
-                Passenger-car levels demonstrate why a release change matters: the
-                extended CHAT series is the cumulative sum of original annual count
-                observations, not an update to the same fleet level. Original counts remain
-                available as a **stock candidate requiring the CHAT definition**. The
-                original variable description alone does not establish retirement treatment.
-                No rate from the transformed series is used as a direct vehicle-stock rate.
-                Other original car series measure engine-power equivalent MW. Changing
-                average power per vehicle would affect their growth; constant-unit scaling
-                invariance alone does not make them vehicle-count proxies.
+                The passenger-car example shows the consequence: extended CHAT levels sum the
+                original annual counts rather than update the same fleet measure. The original
+                counts remain a stock candidate pending the CHAT retirement definition. No rate
+                from the cumulative transformation becomes a direct vehicle-stock rate.
+
+                Other car series measure engine-power equivalent MW. Their growth can change with
+                average power per vehicle; invariance to constant unit conversion does not make
+                them vehicle-count proxies.
                 """
             ),
             inspect_table(
@@ -381,19 +409,17 @@ def _(growth_config, growth_tables, inspect_table, mo):
         [
             mo.md(
                 """
-                ## Curation: inspect exclusions before interpreting rates
+                ## 3. Which observations support a growth estimate?
 
-                Native observations retain zeros, missing years and exclusion reasons.
-                Shares, annual output and active stock have separate uses; performance
-                metrics and average unit size are not direct deployment levels. The
-                historical screen is shown only as a comparison with the configured
-                research screen.
+                Preserve zeros, missing years and exclusion reasons. Active stock, annual output
+                and market share have different uses; performance and average unit size do not
+                measure deployment. The historical screen is compared with the configured research
+                screen below.
 
-                Fit and window eligibility follow the controls below. Windows span
-                **year intervals**, require observed endpoints and enforce the configured
-                gap limit. A zero-containing window has no log-growth estimate. No
-                interpolation, positive floor or clipping creates early observations.
-                Fit $\\boldsymbol{R^2}$ alone cannot establish an identifiable ceiling or transferable rate.
+                Windows count **year intervals**, require observed endpoints and enforce the gap
+                limit. Windows containing zero have no log-growth estimate. No interpolation,
+                positive floor or clipping creates early evidence. A high $\boldsymbol{R^2}$ does
+                not establish a reliable ceiling or a rate transferable to Canadian vehicles.
                 """
             ),
             inspect_table(curation_summary),
@@ -547,7 +573,9 @@ def _(
     )
     mo.vstack(
         [
-            mo.md("## Fit behavior and structural uncertainty"),
+            mo.md("""
+                  ## 4. How sensitive are the fitted rates?
+                  """),
             mo.hstack(
                 [
                     chart_ui(observed_chart.properties(width=600, height=260)),
@@ -559,21 +587,19 @@ def _(
             inspect_table(inspected_windows),
             mo.md(
                 r"""
-                Native-space nonlinear least squares fit logistic and Gompertz curves with
-                multiple starts. Scaling by observed maximum is numerical conditioning,
-                not unit-dependent clipping or a known saturation level. The 1.1 profile
-                recreates legacy ceiling bounds (0.9–1.1 × observed maximum, inflection
-                inside the sample); broader profiles allow unobserved inflection years.
-                They are **optimizer sensitivity settings**, not assumed future ceilings.
-                Curves end at their fitted observation endpoints. The raw [*EAFO Norway*](https://alternative-fuels-observatory.ec.europa.eu/transport-mode/road/norway/vehicles-and-fleet) 2026 point
-                remains visible but is excluded from annual estimates and fits.
+                Logistic and Gompertz curves are fitted to observed levels from multiple starting
+                points. Scaling by the observed maximum improves numerical stability; it does not
+                supply a known saturation level. The 1.1 profile reproduces legacy ceiling bounds
+                (0.9–1.1 × observed maximum, with inflection inside the sample). Broader profiles
+                permit later inflections. These are fitting sensitivities, not future ceilings.
+                Curves stop at their observation endpoints. The partial EAFO Norway 2026 observation
+                is visible but excluded from annual estimates and fits.
 
-                Bound hits, Jacobian conditioning, unobserved inflections, family choice,
-                ceiling sensitivity and removal of the last five years expose uncertainty
-                beyond $\boldsymbol{R^2}$. These ranges are structural sensitivity, not confidence
-                intervals. A good early-phase fit can leave ceiling and midpoint nearly
-                unidentified. Observed-window estimates avoid a future ceiling but depend
-                on the selected phase, policy, denominator and time window.
+                Check bound hits, unstable parameter combinations, unobserved inflections, curve
+                family and sensitivity to ceiling bounds or removing the last five years. These
+                ranges are **structural sensitivities, not confidence intervals**. Early observations
+                can fit well while leaving ceiling and midpoint poorly determined. Observed-window
+                rates avoid a future ceiling but still depend on phase, policy, denominator and window.
                 """
             ),
         ]
@@ -700,7 +726,13 @@ def _(growth_config, growth_tables, inspect_table, mo):
     mo.vstack(
         [
             mo.md(
-                "**Like-for-like estimate changes.** These national-series comparisons use the same curve family, optimizer profile and observation preparation in both releases. Equal-overlap fits should agree unless coverage changed. Cumulative transformations can change coefficients as well as levels. They do not turn an aggregate published rate into a national estimate; all paired sensitivities remain inspectable."
+                """
+                **Compare matching estimates.** Both releases use the same curve family, fitting
+                settings and observation treatment. Fits over identical overlapping data should
+                agree; coverage changes and cumulative transformations can alter the estimates.
+                These country-level sensitivities do not turn a published aggregate rate into a
+                country estimate. Full paired comparisons remain in the audit.
+                """
             ),
             inspect_table(paired_curve_summary),
             mo.accordion(
@@ -845,21 +877,19 @@ def _(alt, chart_ui, growth_tables, inspect_table, mo):
         [
             mo.md(
                 """
-                ## Refreshed Norway vehicle evidence
+                ## 5. What can Norway's vehicle experience tell us?
 
-                [*EAFO Norway* fleet and registrations](https://alternative-fuels-observatory.ec.europa.eu/transport-mode/road/norway/vehicles-and-fleet)
-                was acquired on 7 October 2026. The page advertises fleet coverage Q2 2026
-                and registrations July 2026; 2026 entries are partial snapshots/YTD, so
-                annual fitting and period totals stop at the latest complete year, **2025**.
-                Counts, rounded shares, fuels and classes stay separate. Blank fields remain
-                missing. Rounded H₂ shares of 0.00% do not establish zero deployment.
+                [EAFO Norway](https://alternative-fuels-observatory.ec.europa.eu/transport-mode/road/norway/vehicles-and-fleet)
+                was captured on 7 October 2026. Fleet coverage reaches Q2 2026 and registrations
+                July 2026; these partial observations are displayed, while annual fits and totals
+                stop at **2025**. Counts, rounded shares, fuels and vehicle classes remain separate.
+                Blank fields are missing; a rounded H₂ share of 0.00% does not prove zero vehicles.
 
-                M1 passenger vehicles, N1 vans and N2/N3 trucks are observation classes,
-                not exact CANOE road-class matches. M1 includes vehicles outside a Canadian
-                car-only class; N2/N3 cannot distinguish medium from heavy trucks. H₂ is the
-                [*EAFO Norway*](https://alternative-fuels-observatory.ec.europa.eu/transport-mode/road/norway/vehicles-and-fleet) fuel category and needs a drivetrain definition before a strict FCEV
-                transfer. Policy, imports/exports, scrappage and replacement affect stock;
-                gross registrations are a proxy for model additions, not a stock change.
+                Norwegian M1, N1 and N2/N3 classes do not exactly match CANOE road classes. M1 is
+                broader than Canadian cars; N2/N3 does not separate medium and heavy trucks. H₂
+                needs a drivetrain definition before FCEV transfer. Stock also reflects trade and
+                retirement, while registrations approximate gross additions. These boundaries
+                limit direct transfer of a Norwegian rate to a Canadian class.
                 """
             ),
             chart_ui(
@@ -905,23 +935,20 @@ def _(growth_config, inspect_table, mo, pd):
         [
             mo.md(
                 """
-                ## Which analogues help which targets?
+                ## 6. Which analogues are relevant to each target?
 
-                Direct powertrain adoption is the strongest quantity match, while Norway's
-                policy and class boundaries weaken geographic transfer. Historical passenger
-                cars inform durable-product diffusion, but market expansion is different from
-                substituting one drivetrain for another. Appliances/bicycles inform repeatable
-                manufacture and individual purchasing; wind, pipelines and electrolyser
-                research illuminate coordinated infrastructure and policy dependence.
+                Powertrain adoption has the closest quantity match, but Norwegian policy and class
+                boundaries limit transfer. Historical cars describe durable-product diffusion,
+                not necessarily replacement of an incumbent drivetrain. Appliances and bicycles
+                inform manufacturing and household adoption; wind, pipelines and electrolysers
+                illustrate infrastructure coordination and policy dependence.
 
-                For FCEVs, hydrogen supply, refuelling infrastructure and fleet procurement
-                may matter more than a generic manufactured-product rate. Small H₂ series
-                can jump by a few vehicles, plateau or decline: a high early percentage
-                does not prove sustained commercial-scale growth. HEVs have a different
-                infrastructure burden and more mature installed base; CNG is another fuel
-                network context. Neither a rate ranking nor equal weighting follows from
-                these comparisons. A reviewed analogy selection should compare unit size,
-                manufacture, finance, adopter, policy, network needs and replacement cycle.
+                FCEV adoption also needs hydrogen supply, refuelling and fleet procurement. A few
+                vehicles can produce a large percentage increase in a small H₂ fleet without
+                sustained growth. HEV maturity and CNG fuel networks pose different conditions.
+                Compare unit size, manufacturing, finance, adopter, policy, infrastructure and
+                replacement cycle before selecting analogues; this evidence supplies no automatic
+                ranking or equal weighting.
                 """
             ),
             inspect_table(analogue_review),
@@ -970,28 +997,27 @@ def _(growth_tables, inspect_table, mo, reference_region, reference_target):
         [
             mo.md(
                 """
-                ## Canadian starting deployment participates in calibration
+                ## 7. What is the Canadian starting fleet?
 
-                Configured targets cover cars, passenger/freight light trucks and
-                medium/heavy trucks. BEV/PHEV range alternatives are grouped only for
-                this diagnostic. Associations between existing and future technologies
-                identify one physical fleet; range alternatives must not multiply it.
-                FCEV/FCHEV grouping requires review.
+                Targets cover cars, passenger/freight light trucks and medium/heavy trucks. BEV/PHEV
+                range alternatives are grouped for this diagnostic so they cannot multiply the
+                same physical fleet. FCEV/FCHEV grouping still requires review.
 
-                Reference stock is in **thousand vehicles**, with its year shown below.
-                It combines processed [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) totals, [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) age evidence, cohort handling and
-                inferred registration fuel shares. The cohort audit conserves class stock;
-                processed stock also applies the configured small-row threshold, reconciled
-                here. These are inferred powertrain references, not a direct census.
+                Reference stock is in **thousand vehicles**, with year shown below. It combines
+                processed NRCan CEUD totals, registered age/cohort evidence and inferred fuel
+                shares. The cohort audit conserves class stock and reconciles the production
+                small-row threshold against solver capacity. The deployment reference then uses
+                physical survivors on those published cohort keys. These are inferred powertrain
+                totals; survival-curve mode can have higher installed-equivalent capacity.
 
-                Fuel evidence varies by cohort and source year. AB/NL Canada proxies and
-                BC/BCT, PE/PEI aliases are explicit. Passenger and freight light trucks
-                share an unallocated registration pool. The medium-truck BEV dashboard
-                override retains its own reporting year and YTD sales coverage. [*StatCan*](https://www.statcan.gc.ca/en/developers/wds)
-                23-10-0308 is **registered stock**; it cannot supply gross-additions history.
+                Fuel inputs vary by cohort/year. AB/NL Canada proxies and BC/BCT, PE/PEI aliases
+                remain explicit. Passenger and freight light trucks share an unallocated
+                new-registration pool. StatCan 23-10-0308-01 is registered stock: its 4,536–11,793 kg
+                fuel mix proxies the full CEUD medium-truck class, whose total remains authoritative.
+                Heavy-truck stock remains diesel-only. These stock distributions do not supply
+                historical gross additions; surviving cohorts are not original sales.
 
                 Missing FCEV/CNG representation does not establish zero deployment.
-                Surviving cohorts do not measure original sales in those periods.
                 """
             ),
             inspect_table(region_references),
@@ -1180,7 +1206,11 @@ def _(growth_tables, inspect_table, mo, reference_region):
     mo.vstack(
         [
             mo.md(
-                "**Technology-specific candidate ledger.** Values remain provisional. `insufficient_target_evidence` does not become an accepted parameter because a numerical estimate is present."
+                """
+                **Candidates by technology.** Read each estimate with its evidence window and status.
+                An `insufficient_target_evidence` value remains a sensitivity input, not a production
+                parameter, even when a numerical estimate is available.
+                """
             ),
             inspect_table(
                 candidate_region[
@@ -1239,49 +1269,44 @@ def _(
         [
             mo.md(
                 r"""
-                ## Temoa equations: quantities, units and time interpretation
+                ## 8. What do Temoa's three growth bounds constrain?
 
-                For upper bounds and a physical technology family:
+                For one physical technology family, the upper-bound equations are:
 
                 $$C_i\le S+(1+R)C_{i-1}$$
                 $$N_i\le S+(1+R)N_{i-1}$$
                 $$N_i-N_{i-1}\le S+(1+R)(N_{i-1}-N_{i-2})$$
 
-                | Mode | Appropriate evidence and transformations | Additional references |
+                | Mode | Required quantity | Starting reference |
                 |---|---|---|
-                | `growth_capacity` | Active stock or available capacity. A cumulative installation total needs retirement accounting; annual production needs utilization/capacity interpretation. Count/share labels alone do not settle meaning. Convert fleet share with its changing fleet denominator. | Available group stock at the model reference, including surviving vintages and lifetime weighting. |
-                | `growth_new_capacity` | Gross installations/new registrations; aggregate annual counts into comparable model-period additions. Production of vehicles can be a sales/supply proxy after trade and allocation review. Installed-stock differences are net change and omit replacements. Market share needs the year's total sales denominator. | One previous gross-additions period, period width, region/class allocation, replacement/trade treatment. |
-                | `growth_new_capacity_delta` | Change between comparable period additions, not between stock observations. Test the recurrence jointly for $R,S$. For $R=0$, $\boldsymbol{S}$ bounds the second difference of period additions. Negative prior changes matter. | Two previous additions periods and their difference, consistent widths/units; evidence for acceleration allowance. |
+                | `growth_capacity` | Active stock/available capacity. Cumulative installations need retirement accounting; shares need their changing fleet denominator. | Available group stock, including vintage survival and lifetime weights. |
+                | `growth_new_capacity` | Gross additions over comparable model periods. Stock differences omit replacements; sales shares need total sales. Production needs trade/allocation review. | One previous gross-additions period with compatible width, class and region. |
+                | `growth_new_capacity_delta` | Change between comparable periods' additions. At $R=0$, $S$ bounds their second difference; negative preceding changes matter. | Two previous additions periods and their difference, plus evidence for an acceleration allowance. |
 
-                $\boldsymbol{R}$ is a **fraction per constraint transition** and $\boldsymbol{S}$ has capacity units
-                (here k vehicles). $\boldsymbol{C_i}$ is available stock; $\boldsymbol{N_i}$ is the model's new-vintage
-                capacity variable. The seed recurs on every transition.
-                [Temoa's documentation](https://docs.temoaproject.org/en/latest/extensions/growth_rates.html)
-                calls rates annual; the
-                [inspected implementation](https://github.com/TemoaProject/temoa/tree/a2b0bf24cc0dd2a99570ae48772316341e79c0b5/temoa/extensions/growth_rates)
-                applies `1 + rate` directly, without elapsed-year exponentiation. This
-                snapshot is pinned; a later engine revision must be rechecked.
+                $R$ is a **fraction per transition**; $S$ is capacity, here thousand vehicles.
+                $C_i$ is available stock and $N_i$ new-vintage capacity. The seed $S$ recurs at
+                every transition. [Temoa documentation](https://docs.temoaproject.org/en/latest/extensions/growth_rates.html)
+                calls rates annual, but the
+                [pinned implementation](https://github.com/TemoaProject/temoa/tree/a2b0bf24cc0dd2a99570ae48772316341e79c0b5/temoa/extensions/growth_rates)
+                applies `1 + rate` without elapsed-year exponentiation. Recheck later engine revisions.
 
-                If a discrete annual fraction $\boldsymbol{b}$ is to retain its interpretation over equal
-                $\Delta$ years, supply $R=(1+b)^\Delta-1$; for logistic emergence this is
-                $R=e^{k\Delta}-1$. A constant native $\boldsymbol{R}$ can represent a constant annual
-                fraction only with equal transition widths. A two-year 2023→2025 stock
-                demonstration differs from a five-year 2020→2025 label transition.
-                This diagnostic does not resolve that first-period production contract.
+                To preserve an annual fraction $b$ across equal $\Delta$ years, use
+                $R=(1+b)^\Delta-1$, or $R=e^{k\Delta}-1$ for logistic early growth. Unequal
+                transition widths need separate treatment. A two-year 2023→2025 reference differs
+                from a five-year 2020→2025 label transition; this diagnostic does not settle that
+                first-period production contract.
 
-                An annual recurrence seed $\boldsymbol{s}$ aggregates to
-                $S=s[(1+b)^\Delta-1]/b$ (or $s\Delta$ at $b=0$), not just the same seed.
-                This equivalence is for stock/level recurrences, not an automatic rule for
-                period-additions deltas. Annual sales rates compared between unequal
-                period totals also require period-width normalization.
+                An annual level-recurrence seed $s$ becomes $S=s[(1+b)^\Delta-1]/b$, or $s\Delta$
+                at $b=0$. This is not an automatic conversion for additions deltas. Unequal-period
+                sales totals also need width normalization.
 
-                In the pinned implementation the first stock reference uses adjusted existing
-                capacity, life fractions and the last existing period. The first new-capacity
-                reference uses only the last existing vintage; delta uses the last two.
-                Existing `_EX` and future `_N` identifiers must be associated explicitly
-                before those fallbacks can see one physical family. Their surviving cohorts
-                are not observed gross sales. Diagnostic membership does not create
-                `tech_groups`, and 2023 stock is not claimed to equal native `CAPAVL`.
+                The pinned engine's initial stock reference uses adjusted existing capacity,
+                lifetime fractions and the last existing period. New-capacity bounds reference
+                the last existing vintage; delta bounds use two. Existing `_EX` and future `_N`
+                technologies must be associated before these fallbacks represent one fleet.
+                The production mapping from cohorts to `CAPAVL` still requires an engine check.
+                Diagnostic membership does not create `tech_groups`, and surviving cohorts do not
+                measure gross sales.
                 """
             ),
             inspect_table(conversion_table),
@@ -1315,28 +1340,26 @@ def _(growth_config, growth_tables, inspect_table, mo, selected_reference):
         [
             mo.md(
                 r"""
-                ## Gross-additions references and empirical seed residuals
+                ## 9. How large a recurring seed would past additions require?
 
-                Annual registrations are summed only for complete, fixed-width calendar
-                blocks: 2011–2015 is labelled 2010, 2016–2020 is labelled 2015, and
-                2021–2025 is labelled 2020. These are **historical analytical bins**, not
-                accepted CANOE vintage mappings. Incomplete blocks remain missing; no
-                interpolation or cumulative sum fills them. Counts are divided by 1,000.
+                Annual registrations are summed only within complete five-year blocks: 2011–2015
+                is labelled 2010, 2016–2020 labelled 2015 and 2021–2025 labelled 2020. These are
+                **historical analysis bins**, not accepted CANOE vintage mappings. Incomplete blocks
+                stay missing; no interpolation or cumulative sum fills them. Counts are divided
+                by 1,000.
 
-                For fixed $\boldsymbol{R}$, the smallest nonnegative constant seed covering observed
-                level transitions is $\max(0,\max_i[y_i-(1+R)y_{i-1}])$.
-                For delta it is $\max(0,\max_i[D_i-(1+R)D_{i-1}])$.
-                These full-history residual bounds absorb regime changes and shocks as well
-                as initiation; they are **not** recommendations to use a large recurring seed.
-                Stock frontiers use annual comparisons; new/delta frontiers use complete
-                five-year additions blocks, so their seed magnitudes are not interchangeable.
+                For a fixed $R$, the smallest nonnegative constant seed covering observed levels is
+                $\max(0,\max_i[y_i-(1+R)y_{i-1}])$; for additions changes it is
+                $\max(0,\max_i[D_i-(1+R)D_{i-1}])$. These historical bounds absorb shocks and
+                policy changes as well as initiation. They do not justify a large recurring seed.
+                Stock comparisons are annual; new/delta comparisons use complete five-year additions,
+                so seed magnitudes are not interchangeable.
 
-                Recommend zero seed where a reviewed positive reference and chosen rate
-                already cover relevant transitions. At a measured zero, use a separately
-                justified pilot/procurement allowance: one vehicle is 0.001 k vehicles, ten
-                is 0.01, and 100 is 0.1. Those batches and fractions of class stock below are
-                scale tests, not universal numerical recommendations. FCEV zero-start
-                allowances require actual baseline and infrastructure/project evidence first.
+                A zero seed merits testing when a reviewed positive reference and rate already
+                cover the transitions. Starting from measured zero needs separate pilot/procurement
+                evidence. One, ten and 100 vehicles equal 0.001, 0.01 and 0.1 thousand vehicles;
+                these batches and stock fractions are scale tests, not general recommendations.
+                FCEV allowances require actual baseline and infrastructure/project evidence.
                 """
             ),
             inspect_table(target_period_additions),
@@ -1637,17 +1660,16 @@ def _(
         [
             mo.md(
                 r"""
-                ## Constant growth versus S-curve stages
+                ## 10. When does a constant rate depart from an S-curve?
 
-                Curves start at the selected deployment reference and share the same
-                **early continuous coefficient** $k=\ln(1+b)$. Configured ceiling multiples
-                test how unknown maturity changes local growth at the same $\boldsymbol{C_0}$.
-                The dashed line marks reference-year class stock; it sets no future cap.
+                Curves start at the selected deployment and share the **early continuous coefficient**
+                $k=\ln(1+b)$. Ceiling multiples test how assumed maturity changes local growth at
+                the same $C_0$. The dashed class-stock reference is not a future cap.
 
-                The constant-rate line approximates emergence. Logistic growth is lower
-                when $C_0/L$ is appreciable and slows with deployment. Review any bound
-                alongside demand, turnover and competing technologies; an early growth
-                fraction does not predict saturation or its date.
+                A constant rate approximates early emergence. Logistic growth is lower once
+                $C_0/L$ matters and slows with deployment. Demand, retirement and competing
+                technologies still need review: an early growth fraction predicts neither saturation
+                nor its date.
                 """
             ),
             constant_curve_display,
@@ -1716,24 +1738,22 @@ def _(growth_summary, inspect_table, mo, pd):
         [
             mo.md(
                 """
-                ## Candidate interpretation and remaining decisions
+                ## What can inform a production choice, and what remains unresolved?
 
-                Interpret each **technology-specific candidate** with its status and
-                supporting window. Starting deployment helps select an observed phase
-                and scale a bound; it does not identify the rate. FCEV, CNG, heavy-truck
-                and missing HEV stock evidence remain gaps. A numerical value in an
-                insufficient row is a sensitivity input, not an accepted parameter.
+                Read each technology's candidate alongside its status, quantity and observation
+                window. Starting stock helps match deployment stage and scale a bound; it does
+                not determine growth speed. FCEV, CNG, heavy-truck and missing HEV stock evidence
+                remain gaps. Numbers in insufficient rows are sensitivity inputs.
 
-                Prefer observed positive windows when saturation is unknown. Use fitted
-                logistic coefficients as a distinct early-limit sensitivity after checking
-                identifiability; retain Gompertz and ceiling/tail comparisons as diagnostics.
-                Current Canadian stocks are inferred and have heterogeneous source years,
-                which limits how finely rates can be differentiated across regions/classes.
+                Observed positive windows avoid assuming saturation. Fitted logistic coefficients
+                provide a separate early-growth sensitivity after checking whether their parameters
+                are identifiable. Gompertz, ceiling and observation-tail comparisons remain diagnostics.
+                Inferred Canadian stock and mixed source years limit regional/class precision.
 
-                Before promotion, review analogue transfer, maturity, first-period timing,
-                physical membership and recurring seed purpose. Existing capacity and
-                artificial allowances remain separate. The three formulations demonstrate
-                the consequences of those choices without prescribing saturation or timing.
+                **Before promotion:** review analogy transfer, deployment stage, first-period timing,
+                physical technology membership and the purpose of the recurring seed. Document these
+                choices separately from existing capacity and artificial allowances. The three
+                formulations show their consequences without choosing a saturation level or date.
                 """
             ),
             inspect_table(review_recommendations),

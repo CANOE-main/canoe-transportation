@@ -148,6 +148,7 @@ dependencies = [
     { name = "pyyaml" },
     { name = "requests" },
     { name = "sqlalchemy" },
+    { name = "urllib3" },
     { name = "xlrd" },
     { name = "xlwings", marker = "sys_platform == 'win32'" },
 ]
@@ -184,6 +185,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "requests", specifier = ">=2.33.1" },
     { name = "sqlalchemy", specifier = ">=2.0.49" },
+    { name = "urllib3", specifier = ">=2.6.3" },
     { name = "xlrd", specifier = ">=2.0.2" },
     { name = "xlwings", marker = "sys_platform == 'win32'", specifier = ">=0.37.5" },
 ]

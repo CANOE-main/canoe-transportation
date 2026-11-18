@@ -8,6 +8,7 @@ They are diagnostic calculations, not additional SQLite parameter rows.
 from __future__ import annotations
 
 import argparse
+from collections.abc import Mapping
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -28,10 +29,11 @@ from parameterization.ldv_ev_ranges import (
     bucket_range_evidence, module_rules, validate_share_evidence,
 )
 from parameterization.road_capex_opex import (
-    bean_maintenance_per_mile, ldv_repair_per_mile, select_nlr_purchase_prices,
+    LDV_REPAIR_PRICE_INDEX, bean_maintenance_per_mile, ldv_repair_msrp_factor,
+    ldv_repair_per_mile, select_nlr_purchase_prices,
 )
 from utils import (
-    ConfigBundle, file_sha256, find_repo_root, load_config_bundle,
+    ConfigBundle, file_sha256, find_repo_root, harmonization_rule_paths, load_config_bundle,
     load_harmonization_rules, load_yaml, resolve_artifact_path,
     resolve_configured_path, resolve_input_path, resolve_parameter_path,
     resolve_repo_path, write_dataframe_atomic, write_text_atomic,
@@ -43,6 +45,7 @@ from validation.provenance import resolve_provenance
 
 
 ROUTE = "vehicle_cost_diagnostic"
+CAPTURE_VERSION = 2
 ROAD_MODES = {
     "cars": "Cars", "passenger_light_trucks": "Passenger light trucks",
     "freight_light_trucks": "Freight light trucks", "medium_trucks": "Medium trucks",
@@ -83,8 +86,9 @@ def source_cost_frames(
     prices: pd.DataFrame, *, burnham: dict[str, pd.DataFrame], bean: pd.DataFrame,
     converter: CerCurrencyConverter, rules: dict, ages: list[int],
     burnham_money: tuple[str, int], bean_money: tuple[str, int],
+    usd_price_index: Mapping[int, float],
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Retain native money and a common CAD basis without altering empirical inputs."""
+    """Use the production repair price basis and retain the native ATB price series."""
     if not ages or any(not isinstance(age, int) or age < 0 for age in ages):
         raise ValueError("Diagnostic ages must be explicit nonnegative integer years")
     investment = prices.copy()
@@ -100,9 +104,13 @@ def source_cost_frames(
     investment["source_support"] = "Source projection point; no extrapolation"
     records = []
     for row in investment.loc[investment.family.eq("ldv")].itertuples(index=False):
+        repair_msrp = row.retail_native * ldv_repair_msrp_factor(
+            price_basis=(row.source_currency, row.source_dollar_year), repair_basis=burnham_money,
+            usd_price_index=usd_price_index,
+        )
         for age in ages:
             result = ldv_repair_per_mile(
-                age=age, msrp=row.retail_native, vehicle_class=row.vehicle_class,
+                age=age, msrp=repair_msrp, vehicle_class=row.vehicle_class,
                 powertrain=row.powertrain, **burnham,
                 powertrain_labels=rules["ldv_powertrain_evidence"],
                 price_exponent=rules["ldv_repair_price_exponent_per_usd"],
@@ -113,8 +121,8 @@ def source_cost_frames(
                     "family": "ldv", "vehicle_class": row.vehicle_class, "powertrain": row.powertrain,
                     "source_year": row.source_year, "age": age, "component": component,
                     "cost_native": result[component], "source_currency": burnham_money[0],
-                    "source_dollar_year": burnham_money[1], "retail_msrp": row.retail_native,
-                    "msrp_currency": row.source_currency, "msrp_dollar_year": row.source_dollar_year,
+                    "source_dollar_year": burnham_money[1], "retail_msrp": repair_msrp,
+                    "msrp_currency": burnham_money[0], "msrp_dollar_year": burnham_money[1],
                     "source_support": ("Repair held at terminal coefficient age" if age > rules["ldv_repair_max_age"]
                                        else "Transferred US empirical age coefficients"),
                 })
@@ -214,7 +222,8 @@ def _input_paths(bundle: ConfigBundle) -> dict[str, Path]:
     ranges = module_rules(bundle)
     return {
         "scenario": bundle.scenario_path, "paths": bundle.paths_path, "sources": bundle.sources_path,
-        "rules": resolve_parameter_path(bundle, "rules.yaml"),
+        **{"rules" if path.name == "rules.yaml" else f"rules:{path.name}": path
+           for path in harmonization_rule_paths(bundle)},
         "conversion": resolve_parameter_path(bundle, "conversion.yaml"),
         "vehicles": directory / atb["components"]["vehicles"]["output_file"],
         "bean": directory / atb["components"]["anl_bean"]["output_file"],
@@ -253,6 +262,8 @@ def build_diagnostic(bundle: ConfigBundle) -> VehicleCostDiagnostic:
     )
     converter = CerCurrencyConverter(frames["macro"], scenario=bundle.scenario.economics.cer_scenario,
                                      target_year=bundle.scenario.economics.cost_reference_year)
+    price_index_source, price_index_component = LDV_REPAIR_PRICE_INDEX
+    usd_price_index = bundle.sources.sources[price_index_source].component(price_index_component).adapter
     ages = list(range(int(frames["road_variable"].age.dropna().max()) + 1))
     source_invest, source_maintenance = source_cost_frames(
         prices, burnham={"baseline": frames["baseline_repair_cost"], "class_multipliers": frames["class_multipliers"],
@@ -260,6 +271,7 @@ def build_diagnostic(bundle: ConfigBundle) -> VehicleCostDiagnostic:
         bean=frames["bean"], converter=converter, rules=cost_rules, ages=ages,
         burnham_money=_metadata(bundle, "nlr_atb_transportation", "maintenance_ldv"),
         bean_money=_metadata(bundle, "anl_autonomie_bean", "mhdv_maintenance_coefficients"),
+        usd_price_index=usd_price_index["index_by_year"],
     )
     technology, invest, variable = _read_sqlite(database)
     reconciled = {
@@ -267,7 +279,7 @@ def build_diagnostic(bundle: ConfigBundle) -> VehicleCostDiagnostic:
         "maintenance_shared_rows": reconcile_emitted_costs(frames["road_variable"], variable, variable=True),
     }
     invest = invest.assign(purchase_evidence_year=invest.vintage.map(
-        lambda year: bundle.scenario.periods.projection_year(int(year), legacy_at_end=False)))
+        lambda year: bundle.scenario.periods.evaluation_year(int(year))))
     audit_keys = ["region", "tech", "vintage", "period"]
     details = frames["road_variable"][[*audit_keys, "age", "load_factor", "purchase_evidence_year", "treatment"]]
     variable = variable.merge(details, on=audit_keys, how="left", validate="one_to_one")
@@ -275,8 +287,7 @@ def build_diagnostic(bundle: ConfigBundle) -> VehicleCostDiagnostic:
     # same scenario clock. Do not invent source-class attribution for those rows.
     missing = variable.age.isna() & variable.tech.str.endswith("_N")
     variable.loc[missing, "age"] = [
-        bundle.scenario.periods.projection_year(int(period), legacy_at_end=False)
-        - bundle.scenario.periods.projection_year(int(vintage), legacy_at_end=False)
+        int(period) - int(vintage)
         for period, vintage in zip(variable.loc[missing, "period"], variable.loc[missing, "vintage"])
     ]
     template = frames["template_technology"].rename(columns={"category": "mode", "sub_category": "powertrain"})
@@ -299,7 +310,7 @@ def build_diagnostic(bundle: ConfigBundle) -> VehicleCostDiagnostic:
     if any(file_sha256(path) != hashes[key] for key, path in paths.items()):
         raise ValueError("Vehicle cost inputs changed while capturing evidence; rerun serially")
     return VehicleCostDiagnostic(outputs, {
-        "version": 1, "scenario": bundle.scenario.model_dump(mode="json"),
+        "version": CAPTURE_VERSION, "scenario": bundle.scenario.model_dump(mode="json"),
         "scenario_path": str(bundle.scenario_path.relative_to(bundle.repo_root)),
         "build_timestamp_utc": report["timestamp_utc"], "database_sha256": report["database_sha256"],
         "cost_input_digest": audit["input_digest"], "trajectory": trajectory,
@@ -310,7 +321,6 @@ def build_diagnostic(bundle: ConfigBundle) -> VehicleCostDiagnostic:
         "ages": ages, "repair_terminal_age": cost_rules["ldv_repair_max_age"],
         "figures": FIGURES, "cost_metadata": audit["source_cost_metadata"],
         "limitations": [
-            "ATB retail MSRP uses a different dollar year from the calibrated LDV repair coefficients; production preserves that mismatch.",
             "US empirical M&R coefficients are transferred to Canadian classes; agreement with parameter rows is implementation reconciliation, not independent validation.",
             "The age range is a diagnostic view of model use, not evidence of empirical validation at those ages.",
             "Source-class charts retain actual source years; emitted vintage labels and interval-end cost evidence years are different.",
@@ -394,6 +404,9 @@ def load_diagnostic(*, directory: Path | None = None, repo_root: Path | None = N
                                     "uv run python -m validation.vehicle_cost_diagnostic --scenario <scenario.yaml> --write-report")
         directory = _within(evidence_root, json.loads(index.read_text(encoding="utf-8"))["capture"])
     metadata = json.loads((directory / "manifest.json").read_text(encoding="utf-8"))
+    if metadata.get("version") != CAPTURE_VERSION:
+        raise ValueError("Vehicle-cost capture format has changed. Rebuild the selected scenario, then run "
+                         "uv run python -m validation.vehicle_cost_diagnostic --scenario <scenario.yaml> --write-report")
     for record in metadata["inputs"].values():
         if "path" in record and file_sha256(_within(directory, record["path"])) != record["source_sha256"]:
             raise ValueError("Vehicle cost captured input hash changed; regenerate the diagnostic")
@@ -444,7 +457,7 @@ def source_price_chart(diagnostic: VehicleCostDiagnostic, *, vehicle_class: str 
     return _chart(frame, figure="vehicle-cost-1", x="source_year", y=f"{basis}_{'cad' if currency == 'CAD' else 'native'}",
                   x_title="Source projection year", y_title=f"{basis.title()} cost ({unit})",
                   subtitle=[f"{vehicle_class} · {diagnostic.metadata['trajectory']} · source points, no extrapolation",
-                            "Manufacturing estimates reverse the family RPE markup; retail MSRP remains the repair input."])
+                            "Manufacturing estimates reverse the family RPE markup. The repair equation uses rebased retail MSRP."])
 
 
 def investment_trajectory_chart(diagnostic: VehicleCostDiagnostic, *, region: str = "ON", mode: str = "cars"):
@@ -467,7 +480,7 @@ def maintenance_age_chart(diagnostic: VehicleCostDiagnostic, *, family: str = "l
                   subtitle=[f"{vehicle_class} · {f'MSRP source year {source_year}' if family == 'ldv' else 'BEAN coefficients held across vintages'}",
                   (f"Repair holds after age {diagnostic.metadata['repair_terminal_age']}; US coefficients are transferred to Canadian vehicles."
                    if family == "ldv" else "Age-linear MHDV coefficients have no registered validated age domain."),
-                  ("Retail MSRP and repair coefficients retain their different dollar years."
+                  (f"Retail MSRP is rebased to {int(frame.msrp_dollar_year.iloc[0])} {frame.msrp_currency.iloc[0]} for the repair equation."
                    if family == "ldv" else "No MSRP factor is applied. Legend labels are the registered BEAN powertrain codes.")])
 
 

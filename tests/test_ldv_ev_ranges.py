@@ -22,7 +22,6 @@ from fetching.epa_omega_baseline import (
     build_request,
     fetch_baseline,
     normalize_baseline,
-    prepare_baseline_extract,
     module_rules as omega_rules,
     required_inputs,
     validate_extract,
@@ -363,37 +362,18 @@ def test_typed_modes_reject_unknown_selection(bundle):
         ScenarioConfig.model_validate(payload)
 
 
-def test_compact_registered_extract_matches_legacy_notebook_and_market(bundle):
-    identity = prepare_baseline_extract(bundle)
-    assert (
-        identity["matches_legacy_notebook_source"]
-        and identity["matches_compact_extract_bytes"]
-    )
-    assert identity["parent_rows"] == 783 and identity["extract_rows"] == 78
-    assert identity["sales_by_powertrain"] == {"BEV": 669951, "PHEV": 185606}
-    assert build_request(bundle).expected_bytes == 13977
+def test_compact_registered_extract_matches_pinned_market(bundle):
+    evidence = fetch_baseline(bundle, publish=False)
+    request = build_request(bundle)
+    assert len(evidence) == 78
+    assert evidence.groupby("powertrain").sales.sum().to_dict() == {"BEV": 669951, "PHEV": 185606}
+    assert request.expected_bytes == 13977
     assert bundle.sources.sources["epa_omega_baseline"].status == "active"
     assert "epa_automotive_trends" not in bundle.sources.sources
     assert required_inputs(bundle) == [build_request(bundle).extract_path]
     assert required_inputs(with_mode(bundle, "new_capacity_shares")) == [
         build_request(bundle).extract_path
     ]
-
-
-def test_normal_etl_requires_only_compact_extract_and_never_parent_or_fuel_catalogue(
-    bundle, tmp_path
-):
-    from validation.config_models import SourcesConfig
-
-    sources = bundle.sources.model_dump()
-    adapter = sources["sources"]["epa_omega_baseline"]["components"][
-        "baseline_sales_ranges"
-    ]["adapter"]
-    adapter["parent_path"] = str(tmp_path / "no_parent.csv")
-    adapter["notebook_path"] = str(tmp_path / "no_notebook.ipynb")
-    b = replace(bundle, sources=SourcesConfig.model_validate(sources))
-    assert len(fetch_baseline(b, publish=False)) == 78
-
 
 def test_compact_pin_rejects_changed_snapshot_before_normalization(bundle, tmp_path):
     request = build_request(bundle)
@@ -968,9 +948,35 @@ def test_real_offline_standalone_caller_rollback_and_mode_switches(
 
     with closing(sqlite3.connect(database)) as standalone:
         assert standalone.execute("PRAGMA integrity_check").fetchone() == ("ok",)
-        assert standalone.execute(
-            "SELECT COUNT(*) FROM limit_annual_capacity_factor WHERE tech_or_group LIKE '%CHRG%'"
-        ).fetchone() == (118,)
+        from utils import load_harmonization_rules
+
+        charger_rules = load_harmonization_rules(b, "ev_chargers")
+        region_map = load_harmonization_rules(b, "road_stocks_and_demands")[
+            "existing_capacity"
+        ]["region_output_map"]
+        model_regions = {region_map.get(region, region) for region in b.scenario.geography.regions}
+        # Source updates can create positive existing stock in another region.
+        # Check complete keys against model vintages and physical charger stock.
+        expected_charger_keys = set()
+        for category, mapping in charger_rules["technology"].items():
+            operator = charger_rules["utilization"][category]["operator"]
+            expected_charger_keys.update(
+                (region, mapping["new"], vintage, mapping["output"], operator)
+                for region in model_regions for vintage in b.scenario.periods.model
+            )
+            expected_charger_keys.update(
+                (region, mapping["existing"], vintage, mapping["output"], operator)
+                for region, vintage in standalone.execute(
+                    "SELECT region, vintage FROM existing_capacity WHERE tech=? AND capacity>0",
+                    (mapping["existing"],),
+                )
+            )
+        actual_charger_keys = standalone.execute(
+            "SELECT region, tech_or_group, vintage, output_comm, operator "
+            "FROM limit_annual_capacity_factor WHERE tech_or_group LIKE '%CHRG%'"
+        ).fetchall()
+        assert len(actual_charger_keys) == len(set(actual_charger_keys))
+        assert set(actual_charger_keys) == expected_charger_keys
         assert standalone.execute(
             "SELECT DISTINCT vintage, factor FROM limit_annual_capacity_factor "
             "WHERE tech_or_group='T_LDV_CHRG_EX'"

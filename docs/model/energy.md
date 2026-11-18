@@ -1,9 +1,8 @@
 # How much energy does travel require?
 
-Consumption measures energy per vehicle-km; service efficiency measures passenger-
-or tonne-km per unit energy. The backend averages consumption on a consistent
-physical basis before taking its inverse. Averaging efficiencies directly would
-give a different answer.
+Consumption measures energy per vehicle-km. Service efficiency measures
+passenger-km or tonne-km per unit energy. The backend aggregates consumption and
+the compatible load before calculating service efficiency.
 
 ## From rated configurations to fleet consumption
 
@@ -58,9 +57,9 @@ descriptions support the representative cohort and how their count-weighted
 estimate differs from the catalogue median. It does not establish full-market
 or surviving-fleet coverage of incentive records.*
 
-Asterisks on the 2024 and 2025 rating-year labels mark years after the 2023
-production projection anchor. These later catalogue and composition observations
-are diagnostic evidence; they do not replace the anchored production trajectory.
+Asterisks mark ratings after the 2023 production projection anchor. These later
+catalogue and composition observations provide a diagnostic comparison. Production
+uses its 2023 anchor and ATB relative changes for 2024 onward.
 
 !!! note "Assumption: composition counts proxy travel weights"
     Family, size-class, annual-cohort and range weights have different meanings.
@@ -68,51 +67,66 @@ are diagnostic evidence; they do not replace the anchored production trajectory.
     across families. [*Transport Canada iZEV*](https://open.canada.ca/data/en/dataset/42986a95-be23-436e-af15-7c6bf292a2e1) incentive eligibility and acquisition/request timing do not
     make its records a census of sales or surviving stock.
 
-For normalized weights $\boldsymbol{w_i}$, consumption $\boldsymbol{c_i}$ in MJ/vehicle-km and matched
-occupancy/payload $\boldsymbol{\ell}$, the service efficiency is
+For normalized weights $w_i$, consumption $c_i$ in MJ/vehicle-km and matched
+occupancy or payload $\ell_i$, the service efficiency is
 
-$$\bar c=\sum_iw_i c_i,\qquad \eta=\frac{\ell}{\bar c}.$$
+$$\bar c=\sum_iw_i c_i,\qquad \bar\ell=\sum_iw_i\ell_i,\qquad \eta=\frac{\bar\ell}{\bar c}.$$
 
 !!! example "Worked example: average consumption before inversion"
     $\boldsymbol{\eta}$ is passenger-km/MJ or tonne-km/MJ, numerically equal to billion service-km/PJ.
     For example, equally weighted consumption of 2 and 4 MJ/km gives 3 MJ/km; at two
     passengers, efficiency is $2/3$ passenger-km/MJ, not the mean of $2/2$ and $2/4$.
 
+Each existing road vintage weights supported annual observations by raw physical
+cohort stock after fuel allocation and before lifetime redistribution. Consumption
+and load use the same weights, with missing-year coverage recorded before
+renormalization. This step includes buses and motorcycles, which have different
+[source and stock methods](vehicles.md#buses-and-motorcycles).
+
 ### How matching changes the consumption estimate
 
-The following light-truck gasoline sequence separates source-native evidence,
-the effect of composition, common energy units and the final vintage bridge.
-It precedes occupancy/payload harmonization: these are consumption estimates,
-not passenger- or tonne-km per unit energy.
+The next four figures follow one worked example, from gasoline light-truck
+ratings to the consumption trajectory used for model vintages. All four steps
+work in energy per vehicle-km or its fuel-volume equivalent. The model applies
+occupancy or payload afterward to calculate service efficiency.
+
+#### 1. Start from the gasoline catalogue ratings
 
 ![Native light-truck gasoline consumption](../assets/figures/ldv-eff-4-light-trucks-gasoline-l-100-km.svg)
 
-*Figure ldv-eff-4-light-trucks-gasoline-l-100-km. NRCan catalogue summaries
-retain source-native L/100 km: each size-class/model-year point is a median of
-distinct-trim family medians, before empirical composition weighting. Catalogue
-frequency does not represent the number of vehicles sold.*
+*Figure ldv-eff-4-light-trucks-gasoline-l-100-km. Each size-class and model-year
+point summarizes the NRCan catalogue in its original L/100 km. The median of
+distinct-trim family medians gives the baseline for the matching comparison.*
+
+#### 2. See what matching changes within each size class
 
 ![Composition effect on light-truck gasoline consumption](../assets/figures/ldv-eff-7-light-trucks-gasoline.svg)
 
-*Figure ldv-eff-7-light-trucks-gasoline. Production minus catalogue-median
-consumption by size class/model year, in MJ/vehicle-km. The change isolates the
-effect of the selected composition estimator within supported cells. Grey cells
-are missing comparisons; white cells indicate coincident estimates.*
+*Figure ldv-eff-7-light-trucks-gasoline. Match eligible gasoline families to
+Ontario MTO counts and weight the family medians within each size class. The
+heatmap subtracts the catalogue baseline from that estimate on a common
+MJ/vehicle-km basis. Blue shows lower consumption after matching and red shows
+higher consumption. Grey means no comparison is available. White means the
+estimates coincide.*
+
+#### 3. Combine the size classes on a common energy basis
 
 ![Light-truck gasoline evidence in common energy units](../assets/figures/ldv-eff-5-light-trucks-gasoline-mj-vkm.svg)
 
-*Figure ldv-eff-5-light-trucks-gasoline-mj-vkm. Explicit heating-value conversion
-places harmonized evidence on MJ/vehicle-km before trajectory indexing. The
-empirical composition estimate and catalogue comparison retain their distinct
-construction and source timing.*
+*Figure ldv-eff-5-light-trucks-gasoline-mj-vkm. Convert the gasoline rates using
+the fuel's heating value and combine the size classes with their fleet weights.
+This gives one harmonized light-truck consumption estimate per supported year.
+The ATB source values share the MJ/vehicle-km axis ahead of trajectory indexing.*
+
+#### 4. Build the gasoline vintage trajectory
 
 ![Resulting light-truck gasoline vintage consumption](../assets/figures/ldv-eff-6-light-trucks-gasoline-mj-vkm.svg)
 
-*Figure ldv-eff-6-light-trucks-gasoline-mj-vkm. Annual consumption evidence is
-combined using cohort stock weights, and future vintages follow the anchored ATB
-relative trajectory. Model-vintage aggregation can shift a point from a single
-source-year rating. Final service efficiency is calculated only after the
-matched occupancy or payload is applied.*
+*Figure ldv-eff-6-light-trucks-gasoline-mj-vkm. Combine the annual estimates using
+cohort stock weights to prepare the historical vintages. The latest observed
+cohort anchors the projection, and relative changes from ATB supply the future
+trajectory. Each prepared value represents the supported source years or
+projection year assigned to that model vintage.*
 
 ## Trucks and the observed-to-projected bridge
 
@@ -151,20 +165,21 @@ proxy and any incomplete cohort coverage remain in the audit. Truck weight,
 vocation and haul aggregation shape the ATB ratios rather than creating observed
 Canadian truck-vintage consumption.
 
-The aligned road reference is 2023. Observations through that year establish the
-historical anchor; annual 2024–2025 values use [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) relative changes before vintage
-aggregation. For LDV range variants, with consumption $\boldsymbol{c}$ in MJ/km, projected year $\boldsymbol{y}$, reference
-$\boldsymbol{y_0}=2023$, and powertrain/range variant $\boldsymbol{r}$:
+### Projection years and range variants
+
+On the standard five-year grid, new road vintage 2025 uses the 2030 projection
+in prospective mode. The legacy opening-period route weights supported 2021–2025
+annual consumption and load equally. Both use the 2023 aligned ratings/ATB
+reference for LDVs, with 2024 and 2025 calculated from ATB ratios. For LDV range
+variant $r$ and projected year $y$, consumption in MJ/vehicle-km is
 
 $$c_r(y)=c_{anchor}\frac{c^{ATB}_r(y)}{c^{ATB}_{anchor}(y_0)}.$$
 
 !!! note "Assumption: an empirical anchor with projected relative changes"
-    Here $\boldsymbol{c_{anchor}}$ is the empirical consumption for the reference class and
-    powertrain; the [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) denominator uses its matching reference variant. The ratio
-    carries technology improvement and relative range performance. It does
-    not turn [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) levels into Canadian observations. BEV300 and PHEV35 are common
-    historical projection indices; future range variants retain relative [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) levels.
-    Sparse source years follow explicit source policies rather than invented observations.
+    $c_{anchor}$ is the observed class and powertrain anchor. [NLR ATB](https://atb.nlr.gov/transportation/2024/data)
+    supplies the relative improvement and differences across ranges. BEV300 and
+    PHEV35 provide the reference indices for their families. Source-year policies
+    account for sparse coverage.
 
 ![Car BEV consumption bridge](../assets/figures/ldv-eff-6-cars-bev-mj-vkm.svg)
 
@@ -174,19 +189,24 @@ notebook build uses reference 2023 and explicit future ranges. The bridge is
 constructed from an observed anchor and relative [NLR ATB](https://atb.nlr.gov/transportation/2024/data) changes; continuity is not
 validation of future performance.*
 
-![Medium-truck diesel consumption bridge](../assets/figures/ldv-eff-6-medium-trucks-diesel-mj-vkm.svg)
-
-*Figure ldv-eff-6-medium-trucks-diesel-mj-vkm. The medium-truck fleet-year proxy
-and indexed diesel projection use the configured weight/vocation mix. This is a
-class-average consumption history, not measured efficiency by truck model year.
-Both bridge figures retain source years and selections in the publication manifest.*
-
 ![Light-truck PHEV consumption before load harmonization](../assets/figures/ldv-eff-6-light-trucks-phev-mj-vkm.svg)
 
 *Figure ldv-eff-6-light-trucks-phev-mj-vkm. The light-truck PHEV view retains
 the energy-equivalent consumption and range representations before the final
 payload/occupancy division. The PHEV distance utility factor is applied to its
 physical components before service efficiency is calculated.*
+
+### Ontario medium-truck gasoline and diesel {#ldv-eff-8-medium-trucks-incumbents-mj-vkm}
+
+![Ontario medium-truck gasoline and diesel consumption through historical and projected vintages](../assets/figures/ldv-eff-8-medium-trucks-incumbents-mj-vkm.svg)
+
+*Figure ldv-eff-8-medium-trucks-incumbents-mj-vkm. Ontario's gasoline medium
+trucks use less energy per vehicle-km in every plotted fleet year (2000–2023)
+and prepared vintage (evaluated through 2050). The 2023 NRCan CEUD fleet averages
+are 6.33 MJ/vehicle-km for gasoline and 7.13 for diesel. Solid lines show the
+fleet-year proxies. Dashed lines connect each fuel's stock-weighted anchor
+(a circle) to its new-vintage estimates using the same relative ATB diesel
+improvement. Diamonds mark the consumption underlying the prepared vintages.*
 
 ![Heavy-truck diesel consumption before load harmonization](../assets/figures/ldv-eff-6-heavy-trucks-diesel-mj-vkm.svg)
 
@@ -207,9 +227,8 @@ $$c=f(c_{CD,e}+c_{CD,f})+(1-f)c_{CS,f}.$$
     $\boldsymbol{f}$ is a distance fraction, not the electricity fraction of energy and not annual
     vehicle utilization $\boldsymbol{u}$. Shared input-split contracts represent the resulting
     electric/liquid blend. Its total energy is counted once in reconciliation.
-    Published [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64)/[*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) electricity already includes charging losses on its stated
-    basis; the unity charger transfer preserves that boundary.
-    See [infrastructure boundaries](infrastructure.md).
+    The model uses a wall-energy basis for electricity. The PHEV ratings boundary
+    remains subject to the qualification in [infrastructure](infrastructure.md#representation-and-accounting-limits-remain-explicit).
 
 ## Optional [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) energy calibration {#optional-ceud-energy-calibration}
 
@@ -272,10 +291,12 @@ fraction. All quantities use the same reference-year physical fleet and region.
 
 ![NRCan CEUD calibration closure and retained boundaries](../assets/figures/ceud-cal-1.svg)
 
-*Figure ceud-cal-1. The fitted liquid-fuel total closes on the specified boundary.
-This establishes arithmetic closure, not independent validation of consumption,
-fleet composition or the cause of the original mismatch. Off/on results use the
-same physical fleet, activity and captured source definitions.*
+*Figure ceud-cal-1. Unadjusted and calibrated liquid energy share the left axis
+with the CEUD target. The striped target extension retains excluded propane and
+natural gas; unresolved coverage remains in the diagnostic audit. Markers on the right axis
+show the class consumption multipliers. Fitted closure establishes arithmetic
+consistency under the same fleet and activity, not independent validation of
+consumption or the cause of the original mismatch.*
 
 <div class="keep-together" markdown="1">
 
@@ -287,7 +308,7 @@ projected 2025 demand, the fitted factors are:
 | Cars | 151.375830 | 130.469305 | 0.861890 |
 | Passenger light trucks | 241.974079 | 219.787701 | 0.908311 |
 | Freight light trucks | 80.816287 | 71.790711 | 0.888320 |
-| Medium trucks | 64.415281 | 57.445597 | 0.891801 |
+| Medium trucks | 64.678631 | 57.445597 | 0.888170 |
 | Heavy trucks | 160.698184 | 157.009704 | 0.977047 |
 
 </div>
@@ -299,40 +320,22 @@ projected 2025 demand, the fitted factors are:
     adjustments under the stated fleet/activity assumptions, not measurements of
     technology-specific test-to-road bias.
 
-![Class consumption adjustment factors](../assets/figures/ceud-cal-2.svg)
+![Regional light-duty base-year anchor efficiency changes](../assets/figures/ceud-cal-5-ldv.svg)
 
-*Figure ceud-cal-2. One factor per supported class changes the consumption level
-of all its represented vehicles. Values above one reduce service efficiency;
-values below one increase it. Heavy trucks now fit their confirmed diesel aggregate;
-the factor is estimated from that energy target rather than fixed at one.*
+*Figure ceud-cal-5-ldv. Cars, passenger light trucks and freight light trucks use
+the same powertrain/range columns and all ten model regions. Cells show the
+base-year range-anchor service-efficiency change, $\eta^1/\eta^0-1=1/g-1$,
+before representative aggregation. Every region uses its own fitted class factor.
+The common class multiplier gives emitted representatives the same percentage
+adjustment; the paired final-database audit separately verifies propagation.*
 
-![Reported fuel coverage and unresolved energy](../assets/figures/ceud-cal-3.svg)
+![Regional medium/heavy-duty base-year anchor efficiency changes](../assets/figures/ceud-cal-5-mhdv.svg)
 
-*Figure ceud-cal-3. Gasoline/diesel, excluded reported fuels and unresolved coverage
-remain separate. This prevents a fitted subtotal from appearing to validate the
-whole energy account. For the other classes, missing separately reported electricity
-remains unknown; heavy trucks use the confirmed diesel-only total.*
-
-![Regional car base-year anchor efficiency changes](../assets/figures/ceud-cal-5-cars.svg)
-
-*Figure ceud-cal-5-cars. At the base-year cohort anchor only, regions are rows
-and powertrains/ranges are columns. Cells show the relative change in prepared
-range-anchor service efficiency, $\eta^1/\eta^0-1=1/g-1$. The car heatmap uses the explicitly
-prepared regional calibration scenario; it does not extrapolate the Ontario
-factor to other provinces. These explicit range rows precede representative
-aggregation. The common class multiplier gives emitted representatives the same
-percentage adjustment; the paired final-database audit separately verifies that
-propagation. Historical and future relative trajectories remain unchanged.*
-
-![Regional truck base-year anchor efficiency changes](../assets/figures/ceud-cal-5-trucks.svg)
-
-*Figure ceud-cal-5-trucks. Separate facets retain passenger light trucks, freight
-light trucks, medium trucks and heavy trucks. Percentage changes make the
-passenger/freight units comparable. Tooltips in the notebook retain the prepared
-range-anchor before/after efficiencies and units, rather than final aggregated
-representative levels. Heavy-truck cells show the adjustment fitted to the diesel
-aggregate. Blank cells indicate
-unrepresented class/powertrain combinations rather than a zero adjustment.*
+*Figure ceud-cal-5-mhdv. Medium and heavy trucks retain the same regional layout
+and shared powertrain columns. The heavy-truck adjustment fits the confirmed
+diesel aggregate. Tooltips retain before/after range-anchor efficiencies and their
+units. Blank cells indicate unrepresented class/powertrain combinations rather
+than a zero adjustment. Historical and future relative trajectories are preserved.*
 
 Region codes preserve the backend's source boundaries: **BCT** combines British
 Columbia with the three territories; **NLLAB** and **PEI** denote Newfoundland and
@@ -347,12 +350,12 @@ Labrador and Prince Edward Island. No BC-only calibration is inferred from BCT.
     The same class-factor method now calibrates heavy-truck consumption while
     preserving the projected activity, physical stock and relative trajectories.
 
-!!! info "Verified implementation: final-parameter propagation"
-    The paired final-database check verifies all 574 efficiency rows, including future
-    and representative vehicles: 225 change by the specified class factors, including
-    all 33 heavy-truck rows, with
-    maximum relative factor error $4.44\times10^{-16}$. Comparable liquid energy closes
-    within $2.84\times10^{-14}$ PJ; activity, PHEV split parameters and all other
-    numerical parameter tables are unchanged. The 31 recorded efficiency-input
-    fingerprints agree across the builds. This establishes implementation and
-    accounting properties, not scientific acceptance of the adjustment.
+!!! info "Recorded Ontario paired check"
+    In the comparison accompanying these figures, 225 of 574 efficiency rows
+    change by the specified class factors, including 33 heavy-truck rows. The
+    maximum relative factor error is $4.44\times10^{-16}$ and liquid energy closes
+    within $2.84\times10^{-14}$ PJ. Activity, PHEV input splits and other numerical
+    parameters agree at the recorded tolerances. The 31 efficiency-input
+    fingerprints match. The audit verifies final rows. Separate baseline
+    preaggregation exports were unavailable for a byte-level comparison.
+    See the [comparison commands](../publication.md#optional-energy-calibration-comparisons).

@@ -18,7 +18,7 @@ import pandas as pd
 import requests
 from openpyxl import load_workbook
 from openpyxl.utils.cell import column_index_from_string, range_boundaries
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from utils import (
     ConfigBundle,
@@ -33,10 +33,31 @@ from validation.config_models import SourceSpec
 
 ATB_SOURCE_ID = "nlr_atb_transportation"
 ANL_SOURCE_ID = "anl_autonomie_bean"
+LOGGER = logging.getLogger(__name__)
 
 
 class NlrAtbAutonomieError(ValueError):
     """Raised when an ATB/ANL source contract is unavailable or changed."""
+
+
+class VehicleTrajectoryAlias(BaseModel):
+    """One publisher-documented alias, bounded to explicit vehicle classes."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    source_trajectory: str = Field(min_length=1)
+    trajectory: str = Field(min_length=1)
+    vehicle_classes: list[str] = Field(min_length=1)
+    references: list[str] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def bounded_alias(self):
+        if (self.source_trajectory == self.trajectory
+                or len(self.vehicle_classes) != len(set(self.vehicle_classes))
+                or any(not value.strip() for value in self.vehicle_classes)
+                or any(not value.startswith("https://") for value in self.references)):
+            raise ValueError("Vehicle trajectory alias requires distinct labels, unique classes and HTTPS evidence")
+        return self
 
 
 class ArchiveComponentRequest(BaseModel):
@@ -151,11 +172,12 @@ def configured_trajectory(
 ) -> str:
     """Validate a parameter's ATB choice; normalization retains every trajectory."""
     source = _source(bundle, ATB_SOURCE_ID)
-    expected = tuple(str(value) for value in source.adapter["expected_trajectories"])
+    expected = tuple(str(value) for value in source.adapter["supported_scenario_trajectories"])
     trajectory = getattr(bundle.scenario, parameter).atb_trajectory
     if trajectory not in expected:
         raise NlrAtbAutonomieError(
-            f"Unsupported ATB trajectory {trajectory!r}; expected one of {list(expected)}"
+            f"Unsupported ATB scenario trajectory {trajectory!r}; expected one of {list(expected)}. "
+            + source.adapter.get("unsupported_scenario_notes", {}).get(trajectory, "")
         )
     return trajectory
 
@@ -322,7 +344,7 @@ def normalize_vehicles(
     default_trajectory: str,
     rules: dict[str, Any],
 ) -> pd.DataFrame:
-    """Retain configured cost/performance metrics and every ATB trajectory."""
+    """Retain native metrics/labels and harmonize documented vocational scenarios."""
     _require_columns(frame, component.required_columns, "ATB vehicles.csv")
     actual_trajectories = set(frame["scenario"].dropna().astype(str))
     expected_trajectories = set(request.expected_trajectories)
@@ -356,6 +378,21 @@ def normalize_vehicles(
         raise NlrAtbAutonomieError("ATB vehicles.csv contains invalid year/value rows")
     selected["year"] = selected["year"].astype(int)
     selected["trajectory"] = selected["scenario"].astype(str)
+    selected["source_trajectory"] = selected["trajectory"]
+    for payload in vehicle_rules["trajectory_aliases"]:
+        alias = VehicleTrajectoryAlias.model_validate(payload)
+        if {alias.source_trajectory, alias.trajectory} - expected_trajectories:
+            raise NlrAtbAutonomieError("Vehicle trajectory alias uses an unregistered native label")
+        mask = selected.source_trajectory.eq(alias.source_trajectory) & selected.vehicle_class.isin(alias.vehicle_classes)
+        if selected.loc[mask, "trajectory"].ne(alias.source_trajectory).any():
+            raise NlrAtbAutonomieError("Overlapping vehicle trajectory aliases")
+        selected.loc[mask, "trajectory"] = alias.trajectory
+        if mask.any():
+            LOGGER.info("Harmonized %d ATB vehicle metric rows from native %s to %s for %s",
+                        int(mask.sum()), alias.source_trajectory, alias.trajectory, alias.vehicle_classes)
+    keys = ["vehicle_weight_category", "vehicle_class", "vehicle_powertrain", "vehicle_detail", "metric", "trajectory", "year"]
+    if selected.duplicated(keys).any():
+        raise NlrAtbAutonomieError("ATB effective vehicle trajectory keys overlap after harmonization")
     selected["metric_key"] = selected["metric"].map(metric_keys)
     selected["unit"] = selected["metric"].map(metric_units)
     selected["is_default_trajectory"] = selected["trajectory"].eq(default_trajectory)
@@ -1310,7 +1347,7 @@ def write_outputs(
 
 
 def fetch_and_normalize(
-    scenario_path: str | Path,
+    scenario_path: str | Path | ConfigBundle,
     *,
     download: bool = True,
     session: requests.Session | None = None,

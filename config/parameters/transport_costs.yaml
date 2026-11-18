@@ -1,0 +1,65 @@
+# Transport investment, maintenance and operating-cost conventions.
+# Registered by rules.yaml; see AGENTS.md for ownership and edit boundaries.
+
+version: 1
+
+parameterization:
+  costs:
+    transformation_version: '5'
+    trajectory_endpoint_policy: hold_last
+    # ATB 2024 definitions: MSRP / RPE estimates manufacturing cost by family.
+    # Conservative uses AEO MSRP; this reversal retains an estimated price basis.
+    nlr_road_retail_price_equivalent_markup: {ldv: 1.5, mhdv: 1.2}
+    aircraft_operating_days_per_year: 365
+    # Apply to retail MSRP rebased to the registered LDV repair dollar year.
+    ldv_repair_price_exponent_per_usd: 0.00002
+    ldv_repair_max_age: 14
+    bean_maintenance_age_policy: linear_throughout_life
+    historical_msrp_proxy: earliest_selected_atb_price
+    missing_mhdv_purchase_powertrain_proxy: {gasoline: diesel, cng: diesel}
+    spk_aircraft_cost_proxy: jet_fuel
+    intercity_purchase_source_keys: {diesel: icev, gasoline: icev, cng: cngv, hev: icev, bev: bev, fcev: hfcv}
+    ldv_powertrain_evidence:
+      gasoline: Gasoline
+      diesel: Diesel
+      cng: Natural Gas
+      hev: Gasoline Hybrid
+      phev_35_miles: Plug-in Hybrid
+      phev_50_miles: Plug-in Hybrid
+      bev_150_miles: Battery Electric
+      bev_200_miles: Battery Electric
+      bev_300_miles: Battery Electric
+      bev_400_miles: Battery Electric
+      fcev: Hydrogen Fuel Cell
+    bean_powertrain_evidence:
+      gasoline: Conv
+      diesel: Conv
+      cng: Conv
+      hev: ParHEV
+      phev: SeriesPHEV
+      bev: BEV
+      fcev: FCEV
+      fchev: FCHEV
+    bean_gvwr_proxy:
+      2: BoxMedium 4
+      3: BoxMedium 4
+      4: BoxMedium 4
+      5: BoxMedium 4
+      6: BoxMedium 6
+      7: BoxMedium 6
+    bean_class_alias:
+      Class 8 Beverage DayCab: RegionalDayCab 8
+      Class 8 Drayage DayCab: DrayageDayCab 8
+      Class 8 Regional DayCab: RegionalDayCab 8
+      Class 8 Longhaul Sleeper: LonghaulSleeper 8
+      Class 8 Transit Heavy: TransitHeavy 8
+      Class 3 Medium School: TransitHeavy 8
+      Class 7 Medium School: TransitHeavy 8
+    offroad_multiplier_period_year: {through_2035: 2035, through_2050: 2050}
+    files:
+      road_invest: road_cost_invest.csv
+      road_variable: road_cost_variable.csv
+      offroad_invest: offroad_cost_invest.csv
+      offroad_variable: offroad_cost_variable.csv
+      currency_audit: currency_harmonization.csv
+      integrity: cost_integrity.json

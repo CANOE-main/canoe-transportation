@@ -2,10 +2,10 @@
 
 from dataclasses import replace
 from hashlib import sha256
+from pathlib import Path
 
 import pandas as pd
 import pytest
-import yaml
 
 from parameterization.vehicle_reference import (
     CANONICAL_COLUMNS, SOURCE_LINK_COLUMNS, VehicleReference,
@@ -13,6 +13,7 @@ from parameterization.vehicle_reference import (
     load_vehicle_reference_frames, reference_mto_mapping, resolve_source_labels,
     validate_vehicle_reference, vehicle_id,
 )
+from utils import load_rules_config
 
 
 def canonical(**changes):
@@ -253,7 +254,7 @@ def test_generic_provincial_sources_can_reuse_identity_without_copying_canonical
 
 
 def test_mto_adapter_preserves_scope_class_notes_and_supplies_no_population_counts():
-    rules = yaml.safe_load(open("config/parameters/rules.yaml", encoding="utf-8"))
+    rules = load_rules_config(Path(__file__).resolve().parents[1] / "config/parameters")
     road = rules["parameterization"]["road_aggregation"]
     classes = rules["fetching"]["nrcan_fuel_consumption_ratings"]["vehicle_class_harmonization"]
     ref = reference(links=[link(source="ontario_ministry_transport_vehicle_population", source_make="FIX", source_model="F",
@@ -269,7 +270,7 @@ def test_mto_adapter_preserves_scope_class_notes_and_supplies_no_population_coun
 
 
 def test_ambiguous_mto_class_is_not_inferred_from_known_canonical_class():
-    rules = yaml.safe_load(open("config/parameters/rules.yaml", encoding="utf-8"))
+    rules = load_rules_config(Path(__file__).resolve().parents[1] / "config/parameters")
     ref = reference(links=[link(source="ontario_ministry_transport_vehicle_population", source_make="FIX", source_model="F",
         vehicle_scope="ldv_class_unresolved", source_vehicle_class="", canonical_description="Family")])
     frame = reference_mto_mapping(ref, rules["parameterization"]["road_aggregation"],

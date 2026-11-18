@@ -97,6 +97,8 @@ sources:
     adapter:
       url_template: "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e/downloads/comprehensive/Excel/{year}/tran_{region}_e_{table_id}.xls"
       cache_path_template: "nrcan_ceud_transport/{year}_tran_{region}_e_{table_id}.xls"
+      retry_attempts: 3
+      retry_backoff_seconds: 0.5
       regions:
         allowed: ["AB", "BCT", "MB", "NB", "NL", "NS", "ON", "PE", "QC", "SK"]
     components:
@@ -268,6 +270,8 @@ sources:
     adapter:
       url_template: "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/data_e/downloads/comprehensive/Excel/{year}/tran_ca_e_{table_id}.xls"
       cache_path_template: "nrcan_ceud_transport/{year}_tran_ca_e_{table_id}.xls"
+      retry_attempts: 3
+      retry_backoff_seconds: 0.5
     components:
       20:
         label: "Passenger Air"
@@ -525,7 +529,7 @@ sources:
         validation_rule: "Current quarterly table must expose exact province-level geography, fuel type, LDV type, and number-of-vehicles series."
         adapter: {product_id: 20100025, frequency: quarterly, archive_status: current}
       "23-10-0308-01":
-        database_note: "Registered vehicle stock by province, weight class and fuel; stock composition is used as a fuel-mix proxy rather than new-vehicle sales."
+        database_note: "Registered-fleet composition for vehicles weighing 4,536 to 11,793 kg proxies powertrain shares of the full CEUD medium-truck class and annual cohorts; CEUD retains stock totals. Class 7 is excluded from the share basis; unsupported fuels are excluded and audited. These are stock distributions, unlike the LDV new-registration distributions."
         data_quality: {dq_geog: 2, dq_struc: 3, dq_tech: 2}
         label: "Vehicle registrations, by type of vehicle and fuel type"
         short_name: vehicle_registrations_by_size_and_fuel_type
@@ -536,7 +540,7 @@ sources:
         version: "2017-present"
         citation: "Statistics Canada. Table 23-10-0308-01. https://doi.org/10.25318/2310030801-eng"
         validation_rule: "Annual table must expose configured medium and heavy vehicle classes, fuel types, and number-of-vehicles series by province."
-        adapter: {product_id: 23100308, frequency: annual, archive_status: current}
+        adapter: {product_id: 23100308, frequency: annual, archive_status: current, snapshot: {archive_cache_path: statcan_transport/23100308-eng-09397af821ad7396.zip, metadata_cache_path: statcan_transport/23100308-metadata-08007a6bbbe9ddb6.json, archive_sha256: 09397af821ad73962b555b558d8547fa75ff8c22c28a9d383e20ed58ff43d608, metadata_sha256: 08007a6bbbe9ddb6fc9b70743cc698eed9c5d9d7fa9d8683ae55ba4967401ab9, release_time: '2026-09-22T08:30'}}
       "34-10-0254-01":
         database_note_variants:
           canada_fallback: "Canada-level reported useful life substitutes where the selected province has no usable value."
@@ -696,9 +700,12 @@ sources:
         url: "https://atb.nlr.gov/img/other/2024_atb_transportation_data_v1.zip"
       cache_path: "nlr_atb_autonomie/2024/2024_atb_transportation_data_v1.zip"
       expected_trajectories: [Advanced, Conservative, Constant, Mid]
+      supported_scenario_trajectories: [Advanced, Conservative, Mid]
+      unsupported_scenario_notes:
+        Constant: "The 2024 publisher discontinued Constant for most vehicle types; native Constant rows cover only refuse/vocational exceptions within Conservative, not a complete road-vehicle scenario."
     components:
       vehicles:
-        database_note: "U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately."
+        database_note: "U.S. vehicle technology and retail-equivalent price trajectories in 2022 USD; MHDV gasoline/CNG variants are absent, requiring mapped proxies. Manufacturing-cost conversion is applied separately. For Conservative, the publisher supplies native Constant trajectories for Class 7 Medium Vocational, Class 8 Refuse Heavy and Class 8 Vocational Heavy; retain those native labels while harmonizing their scenario selection."
         data_quality: {dq_time: 1}
         label: "Transportation ATB vehicle projections"
         short_name: atb_vehicle_cost_performance_trajectories
@@ -707,7 +714,7 @@ sources:
         produces: [vehicle_efficiency, vehicle_cost, all_electric_range, usable_battery_capacity]
         parameter_modules: [road_efficiencies, road_capex_opex]
         units: "Metric-labelled: mi/dge, mi/gge, 2022 USD, miles, and kWh."
-        validation_rule: "Must retain Advanced, Conservative, Constant, and Mid trajectories and expose configured vehicle dimensions, metric, value, and reference columns. PHEV fuel economy is reconciliation evidence only; other PHEV metrics and all configured non-PHEV metrics remain authoritative."
+        validation_rule: "Retain all four native source_trajectory labels and harmonize only the three publisher-defined Constant vocational exceptions to Conservative. Expose configured vehicle dimensions, metric, value and reference columns; reject overlapping effective keys. PHEV fuel economy is reconciliation evidence only; other PHEV metrics and all configured non-PHEV metrics remain authoritative."
         adapter:
           native_cost_currency: USD
           native_cost_dollar_year: 2022
@@ -821,6 +828,29 @@ sources:
           required_columns: [vehicle_weight_category, vehicle_class, notes, reference]
           age_column_pattern: "^[0-9]+$"
 
+  bea_us_gdp_deflator:
+    source_id: T42
+    title: "BEA U.S. GDP implicit price deflator"
+    status: active
+    source_type: reviewed_manual
+    file_type: published_table
+    version: "2024-04-25"
+    citation: "U.S. Bureau of Economic Analysis. NIPA Table 1.1.9, line 1, annual values, April 25, 2024 release. https://downloads.regulations.gov/BOEM-2024-0037-0002/content.pdf"
+    database_note: "Annual U.S. GDP implicit price deflator levels for rebasing the ATB retail price input to the Burnham repair equation."
+    units: "Index, 2017=100."
+    data_quality: {dq_cred: 1, dq_geog: null, dq_struc: null, dq_tech: null, dq_time: 1}
+    validation_rule: "Require finite positive annual index levels for the registered ATB MSRP and Burnham repair dollar years."
+    refresh_notes: "Pin the annual table values for the two source dollar years. The 2024 Transportation ATB uses the U.S. GDP implicit price deflator. Normal builds read the pinned values here."
+    components:
+      annual:
+        label: "Annual U.S. GDP implicit price deflator"
+        short_name: us_gdp_implicit_price_deflator
+        applies_to: [cars, passenger_light_trucks, freight_light_trucks]
+        produces: [ldv_repair_msrp]
+        parameter_modules: [road_capex_opex]
+        adapter:
+          index_by_year: {2020: 105.381, 2022: 117.973}
+
   anl_autonomie_bean:
     source_id: T07
     title: "ANL 2022 Autonomie and BEAN transportation analysis"
@@ -865,6 +895,36 @@ sources:
         units: "Source-labelled maintenance-and-repair coefficients."
         validation_rule: "The rules.yaml extraction mapping must yield non-empty numeric long-form coefficients with source labels and cell coordinates."
 
+  jonas_ev_charging_utilization:
+    source_id: T41
+    title: "Electric Vehicle User Behavior: An Analysis of Charging Station Utilization in Canada"
+    status: active
+    source_type: reviewed_manual
+    file_type: published_article
+    version: "2023; FLO observations 2018-2019"
+    citation: "Jonas, T., Daniels, N., & Macht, G. (2023). Electric Vehicle User Behavior: An Analysis of Charging Station Utilization in Canada. Energies, 16(4), 1592. https://doi.org/10.3390/en16041592"
+    units: "Active charging minutes/session and sessions/port/day; derived annual time fraction."
+    database_note: "FLO residential Level 2 telemetry from 2018-2019 in a British Columbia/Quebec study: 2,657 residential ports and 675,560 sessions. Table 2 reports 156.61 mean active minutes/session and 0.73 mean sessions/port/day; their product gives about 1.91 active hours/day, supporting the scenario's reviewed 0.08 home-utilization proxy. Multiplying differently weighted means is an approximation, not a directly measured annual rated-power energy factor. Application to home L1, other provinces and future vintages is a modeling proxy; plugged-in parking time is excluded."
+    data_quality: {dq_cred: null, dq_geog: null, dq_struc: null, dq_tech: null, dq_time: null}
+    validation_rule: "Retain the reviewed scenario home factor separately from published observations; require finite utilization strictly between zero and one and preserve full resolved DQ."
+    refresh_notes: "Review the published Table 2 and scenario assumption explicitly; normal builds do not retrieve article text or private session data. New source DQ annotations await review and resolve conservatively to 5."
+    components:
+      residential_l2_utilization:
+        label: "FLO residential L2 active-charging utilization proxy"
+        short_name: flo_residential_l2_utilization
+        inputs: [mean_active_charging_minutes_per_session, mean_sessions_per_port_day]
+        applies_to: [ldv_chargers]
+        produces: [charger_annual_utilization]
+        parameter_modules: [ev_chargers]
+        adapter:
+          publication_url: https://doi.org/10.3390/en16041592
+          table: 2
+          observation_years: [2018, 2019]
+          residential_ports: 2657
+          residential_sessions: 675560
+          mean_active_minutes_per_session: 156.61
+          mean_sessions_per_port_day: 0.73
+
   transport_canada_izev:
     source_id: T40
     title: "Transport Canada Incentives for Zero-Emission Vehicles (iZEV)"
@@ -875,7 +935,7 @@ sources:
     citation: "Transport Canada. iZEV program incentive requests. Government of Canada Open Government Portal. https://open.canada.ca/data/en/dataset/42986a95-be23-436e-af15-7c6bf292a2e1"
     units: "Incentivized purchase/lease records; one vehicle per record."
     database_note: "Purchase/lease acquisition records proxy PEV composition. Own-year MY2020–2024 counts apply within that window; their pooled composition proxies older cohorts using each target year's Ratings consumption, classes and ranges. Geography is chosen for the whole source-period/broad-powertrain pool before matching. Eligibility and demonstrator exceptions limit market representation; public records lack VIN/transaction IDs, so identical rows are retained without claiming unique vehicles. Request year differs from model year. Unresolved matches use distinct-model catalogue medians; incentive composition does not measure historical sales or in-use consumption."
-    data_quality: {dq_cred: null, dq_geog: null, dq_struc: null, dq_tech: null, dq_time: null}
+    data_quality: {dq_cred: 1, dq_geog: 1, dq_struc: 3, dq_tech: 2, dq_time: 1}
     validation_rule: "Pinned MD5/bytes, 18 native columns, Purchase/Lease categories, exact model-year/province/propulsion coverage and actual request dates; retain repeated transactions and audit blank physical rows."
     refresh_notes: "Use the explicit source updater for the three registered resource IDs. Review eligibility and model-year coverage changes before adoption; never overwrite pinned caches. The FY2024-25 file contains an FY2025-26 processing tail through August 2025."
     update:
@@ -1725,8 +1785,11 @@ sources:
         validation_rule: >
           Validate complete class/range/gas coverage, native controls, units, finite
           converged results and source/result-bank hashes. Replay must reproduce the
-          retained ATB digest after restoring only its source-family identity and
-          default-trajectory marker. Accept the native lightweight selector mismatch
+          retained ATB digest after strictly reversing the registered source-family,
+          default-marker, record-ending and publisher vocational-trajectory
+          representations, including the source_trajectory annotation. Every inverse
+          must reproduce the exact registered SHA-256; value/schema drift is rejected.
+          Accept the native lightweight selector mismatch
           only while affected range inputs are identical; exclude combined CO2.
         adapter:
           directory: R&D GREET2025_Rev1
@@ -1851,36 +1914,39 @@ sources:
     status: active
     source_type: upstream_download
     file_type: zip
-    version: "2026-09-29 vehicle snapshot"
+    version: "2026-11-04 vehicle snapshot"
     units: "Source vehicle classification records by model year, make, and model."
     citation: "U.S. Department of Energy and U.S. Environmental Protection Agency. FuelEconomy.gov Find a Car vehicle data. https://www.fueleconomy.gov/feg/ws/index.shtml"
     database_note: "U.S. model-year make/model and vehicle-class records used to corroborate Canadian vehicle classification; model names and classes require harmonization."
     # dq_time: Catalogue model years 1984-2027 support matching-year classification, not snapshot-year scoring.
     data_quality: {dq_cred: 1, dq_geog: 2, dq_struc: 2, dq_tech: 2, dq_time: 1}
-    validation_rule: "Validate the pinned ZIP hash, byte count, vehicles.csv member, exact four selected columns, non-null values, and model-year bounds before VClass normalization."
+    validation_rule: "Validate the pinned ZIP hash, byte count, vehicles.csv member, four selected classification columns, non-null values, and model-year bounds before VClass normalization; also validate the native propulsion fields selected by efficiencies.ratings.evidence_columns before efficiency classification and update adoption."
     refresh_notes: >
       The public download is a moving file. Review its Last-Modified header, byte count,
       SHA-256, archive member, selected columns, model-year bounds, and complete VClass
       vocabulary together before replacing the pinned cache. Only year, make, model,
-      and VClass are the classification contract. The separately registered range
+      and VClass are the vehicle-class output contract. The same vehicles component
+      also supplies complementary propulsion configurations selected by
+      efficiencies.ratings.evidence_columns; update review compares those rows too.
+      The separately registered range
       component authorizes additional fields from the same frozen cache; never refresh
       or widen classification implicitly.
     components:
       vehicles:
-        label: "FuelEconomy.gov vehicles.csv (2026-09-29)"
+        label: "FuelEconomy.gov vehicles.csv (2026-11-04)"
         short_name: fueleconomy_vehicle_class_evidence
-        inputs: [vehicle_model_year, vehicle_make, vehicle_model, vehicle_size_class]
+        inputs: [vehicle_model_year, vehicle_make, vehicle_model, vehicle_size_class, propulsion_configuration]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks]
-        produces: [normalized_vehicle_class_evidence]
-        parameter_modules: [road_aggregation]
+        produces: [normalized_vehicle_class_evidence, complementary_propulsion_evidence]
+        parameter_modules: [road_aggregation, road_efficiencies]
         units: "Categorical vehicle records."
-        validation_rule: "Select only year, make, model, and VClass and retain unresolved class normalizations explicitly."
+        validation_rule: "Select only year, make, model, and VClass for the class output and retain unresolved normalizations; efficiency classification separately reads native propulsion fields from efficiencies.ratings.evidence_columns, and update review must compare both consumed scopes."
         adapter:
           url: "https://www.fueleconomy.gov/feg/epadata/vehicles.csv.zip"
-          cache_path: "fueleconomy_vehicles/2026-09-29_vehicles.csv.zip"
+          cache_path: "fueleconomy_vehicles/2026-09-29_vehicles-1d553896a77898f6.csv.zip"
           archive_member: vehicles.csv
-          expected_sha256: "33d32caa0343cdb11c47be631e8a80b7ed7c351ee8503646a4e96485bd67b22f"
-          expected_bytes: 2212193
+          expected_sha256: "1d553896a77898f6cf47128281337af268df053c90dc1365891c7c8abff82c82"
+          expected_bytes: 2228192
           expected_model_year_from: 1984
           expected_model_year_to: 2027
           required_columns: [year, make, model, VClass]
@@ -1889,7 +1955,7 @@ sources:
       range_evidence:
         database_note: "U.S. MY2024 BEV range and PHEV charge-depleting range keyed by model type; the range records carry no production weights."
         data_quality: {dq_time: 2}
-        label: "FuelEconomy.gov MY2024 BEV/PHEV range and EPA model-type keys (2026-09-29)"
+        label: "FuelEconomy.gov MY2024 BEV/PHEV range and EPA model-type keys (2026-11-04)"
         short_name: fueleconomy_cd_range_evidence
         inputs: [vehicle_id, model_year, manufacturer_code, model_type_index, powertrain, range, secondary_fuel_range]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks]
@@ -1913,7 +1979,7 @@ sources:
     units: "Source model and vehicle-type records by make and model year."
     citation: "National Highway Traffic Safety Administration. Vehicle Product Information Catalog (vPIC) API. https://vpic.nhtsa.dot.gov/api/"
     database_note: "U.S. make/model-year and vehicle-type records used to corroborate Canadian vehicle mappings; missing responses do not establish vehicle nonexistence."
-    data_quality: {dq_cred: 2, dq_geog: 2, dq_struc: 3, dq_tech: 2, dq_time: 2}
+    data_quality: {dq_cred: 1, dq_geog: 1, dq_struc: 1, dq_tech: 1, dq_time: 1}
     validation_rule: "Issue only bootstrap-gated make/year requests, validate response envelopes and records strictly, and retain every response in the registered cache."
     refresh_notes: >
       Refresh only after regenerating the positive-stock, promotion-approved,
@@ -1955,12 +2021,12 @@ sources:
     source_id: T24
     title: "Electric Vehicle Charging Infrastructure for Canada"
     status: active
-    source_type: manual_parameter
-    file_type: csv
-    version: "2024 updated forecast; reviewed manual extraction"
+    source_type: upstream_download
+    file_type: html
+    version: "2024 updated forecast; registered report and reviewed aggregate overrides"
     units: "Reviewed dimensionless utilization and port-count shares, kW port ratings, and 2022 CAD capital costs per port."
     citation: "Dunsky Energy & Climate. (2024). Electric Vehicle Charging Infrastructure for Canada—Updated forecasts of vehicle charging needs, grid impacts and costs for all vehicle segments. Natural Resources Canada. https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada"
-    database_note: "Canadian LD/MHD charging projections with reviewed port-count mixes, rated-power trajectories and CAD2022 equipment/installation costs per port. Convert total port expenditure divided by total rated power to model costs. Common 0.20 utilization is a user-reviewed consistency override for vintage-indexed limits, not a direct source observation; final cost/power values beyond 2040 retain the reviewed endpoint."
+    database_note: "Canadian LD/MHD charging projections with port-count mixes, rated-power trajectories and CAD2022 equipment/installation costs per port. Model cost is total port expenditure divided by total rated power. Aggregated infrastructure retains manual annual utilization 0.20/0.30 for LDV/MHDV; explicit archetypes derive utilization from matched operating inputs and a separately sourced home proxy. Source-specific endpoint holds remain explicit."
     database_precedence:
       - table: existing_capacity
         categories: [charger]
@@ -1968,90 +2034,116 @@ sources:
         categories: [charger]
       - table: cost_invest
         categories: [charger]
-    data_quality: {dq_cred: 2, dq_geog: 2, dq_struc: 3, dq_tech: 2, dq_time: 2}
-    validation_rule: "Select 37 cited charger rows from the compact charger table with unique category/subcategory/parameter/period keys."
+    data_quality: {dq_cred: 2, dq_geog: 2, dq_struc: 2, dq_tech: 1, dq_time: 1}
+    validation_rule: "Authenticate the registered report and 29 extracted cost/power/existing-mix inputs; retain exactly two manual aggregate utilization overrides. Validate source-native cells and yearly component counts before deriving aggregate or explicit rows."
     refresh_notes: >
       Review the source report tables and all charger utilization/share/cost rows together
       before changing the version-controlled values or derivation notes.
     adapter:
+      diagnostic_report:
+        url: "https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada"
+        cache_path: "dunsky/charging_infrastructure_2024-e4592af54437.html"
+        expected_sha256: "e4592af5443703fd1e563fae58ade15fc4cf5591efc142d0c2cb361f776e9730"
+        expected_bytes: 441179
+        publication_date: "2024-02"
       access:
-        method: version_controlled_manual_parameter
+        method: pinned_report_and_reviewed_manual_overrides
         url: "https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada"
     components:
+      published_report:
+        label: "February 2024 all-segment charging infrastructure assessment"
+        short_name: published_report
+        inputs: [charger_counts, composition, rated_power, utilization, capital_cost]
+        applies_to: [charger]
+        produces: [aggregate_charger_inputs, diagnostic_evidence]
+        parameter_modules: [ev_chargers]
+        units: "Source-native counts, shares, kW, annual utilization and CAD2022 per port."
+        database_precedence:
+          - table: existing_capacity
+            categories: [charger]
+          - table: cost_invest
+            categories: [charger]
+        database_note: "Tables 6 and 38 provide evolving port-count composition; Tables 12 and 21 provide matched equipment cost/power, with DCFC rating held at 300 kW after 2040. Aggregate LDV/MHDV rates pool expenditure and rated power from the same components as explicit archetypes. Explicit LDV public/workplace utilization uses Table 31. Table 19 MHDV inputs are private overnight 8 hours/vehicle and 1 vehicle/port/day; public overnight 6 hours/vehicle and 1.5 vehicles/port/day; private fast/MCS 0.5 hours/vehicle and 3 vehicles/port/day; public fast/MCS 0.5 hours/vehicle and 6 vehicles/port/day. Reference annualization multiplies occupied hours/day by 300 operating days and divides by 8,760; the transformation description records selected controls. Public 100 kW overnight cost scales the private 50 kW cost linearly; home L2 uses public-L2 capex as a proxy. National MHDV composition transfers to each province; projected mix after 2040 is held, not a new port forecast."
       charger_shares_and_utilization:
-        label: "EV charger utilization, shares, and capital costs"
+        label: "Reviewed aggregate EV charger annual utilization"
         short_name: dunsky_charger_shares_utilization
         inputs: [category, sub_category, parameter, unit, currency_year, period, value]
         applies_to: [charger]
-        produces: [charger_utilization, charger_type_share, charger_cost_invest]
+        produces: [charger_utilization]
         parameter_modules: [ev_chargers]
-        units: "Dimensionless utilization rate or port-count share; kW port rating; 2022 CAD per port."
-        validation_rule: "Require all 37 cited rows, matched cost/power source years, and reviewed derivation/override notes."
+        units: "Dimensionless annual utilization."
+        database_note: "Aggregated representation retains reviewed manual annual utilization of 0.20 for LDV and 0.30 for MHDV. These values are distinct from explicit type-specific utilization derived from operating inputs. The original rounded MHDV duration/throughput and 80/20 mix rationale remains in the manual input for audit."
+        validation_rule: "Require exactly the two retained aggregate-utilization rows. Rated powers and evolving cost-composition trajectories come from authenticated report cells, not manual overrides."
         adapter:
           manual_parameter_path: "charger_parameters.csv"
           expected_columns: [category, sub_category, parameter, unit, currency_year, period, value, notes, "source -> data_source"]
           unique_key: [category, sub_category, parameter, period]
           source_selector: "Dunsky Energy & Climate. (2024). Electric Vehicle Charging Infrastructure for Canada—Updated forecasts of vehicle charging needs, grid impacts and costs for all vehicle segments. Natural Resources Canada. https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada"
-          expected_rows: 37
+          expected_rows: 2
 
-  transport_canada_ev_dashboard:
-    # No API: changed observations/publication require an exact reviewed updater report.
-    update: {strategy: tc_dashboard}
-    source_id: T25
-    title: "Transport Canada electric vehicle dashboard"
+  afdc_alternative_fueling_stations:
+    source_id: T38
+    title: "Alternative Fuels Data Center — public electric charging stations"
     status: active
     source_type: upstream_download
-    file_type: html
-    version: "2026; public chargers June 2026; snapshot b100cabf366a"
-    units: "Medium/heavy EV market-share percentages and public light-duty charging port counts."
-    citation: "Transport Canada. (2026). Canada's electric vehicle dashboard. https://tc.canada.ca/en/road-transportation/innovative-technologies/electric-vehicles/canada-electric-vehicle-dashboard"
-    database_note: "Canadian provincial EV market-share and public charging-port snapshots; reporting dates and coverage differ by component."
+    file_type: json
+    version: "Canadian public inventory, 2025-12-31"
+    units: "Electric vehicle charging ports (EVSE); station records are locations."
+    citation: "National Laboratory of the Rockies / Natural Resources Canada. Alternative Fuels Data Center, Alternative Fueling Station Locator. https://afdc.energy.gov/stations/"
+    database_note: "Canadian public, available electric-station inventory observed 2025-12-31; count L1, L2 and DC fast EVSE ports by province and territory, not station locations or connector plugs. Observation date is retained separately from model base year."
     data_quality: {dq_cred: 1, dq_geog: 1, dq_struc: 2, dq_tech: 2, dq_time: 2}
-    validation_rule: "Pinned HTML must contain the configured market-share and public-charger sections; validate regional coverage, charger types, counts, and national totals."
-    refresh_notes: >
-      Run source_updater with --source transport_canada_ev_dashboard, inspect its
-      table-selection evidence and observation_changes, then use --apply
-      --review-report <report.json> to adopt that exact proposal. Added same-year
-      quarters retain the configured selected quarter; changed years, ambiguous
-      tables or missing selected columns require a separate configuration review.
-      Provincial charger counts take precedence over national aggregates. Retain
-      national inconsistencies in update notes and normalized warnings; preserve
-      published L2/DCFC counts and use their normalized mix for provincial totals.
+    validation_rule: "Require exact registered bytes/hash, complete filtered Canadian station inventory, unique station IDs, all 13 provinces/territories and reconciled L1/L2/DCFC port counts."
+    refresh_notes: "Acquire an explicitly dated AFDC inventory, review native station/port changes and register its exact hash and byte count; offline replay never refreshes the source implicitly."
     adapter:
-      access:
-        method: https
-        url: "https://tc.canada.ca/en/road-transportation/innovative-technologies/electric-vehicles/canada-electric-vehicle-dashboard"
-      cache_path: "assorted_sources/transport_canada_ev_dashboard_2026_q1-b100cabf366aab32.html"
-      expected_sha256: "b100cabf366aab321e620ef74db548a89c65b0e1783419647b536ba7b99b1e48"
-      expected_bytes: 96814
+      access: {method: api, url: "https://developer.nlr.gov/api/alt-fuel-stations/v0/historical-date/2025-12-31.json", api_key: DEMO_KEY}
+      cache_path: "afdc/canada_public_2025-12-31-d22963c84c58.json"
+      snapshot_date: "2025-12-31"
+      expected_sha256: "d22963c84c5876b8465a7317796d361cea65bbe0ef369a192f8114f8a859949c"
+      expected_bytes: 45291619
     components:
-      medium_heavy_ev_market_share:
-        database_note: "Provincial MHDV EV market shares for 2026 year to date, used as a stock-share proxy where selected; market share does not directly measure the installed fleet."
-        data_quality: {dq_struc: 3, dq_time: 3}
-        label: "2026 year-to-date medium/heavy EV market share by province"
-        short_name: medium_heavy_ev_market_share
-        inputs: [province, quarter_share, year_to_date_share]
-        applies_to: [medium_trucks, heavy_trucks]
-        produces: [existing_capacity]
-        parameter_modules: [road_stocks_and_demands]
-        units: fraction
-        validation_rule: "Require all CEUD regional share proxies to resolve to a numeric bounded provincial 2026 year-to-date value."
-      public_light_duty_chargers:
+      mhdv_accessible_2025:
+        label: "Canadian stations physically accessible to medium/heavy vehicles, 2025-12-31"
+        short_name: mhdv_accessible_2025
+        required: false
+        inputs: [station_locations, evse_ports, access, maximum_vehicle_class]
+        applies_to: [charger]
+        produces: [diagnostic_evidence]
+        parameter_modules: []
+        units: "Station locations and EVSE ports; physical accessibility is not dedicated truck use."
+        database_note: "Diagnostic inventory of public/private stations with reported MD/HD access; incomplete applicability labels prevent estimating all truck or depot infrastructure."
         adapter:
-          reporting_date: "June 2026"
-          reconciliation_note: 'TC public chargers June 2026: provincial total 40,164 takes
-            precedence; chart total 40,119; printed national totals [40119]; provincial-minus-chart
-            difference +45. Published L2/DCFC counts retain their chart-normalized type mix.'
-        database_note: "Public light-duty charging-port counts by province as of June 2026, with national L2/DCFC shares; provincial counts exclude private chargers. Provincial counts take precedence over national aggregates; published type counts determine the normalized L2/DCFC mix, with aggregate discrepancies retained in update notes. TC public chargers June 2026: provincial total 40,164 takes precedence; chart total 40,119; printed national totals [40119]; provincial-minus-chart difference +45. Published L2/DCFC counts retain their chart-normalized type mix."
-        data_quality: {dq_tech: 1}
-        label: "June 2026 public light-duty charging ports by province and type"
-        short_name: public_light_duty_chargers
-        inputs: [province, level_2_ports, level_3_ports, national_total]
+          access: {method: api, url: "https://developer.nlr.gov/api/alt-fuel-stations/v0/historical-date/2025-12-31.json", api_key: DEMO_KEY}
+          cache_path: "afdc/canada_mhdv_accessible_2025-12-31-3639671255e8.json"
+          snapshot_date: "2025-12-31"
+          expected_sha256: "3639671255e8cf269c2c184ce8e70ff956e35bef0d32f6f9ca1651de550db98e"
+          expected_bytes: 785951
+          query: {country: CA, fuel_type: ELEC, access: all, status: E, limit: all, maximum_vehicle_class: MD}
+      mhdv_accessible_2026:
+        label: "Canadian stations physically accessible to medium/heavy vehicles, 2026-11-14"
+        short_name: mhdv_accessible_2026
+        required: false
+        inputs: [station_locations, evse_ports, access, maximum_vehicle_class]
+        applies_to: [charger]
+        produces: [diagnostic_evidence]
+        parameter_modules: []
+        units: "Station locations and EVSE ports; physical accessibility is not dedicated truck use."
+        database_note: "Diagnostic inventory of public/private stations with reported MD/HD access; incomplete applicability labels prevent estimating all truck or depot infrastructure."
+        adapter:
+          access: {method: api, url: "https://developer.nlr.gov/api/alt-fuel-stations/v1.json", api_key: DEMO_KEY}
+          cache_path: "afdc/canada_mhdv_accessible_2026-11-14-a88d8e558b03.json"
+          snapshot_date: "2026-11-14"
+          expected_sha256: "a88d8e558b03fb5087524d12853b4b862652cd452d37be3be7e2bc859e58b2fb"
+          expected_bytes: 948986
+          query: {country: CA, fuel_type: ELEC, access: all, status: E, limit: all, maximum_vehicle_class: MD}
+      public_electric_charging_ports:
+        label: "Canadian public available electric charging ports by province and level"
+        short_name: public_electric_charging_ports
+        inputs: [province, station_id, level_1_ports, level_2_ports, dc_fast_ports]
         applies_to: [charger]
         produces: [existing_capacity]
         parameter_modules: [ev_chargers]
         units: ports
-        validation_rule: "Require all 13 provincial/territorial counts and valid L2/DCFC types. Provincial counts are authoritative; normalized type shares sum to one. Flag discrepancies against national aggregates without blocking ingestion."
+        database_note: "Observed provincial L1/L2/DCFC counts determine public port composition; private ports remain inferred from prepared BEV stock."
 
   pollution_probe_ev_charging_survey:
     source_id: T26
@@ -2215,55 +2307,320 @@ sources:
 
   legacy_charging_profiles:
     source_id: T31
-    title: "Legacy Ontario RAMP-mobility LDV charging profiles — legacy, pending update"
+    title: Ontario RAMP-mobility LDV charging profiles — corrected survey/strategy runs
     status: active
     source_type: external_model
     file_type: csv
-    version: "Frozen Ontario 2018 v5 chargers AER-shares"
-    citation: "Legacy CANOE Ontario RAMP-mobility simulations with NHTS 2022 or TTS 2016 travel inputs, Ontario 2018 weather and inherited fleet/range composition; https://github.com/RAMP-project/RAMP-mobility"
-    units: "Aggregate charging power (kW), minute samples; hourly mean kW / annual hourly peak kW gives a dimensionless factor."
-    database_note: "Frozen Ontario RAMP-mobility charging simulations using 2018 weather and embedded fleet, range and charger composition; normalized load shapes, not measured charger utilization."
-    database_precedence: [capacity_factor_tech]
-    # dq_time: Frozen NHTS 2022 or TTS 2016 travel with 2018 weather proxies later vintages.
-    data_quality: {dq_cred: 3, dq_geog: 2, dq_struc: 3, dq_tech: 3, dq_time: 3}
-    validation_rule: "Verify immutable hashes/bytes, UTC minute index, nonnegative finite complete Toronto-year samples and hourly energy/peak conservation."
-    refresh_notes: "Legacy, pending update. Do not rerun simulations or rewrite registered files. Range composition is already embedded; never multiply by new range shares. Upstream post_process.py (blob 6669c3d6633f5938b50a463d8b0f7f385491cf8a) plots charging output in kW and resamples by hourly mean; the local plotting notebook's kWh label is inconsistent with power samples. Native integrals use kW*hours; no absolute fleet rescaling."
+    version: ontario-2018-corrected-soc-weather-v1
+    citation: CANOE Ontario RAMP-mobility simulations, paper-overnight batch (2026-11-13), seed 42; NHTS 2022
+      or TTS 2016 aggregate travel inputs and 2018 weather; https://github.com/RAMP-project/RAMP-mobility
+    units: Aggregate charging power (kW), minute samples; CANOE takes hourly means, peak-normalizes and rescales
+      the full-year mean to reviewed charger utilization. Opt-in companions retain aggregate battery-side
+      mobility power (W) and usage (active-driver counts, not charger occupancy).
+    database_note: Ontario RAMP-mobility BEV simulations (2018 Toronto calendar; seed 42), corrected for charging-loss/SOC
+      accounting and UTC weather alignment. Inputs combine survey driving patterns, Ontario driver/vehicle shares,
+      legacy sales-weighted battery capacities, population-weighted Renewables Ninja weather and inherited charger
+      access/power. Embedded fleet/range/charger composition proxies shared LDV charging across selected regions;
+      CANOE rescales hourly shapes to reviewed charger utilization.
+    database_precedence:
+    - capacity_factor_tech
+    data_quality:
+      dq_cred: 3
+      dq_geog: 2
+      dq_struc: 3
+      dq_tech: 3
+      dq_time: 3
+    validation_rule: Authenticate profile and run metadata hashes/bytes/model revision and successful diagnostics;
+      require complete finite nonnegative Toronto-year minute samples and conserved hourly energy. Catalogue
+      inputs/model hashes are retained in inputs_manifest.json. Companion import authenticates all original
+      run files before deduplicating equal mobility/usage bytes under each survey's common directory;
+      import_manifest.json records every run-to-file mapping. Require aligned UTC minutes, bounded integer
+      usage counts and explicit W-to-kW conversion in the opt-in diagnostic replay.
+    refresh_notes: Production defaults use these six registered corrected outputs; do not rerun or rewrite them
+      during ETL. Aggregate input databases, run metadata, model source snapshot and hashes are catalogued under
+      inputs/0_external_models/ramp_mobility. Restricted raw TTS records are not included. Legacy v5 files remain
+      comparison evidence, not production inputs. No range-share reweighting, absolute fleet rescaling or hidden
+      network acquisition. Diagnostic mobility (W) and usage (active-vehicle counts) companions are hash-registered
+      in the source adapter. Identical companions across strategies are stored once per survey after verifying
+      every original run; strategy-to-origin identities remain in the opt-in import audit.
+    adapter:
+      diagnostic_profiles:
+        nhts_uncontrolled:
+          mobility:
+            registered_path: inputs/0_external_models/ramp_mobility/results/NHTS2022/common/Mobility
+              Profiles.csv
+            expected_sha256: 6516eec3e09197ceb1fe80bccc4c06756165cf2b41c53a244a48fcbca3870f53
+            expected_bytes: 23898755
+            expected_rows: 527040
+          usage:
+            registered_path: inputs/0_external_models/ramp_mobility/results/NHTS2022/common/Usage.csv
+            expected_sha256: 4ace1387ca36eeb676489d6c0198918416e33845bb2036e4cdbd8454bb74cd2d
+            expected_bytes: 16943347
+            expected_rows: 527040
+        nhts_night:
+          mobility:
+            registered_path: inputs/0_external_models/ramp_mobility/results/NHTS2022/common/Mobility
+              Profiles.csv
+            expected_sha256: 6516eec3e09197ceb1fe80bccc4c06756165cf2b41c53a244a48fcbca3870f53
+            expected_bytes: 23898755
+            expected_rows: 527040
+          usage:
+            registered_path: inputs/0_external_models/ramp_mobility/results/NHTS2022/common/Usage.csv
+            expected_sha256: 4ace1387ca36eeb676489d6c0198918416e33845bb2036e4cdbd8454bb74cd2d
+            expected_bytes: 16943347
+            expected_rows: 527040
+        nhts_day:
+          mobility:
+            registered_path: inputs/0_external_models/ramp_mobility/results/NHTS2022/common/Mobility
+              Profiles.csv
+            expected_sha256: 6516eec3e09197ceb1fe80bccc4c06756165cf2b41c53a244a48fcbca3870f53
+            expected_bytes: 23898755
+            expected_rows: 527040
+          usage:
+            registered_path: inputs/0_external_models/ramp_mobility/results/NHTS2022/common/Usage.csv
+            expected_sha256: 4ace1387ca36eeb676489d6c0198918416e33845bb2036e4cdbd8454bb74cd2d
+            expected_bytes: 16943347
+            expected_rows: 527040
+        tts_uncontrolled:
+          mobility:
+            registered_path: inputs/0_external_models/ramp_mobility/results/TTS2016/common/Mobility
+              Profiles.csv
+            expected_sha256: e041eaf58de2da0302b725d556d49bb4014346e55c3f038869e8cd0a244bd995
+            expected_bytes: 23887759
+            expected_rows: 527040
+          usage:
+            registered_path: inputs/0_external_models/ramp_mobility/results/TTS2016/common/Usage.csv
+            expected_sha256: 99cae7c17915df7e06d42c3a72b1447d877f7ba24b1fed03622e15adfed573cf
+            expected_bytes: 16824016
+            expected_rows: 527040
+        tts_night:
+          mobility:
+            registered_path: inputs/0_external_models/ramp_mobility/results/TTS2016/common/Mobility
+              Profiles.csv
+            expected_sha256: e041eaf58de2da0302b725d556d49bb4014346e55c3f038869e8cd0a244bd995
+            expected_bytes: 23887759
+            expected_rows: 527040
+          usage:
+            registered_path: inputs/0_external_models/ramp_mobility/results/TTS2016/common/Usage.csv
+            expected_sha256: 99cae7c17915df7e06d42c3a72b1447d877f7ba24b1fed03622e15adfed573cf
+            expected_bytes: 16824016
+            expected_rows: 527040
+        tts_day:
+          mobility:
+            registered_path: inputs/0_external_models/ramp_mobility/results/TTS2016/common/Mobility
+              Profiles.csv
+            expected_sha256: e041eaf58de2da0302b725d556d49bb4014346e55c3f038869e8cd0a244bd995
+            expected_bytes: 23887759
+            expected_rows: 527040
+          usage:
+            registered_path: inputs/0_external_models/ramp_mobility/results/TTS2016/common/Usage.csv
+            expected_sha256: 99cae7c17915df7e06d42c3a72b1447d877f7ba24b1fed03622e15adfed573cf
+            expected_bytes: 16824016
+            expected_rows: 527040
     components:
-      nhts:
-        database_note: "Ontario charging simulation with NHTS 2022 travel inputs and 2018 weather; inherited BEV fleet and charger mix also proxy other regions and shared LDV charging."
-        label: "Ontario NHTS 2022 travel / 2018 weather charging shape"
-        short_name: legacy_ldv_charging_nhts
-        inputs: [timestamp_utc, aggregate_charging_demand]
-        applies_to: [ldv_charging]
-        produces: [capacity_factor_tech]
-        parameter_modules: [ldv_charging_profiles]
-        notes: "BEV fleet shape; AER shares and charger mix embedded. Ontario shape proxies every selected region and both shared LDV chargers, including PHEV/motorcycle charging."
+      nhts_uncontrolled:
+        database_note: Unweighted filtered NHTS 2022 household-driver travel; midpoint trip-occurrence distributions
+          and mean distance among observed trip-taking persons (zero-trip people excluded). Uncontrolled charging
+          starts at parking arrival when SOC/access gates permit. Low SOC/insufficient next-trip energy permits
+          emergency charging outside preferred windows. Initial/target SOC 80%, charging efficiency 90%; 2,499
+          rounded drivers.
+        label: Ontario NHTS2022 / uncontrolled charging / 2018 weather
+        short_name: ramp_ldv_nhts_uncontrolled
+        inputs:
+        - timestamp_utc
+        - aggregate_charging_demand
+        - simulation_metadata
+        applies_to:
+        - ldv_charging
+        produces:
+        - capacity_factor_tech
+        parameter_modules:
+        - ldv_charging_profiles
+        notes: Battery capacities small/medium/large 82.668/88.048/115.399 kWh; inherited Ontario demographics/size
+          mix, 2022 US sales-weighted legacy range composition. Chargers 1.6/7.2/125 kW with probabilities 0.1279/0.8639/0.0082
+          (2025 Canada-wide Dunsky port mix); access probability 0.85 outside 07:00–19:00, 0.34 within. No current-market
+          reweighting. Renewables Ninja hourly UTC weather uses 2018 and buffer years.
         adapter:
-          registered_path: "legacy_backend/charging_profiles[deprecated]/ramp_mobility/results/ON-2022NHTS_2018_v5_chargers_AER-shares.csv"
-          expected_sha256: a5e4f924d72c409f38e29c0b84d20390b5b1a180ae63956bf4f902a59a78aac1
-          expected_bytes: 23771774
+          registered_path: inputs/0_external_models/ramp_mobility/results/NHTS2022/uncontrolled/Charging Profiles.csv
+          expected_sha256: eb2042927963de09f9b46237d73a566e798472da503563eaa26ddf716340167f
+          expected_bytes: 23767149
           expected_rows: 527040
           native_interval_seconds: 60
           calendar_year: 2018
           calendar_timezone: America/Toronto
-      tts:
-        database_note: "Ontario charging simulation with TTS 2016 weekday travel and 2018 weather; no weekend reconstruction, and fleet and charger composition remain embedded."
-        data_quality: {dq_struc: 4}
-        label: "Ontario TTS 2016 weekday travel / 2018 weather charging shape"
-        short_name: legacy_ldv_charging_tts
-        inputs: [timestamp_utc, aggregate_charging_demand]
-        applies_to: [ldv_charging]
-        produces: [capacity_factor_tech]
-        parameter_modules: [ldv_charging_profiles]
-        notes: "Weekday-only TTS simulation; inherited AER shares and charger mix. No weekend reconstruction or new-market reweighting."
+          metadata_path: inputs/0_external_models/ramp_mobility/results/NHTS2022/uncontrolled/run_metadata.json
+          metadata_sha256: 5e113328dacdb042113e3852bcd2337d80e1f5a0147264536c28c43ea353779e
+          expected_model_revision: ontario-2018-corrected-soc-weather-v1
+      nhts_night:
+        database_note: Unweighted filtered NHTS 2022 household-driver travel; midpoint trip-occurrence distributions
+          and mean distance among observed trip-taking persons (zero-trip people excluded). Night charging preferentially
+          uses 22:00–07:00 Toronto time, spreading energy over eligible parked minutes. Low SOC/insufficient
+          next-trip energy permits emergency charging outside preferred windows. Initial/target SOC 80%, charging
+          efficiency 90%; 2,499 rounded drivers.
+        label: Ontario NHTS2022 / night charging / 2018 weather
+        short_name: ramp_ldv_nhts_night
+        inputs:
+        - timestamp_utc
+        - aggregate_charging_demand
+        - simulation_metadata
+        applies_to:
+        - ldv_charging
+        produces:
+        - capacity_factor_tech
+        parameter_modules:
+        - ldv_charging_profiles
+        notes: Battery capacities small/medium/large 82.668/88.048/115.399 kWh; inherited Ontario demographics/size
+          mix, 2022 US sales-weighted legacy range composition. Chargers 1.6/7.2/125 kW with probabilities 0.1279/0.8639/0.0082
+          (2025 Canada-wide Dunsky port mix); access probability 0.85 outside 07:00–19:00, 0.34 within. No current-market
+          reweighting. Renewables Ninja hourly UTC weather uses 2018 and buffer years.
         adapter:
-          registered_path: "legacy_backend/charging_profiles[deprecated]/ramp_mobility/results/ON-2016TTS_no-we_2018_v5_chargers_AER-shares.csv"
-          expected_sha256: 649175f04bc52af0c9920a08adc03934edc42aa6d876867d884dbd0575e3b32a
-          expected_bytes: 23829116
+          registered_path: inputs/0_external_models/ramp_mobility/results/NHTS2022/night/Charging Profiles.csv
+          expected_sha256: dacb80807cf4b4b3ccf3c0b67f2010b0c7d0779486b828fb6e953e495f64d262
+          expected_bytes: 22105785
           expected_rows: 527040
           native_interval_seconds: 60
           calendar_year: 2018
           calendar_timezone: America/Toronto
+          metadata_path: inputs/0_external_models/ramp_mobility/results/NHTS2022/night/run_metadata.json
+          metadata_sha256: 40014ea734f7f66468c5070d778c6f38759183007f1f1cd50793118480f66153
+          expected_model_revision: ontario-2018-corrected-soc-weather-v1
+      nhts_day:
+        database_note: Unweighted filtered NHTS 2022 household-driver travel; midpoint trip-occurrence distributions
+          and mean distance among observed trip-taking persons (zero-trip people excluded). Day charging preferentially
+          uses 07:00–18:00 Toronto time, spreading energy over eligible parked minutes. Low SOC/insufficient
+          next-trip energy permits emergency charging outside preferred windows. Initial/target SOC 80%, charging
+          efficiency 90%; 2,499 rounded drivers.
+        label: Ontario NHTS2022 / day charging / 2018 weather
+        short_name: ramp_ldv_nhts_day
+        inputs:
+        - timestamp_utc
+        - aggregate_charging_demand
+        - simulation_metadata
+        applies_to:
+        - ldv_charging
+        produces:
+        - capacity_factor_tech
+        parameter_modules:
+        - ldv_charging_profiles
+        notes: Battery capacities small/medium/large 82.668/88.048/115.399 kWh; inherited Ontario demographics/size
+          mix, 2022 US sales-weighted legacy range composition. Chargers 1.6/7.2/125 kW with probabilities 0.1279/0.8639/0.0082
+          (2025 Canada-wide Dunsky port mix); access probability 0.85 outside 07:00–19:00, 0.34 within. No current-market
+          reweighting. Renewables Ninja hourly UTC weather uses 2018 and buffer years.
+        adapter:
+          registered_path: inputs/0_external_models/ramp_mobility/results/NHTS2022/day/Charging Profiles.csv
+          expected_sha256: 1ead41446181abbcfcc30a6c3b3884097f42a17bc6a1b4e02f02c9c2841c999f
+          expected_bytes: 20639584
+          expected_rows: 527040
+          native_interval_seconds: 60
+          calendar_year: 2018
+          calendar_timezone: America/Toronto
+          metadata_path: inputs/0_external_models/ramp_mobility/results/NHTS2022/day/run_metadata.json
+          metadata_sha256: 7acd06c479bbee1ba154354bdaeb17fa2b162bb63d223938d71a0da1b41f3f8e
+          expected_model_revision: ontario-2018-corrected-soc-weather-v1
+      tts_uncontrolled:
+        database_note: Ontario GGH TTS 2016 aggregate weekday travel, repeated on weekends because weekend observations
+          are unavailable; legacy weekend activity probabilities retained. Uncontrolled charging starts at parking
+          arrival when SOC/access gates permit. Low SOC/insufficient next-trip energy permits emergency charging
+          outside preferred windows. Initial/target SOC 80%, charging efficiency 90%; 2,499 rounded drivers.
+        label: Ontario TTS2016 / uncontrolled charging / 2018 weather
+        short_name: ramp_ldv_tts_uncontrolled
+        inputs:
+        - timestamp_utc
+        - aggregate_charging_demand
+        - simulation_metadata
+        applies_to:
+        - ldv_charging
+        produces:
+        - capacity_factor_tech
+        parameter_modules:
+        - ldv_charging_profiles
+        notes: Battery capacities small/medium/large 82.668/88.048/115.399 kWh; inherited Ontario demographics/size
+          mix, 2022 US sales-weighted legacy range composition. Chargers 1.6/7.2/125 kW with probabilities 0.1279/0.8639/0.0082
+          (2025 Canada-wide Dunsky port mix); access probability 0.85 outside 07:00–19:00, 0.34 within. No current-market
+          reweighting. Renewables Ninja hourly UTC weather uses 2018 and buffer years.
+        adapter:
+          registered_path: inputs/0_external_models/ramp_mobility/results/TTS2016/uncontrolled/Charging Profiles.csv
+          expected_sha256: b4b28c1953352059b49bf0b9d731fe31adefae03196b7bbaaf1e558803b6db50
+          expected_bytes: 23808100
+          expected_rows: 527040
+          native_interval_seconds: 60
+          calendar_year: 2018
+          calendar_timezone: America/Toronto
+          metadata_path: inputs/0_external_models/ramp_mobility/results/TTS2016/uncontrolled/run_metadata.json
+          metadata_sha256: 45bf57cc77b0fc095f4ba05845dda83025f40a007eef66603534384b0e1fe7c5
+          expected_model_revision: ontario-2018-corrected-soc-weather-v1
+        data_quality:
+          dq_struc: 4
+      tts_night:
+        database_note: Ontario GGH TTS 2016 aggregate weekday travel, repeated on weekends because weekend observations
+          are unavailable; legacy weekend activity probabilities retained. Night charging preferentially uses
+          22:00–07:00 Toronto time, spreading energy over eligible parked minutes. Low SOC/insufficient next-trip
+          energy permits emergency charging outside preferred windows. Initial/target SOC 80%, charging efficiency
+          90%; 2,499 rounded drivers.
+        label: Ontario TTS2016 / night charging / 2018 weather
+        short_name: ramp_ldv_tts_night
+        inputs:
+        - timestamp_utc
+        - aggregate_charging_demand
+        - simulation_metadata
+        applies_to:
+        - ldv_charging
+        produces:
+        - capacity_factor_tech
+        parameter_modules:
+        - ldv_charging_profiles
+        notes: Battery capacities small/medium/large 82.668/88.048/115.399 kWh; inherited Ontario demographics/size
+          mix, 2022 US sales-weighted legacy range composition. Chargers 1.6/7.2/125 kW with probabilities 0.1279/0.8639/0.0082
+          (2025 Canada-wide Dunsky port mix); access probability 0.85 outside 07:00–19:00, 0.34 within. No current-market
+          reweighting. Renewables Ninja hourly UTC weather uses 2018 and buffer years.
+        adapter:
+          registered_path: inputs/0_external_models/ramp_mobility/results/TTS2016/night/Charging Profiles.csv
+          expected_sha256: 292ac139ce8a90ab1b2a412e65fe249142c8b55690f6985bf20242cba16acf88
+          expected_bytes: 21162151
+          expected_rows: 527040
+          native_interval_seconds: 60
+          calendar_year: 2018
+          calendar_timezone: America/Toronto
+          metadata_path: inputs/0_external_models/ramp_mobility/results/TTS2016/night/run_metadata.json
+          metadata_sha256: b19161ce81066d139672e9058cd2fc00594f175a7684668a5994f94e21c1b9d5
+          expected_model_revision: ontario-2018-corrected-soc-weather-v1
+        data_quality:
+          dq_struc: 4
+      tts_day:
+        database_note: Ontario GGH TTS 2016 aggregate weekday travel, repeated on weekends because weekend observations
+          are unavailable; legacy weekend activity probabilities retained. Day charging preferentially uses 07:00–18:00
+          Toronto time, spreading energy over eligible parked minutes. Low SOC/insufficient next-trip energy
+          permits emergency charging outside preferred windows. Initial/target SOC 80%, charging efficiency 90%;
+          2,499 rounded drivers.
+        label: Ontario TTS2016 / day charging / 2018 weather
+        short_name: ramp_ldv_tts_day
+        inputs:
+        - timestamp_utc
+        - aggregate_charging_demand
+        - simulation_metadata
+        applies_to:
+        - ldv_charging
+        produces:
+        - capacity_factor_tech
+        parameter_modules:
+        - ldv_charging_profiles
+        notes: Battery capacities small/medium/large 82.668/88.048/115.399 kWh; inherited Ontario demographics/size
+          mix, 2022 US sales-weighted legacy range composition. Chargers 1.6/7.2/125 kW with probabilities 0.1279/0.8639/0.0082
+          (2025 Canada-wide Dunsky port mix); access probability 0.85 outside 07:00–19:00, 0.34 within. No current-market
+          reweighting. Renewables Ninja hourly UTC weather uses 2018 and buffer years.
+        adapter:
+          registered_path: inputs/0_external_models/ramp_mobility/results/TTS2016/day/Charging Profiles.csv
+          expected_sha256: 7e6bf13e8878cd6e89b77619e3807c4da0f56fd26d0dafa8dcf32eba2f08a4e7
+          expected_bytes: 20115188
+          expected_rows: 527040
+          native_interval_seconds: 60
+          calendar_year: 2018
+          calendar_timezone: America/Toronto
+          metadata_path: inputs/0_external_models/ramp_mobility/results/TTS2016/day/run_metadata.json
+          metadata_sha256: b2de23ae7b172d5edea1f0dd2eedc135e24ff3cf001f4d09c2eed14c5dea4256
+          expected_model_revision: ontario-2018-corrected-soc-weather-v1
+        data_quality:
+          dq_struc: 4
 
   epa_omega_baseline:
     source_id: T33
@@ -2277,8 +2634,8 @@ sources:
     database_note: "U.S. OMEGA MY2022 baseline sales and on-road charge-depleting ranges; car/light-truck range shares proxy Canadian plug-in fleets and remain fixed across modeled vintages."
     # dq_time: Fixed MY2022 sales/ranges proxy all modeled vintages; the snapshot is not a forecast.
     data_quality: {dq_cred: 2, dq_geog: 3, dq_struc: 3, dq_tech: 2, dq_time: 3}
-    validation_rule: "Verify pinned compact bytes/rows, unique original source-row IDs, complete class/powertrain coverage, nonnegative integer sales and on-road CD range; prove exact parent/notebook identity independently; conserve all sales in within-group buckets. Registry DQ defaults apply where unreviewed."
-    refresh_notes: "Accepted legacy market snapshot; no refresh or OMEGA rerun. Routine ETL reads only the compact extract. Optional identity validation reads the exact notebook and 510 KB parent, not the full archive. No Trends/FuelEconomy fallback."
+    validation_rule: "Verify pinned compact bytes and rows, unique original source-row IDs, complete class and powertrain coverage, nonnegative integer sales, and on-road CD range. Conserve all sales in within-group buckets. Registry DQ defaults apply where unreviewed."
+    refresh_notes: "Accepted historical market snapshot. The registered compact extract is the build input. The source parent and notebook hashes identify the original evidence."
     components:
       baseline_sales_ranges:
         database_note_variants:
@@ -2296,10 +2653,7 @@ sources:
           extract_path: "inputs/0_external_models/epa_omega_ldv_range_extract/ldv_central_2022_plug_in.csv"
           model_year: 2022
           expected_sales_by_powertrain: {BEV: 669951, PHEV: 185606}
-          parent_path: "legacy_backend/model_constraints[deprecated]/bev_phev_aer_market_shares/EPA_OMEGA_v2.5/2024_02_27_16_06_31_LDV_central_to2055_20240227/_Final/out/aggregated_vehicles.csv"
           parent_sha256: f8a384161e199f5921bfc57dae60831264ab5c0ec55e6110369ef0df5324272f
-          parent_bytes: 510055
-          notebook_path: "legacy_backend/model_constraints[deprecated]/bev_phev_aer_market_shares/LDV_AER_market_shares.ipynb"
           notebook_sha256: 43417923a0e20c1a0a1dd4036f6f5bc91b386953f873567601f7a7270881a2db
           expected_sha256: fb9b3ef747ae4032cbee67bc3179a91ce81c1656545e7af99bbfcc3f0bed0e98
           expected_bytes: 13977
@@ -2593,3 +2947,117 @@ sources:
         bytes: 287
         format: csv
         url: https://alternative-fuels-observatory.ec.europa.eu/sites/default/files/csv/norway/new_registrations_n2_n3.csv
+
+  nhts_household_travel:
+    source_id: T37
+    title: FHWA National Household Travel Survey 2022 public-use data
+    status: active
+    source_type: upstream_download
+    file_type: zip/csv; xlsx; pdf
+    version: 2022 V2.1
+    units: Source-native miles, minutes, local HHMM; national annual trip and person
+      weights
+    citation: Federal Highway Administration. (2022). 2022 National Household Travel
+      Survey V2.1. U.S. Department of Transportation. https://nhts.ornl.gov/
+    required: false
+    data_quality:
+      dq_cred: null
+      dq_geog: null
+      dq_struc: null
+      dq_tech: null
+      dq_time: null
+    database_note: US household travel evidence for opt-in research diagnostics. No
+      accepted Canadian charging assumption or production parameter contribution. Trip
+      and person weights have distinct denominators.
+    validation_rule: Pinned SHA-256 and byte counts; ZIP CRC and exact registered members;
+      native row counts, keys, codebook and numeric types before normalization.
+    refresh_notes: 'Latest public-use national survey release verified 2026-11-13 at
+      https://nhts.ornl.gov/downloads and https://nhts.ornl.gov/documentation: 2022
+      V2.1. Refresh explicitly; never replace an existing pinned cache or adopt a newly
+      published edition during an offline run. The maintained travel-survey diagnostic
+      uses this registered public-use edition; reviewed RAMP activity windows remain
+      separately authenticated in the registered model-input snapshot.'
+    adapter:
+      edition: 2022_v2_1
+      download_hosts:
+      - nhts.ornl.gov
+    components:
+      public_use:
+        label: Public Use V2.1
+        short_name: nhts2022_public_use
+        required: false
+        version: 2022 V2.1
+        produces:
+        - travel_survey_diagnosis
+        adapter:
+          url: https://nhts.ornl.gov/media/2022/download/csv.zip
+          cache_path: nhts/2022_v2_1/csv.zip
+          expected_sha256: 64530c396d5f164d2259a22f7042f27bee5147babcd367568ddbfafe6c8bf34c
+          expected_bytes: 4533528
+          kind: zip
+          archive_members:
+          - Citation.pdf
+          - hhv2pub.csv
+          - ldtv2pub.csv
+          - perv2pub.csv
+          - tripv2pub.csv
+          - vehv2pub.csv
+          tables:
+            trip:
+              member: tripv2pub.csv
+              expected_rows: 31074
+              keys:
+              - HOUSEID
+              - PERSONID
+              - TRIPID
+            vehicle:
+              member: vehv2pub.csv
+              expected_rows: 14684
+              keys:
+              - HOUSEID
+              - VEHID
+            person:
+              member: perv2pub.csv
+              expected_rows: 16997
+              keys:
+              - HOUSEID
+              - PERSONID
+      codebook:
+        label: Codebook V2.1
+        short_name: nhts2022_codebook
+        required: false
+        version: 2022 V2.1
+        produces:
+        - travel_survey_diagnosis
+        adapter:
+          url: https://nhts.ornl.gov/media/2022/doc/codebook.xlsx
+          cache_path: nhts/2022_v2_1/codebook.xlsx
+          expected_sha256: 7e10ff62be0a72b03528f2469e8da850b335b7d761cf6efdfe9eba9b8a513d96
+          expected_bytes: 163714
+          kind: xlsx
+      user_guide:
+        label: User Guide V2.1
+        short_name: nhts2022_user_guide
+        required: false
+        version: 2022 V2.1
+        produces:
+        - travel_survey_diagnosis
+        adapter:
+          url: https://nhts.ornl.gov/media/2022/doc/2022%20NextGen%20NHTS%20User's%20Guide%20V201_PubUse.pdf
+          cache_path: nhts/2022_v2_1/user_guide.pdf
+          expected_sha256: bc0e7dc4546db3ff6a465fca928c29f4ecb7fbfe23d44ee7e57add4602d3ba0c
+          expected_bytes: 5666526
+          kind: pdf
+      release_notes:
+        label: Release Notes V2.1
+        short_name: nhts2022_release_notes
+        required: false
+        version: 2022 V2.1
+        produces:
+        - travel_survey_diagnosis
+        adapter:
+          url: https://nhts.ornl.gov/media/2022/doc/2022%20NextGen%20NHTS%20V2.1%20Release%20Notes.pdf
+          cache_path: nhts/2022_v2_1/release_notes.pdf
+          expected_sha256: d9f385ab1dc04216f5cb29bd908c520e20e1c52dffef77c17f170e6cefb8b8cb
+          expected_bytes: 732041
+          kind: pdf

@@ -475,7 +475,7 @@ def write_outputs(
 
 
 def fetch_and_normalize(
-    scenario_path: str | Path,
+    scenario_path: str | Path | ConfigBundle,
     *,
     edition: int | None = None,
     regions: list[str] | None = None,

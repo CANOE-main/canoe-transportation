@@ -23,6 +23,9 @@ from canoe_schema.v4_0 import (
     Commodity,
     CommodityLabel,
     DataSet,
+    DataSource,
+    DataSourceLabel,
+    MetadataReal,
     Region,
     TechnologyLabel,
     TimePeriod,
@@ -43,6 +46,7 @@ from canoe_schema.v4_0 import (
     TimeSeason,
     TimeOfDay,
     LimitNewCapacityShare,
+    LimitCapacityShare,
     TechGroup,
     TechGroupMember,
     TechGroupLabel,
@@ -53,18 +57,20 @@ from pydantic_core import PydanticUndefined
 from utils import (
     ConfigBundle,
     file_sha256,
+    harmonization_rule_paths,
     load_config_bundle,
     load_harmonization_rules,
     log_duration,
     resolve_configured_path,
+    resolve_artifact_path,
     resolve_input_path,
     resolve_parameter_path,
     resolve_repo_path,
     write_text_atomic,
+    write_dataframe_atomic,
 )
 from validation.database_bootstrap import validate_database
 from validation.insertion import ConflictPolicy, insert_models, validate_transport_parameter_support
-from validation.legacy_compare import compare_legacy_costs, compare_legacy_demand, compare_legacy_efficiency, compare_legacy_existing_capacity, compare_legacy_lifetime_tech, compare_legacy_tables, compare_legacy_emission_embodied
 from validation.provenance import (
     ResolvedProvenance,
     publish_data_ids,
@@ -118,6 +124,7 @@ class TableLoadResult:
     blank_values_as_null: dict[str, int]
     primary_key_columns: list[str]
     primary_keys: list[tuple[Any, ...]]
+    excluded_technologies: list[str] = dataclass_field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -144,6 +151,10 @@ class TransportContribution:
     cost_fixed_rows: list[CostFixed] = dataclass_field(default_factory=list)
     cost_variable_rows: list[CostVariable] = dataclass_field(default_factory=list)
     charger_audit: dict[str, Any] = dataclass_field(default_factory=dict)
+    charger_group_rows: list[TechGroup] = dataclass_field(default_factory=list)
+    charger_group_member_rows: list[TechGroupMember] = dataclass_field(default_factory=list)
+    charger_capacity_share_rows: list[LimitCapacityShare] = dataclass_field(default_factory=list)
+    charger_contract_fingerprint: str | None = None
     efficiency_assumption_dataset: DataSet | None = None
     provenance_contexts: list[ResolvedProvenance] = dataclass_field(default_factory=list)
     parameter_audit: dict[str, Any] = dataclass_field(default_factory=dict)
@@ -434,6 +445,16 @@ def _internal_template_dataset(template_dir: Path) -> DataSet:
     )
 
 
+def _require_compilable_road_utilization(vkt_schedules: bool) -> None:
+    if vkt_schedules:
+        raise ValueError(
+            "road_utilization.vkt_schedules requires dual-index LACF insertion: canoe-schema v4 "
+            "cannot insert its separate vintage/period factors. Use vkt_schedules: false "
+            "for native builds and caller-owned contributions; prepare age evidence "
+            "separately with complete lifetime coverage and provenance."
+        )
+
+
 def prepare_transport_contribution(
     connection: sqlite3.Connection,
     *,
@@ -454,6 +475,8 @@ def prepare_transport_contribution(
     """Prepare the currently supported transport rows without writing to SQLite."""
     from parameterization.road_lifetimes_survival import require_tail_derivation
 
+    if include_road_utilization is not False:
+        _require_compilable_road_utilization(bundle.scenario.road_utilization.vkt_schedules)
     require_tail_derivation(bundle)
     if not template_dir.is_dir():
         raise FileNotFoundError(f"Template directory does not exist: {template_dir}")
@@ -469,6 +492,20 @@ def prepare_transport_contribution(
             data_id=template_dataset.data_id,
         )
         if specification.table == "technology":
+            from parameterization.charger_representation import select_charger_technologies
+            import pandas as pd
+
+            if any(row.category == "charger" for row in rows):
+                selected = set(select_charger_technologies(
+                    bundle, pd.DataFrame([row.model_dump() for row in rows]),
+                ).tech)
+                excluded = sorted(row.tech for row in rows if row.tech not in selected)
+                rows = [row for row in rows if row.tech in selected]
+                labels = [row for row in labels if row.tech in selected]
+                result = replace(result, inserted_rows=len(rows), primary_keys=[_primary_key(row) for row in rows],
+                                 excluded_technologies=excluded)
+                LOGGER.info("Selected %s charger representation; excluded %s inactive technologies",
+                            bundle.scenario.ev_chargers.charger_type_classes, len(excluded))
             rows = apply_technology_note_overrides(
                 rows, bundle.scenario.row_note_overrides.technology
             )
@@ -529,6 +566,25 @@ def prepare_transport_contribution(
         with log_duration(LOGGER, "Demand"):
             demand_rows, demand_contexts, demand_audit = prepare_demand_rows(bundle)
         contexts.extend(demand_contexts)
+    lifetimes = None
+    lifetime_tech_rows: list[LifetimeTech] = []
+    lifetime_curve_rows: list[LifetimeSurvivalCurve] = []
+    lifetime_process_rows: list[LifetimeProcess] = []
+    lifetime_audit: dict[str, Any] = {}
+    if include_lifetimes is not False:
+        from parameterization.build_lifetime_parameters import prepare_lifetime_rows
+
+        with log_duration(LOGGER, "Lifetimes (lifetime_tech, lifetime_survival_curve)"):
+            lifetimes = prepare_lifetime_rows(
+                bundle,
+                annual_acquisitions=capacity_preparation.annual_acquisitions if capacity_preparation else None,
+                cohort_provenance_contexts=capacity_contexts,
+            )
+        lifetime_tech_rows = lifetimes.fixed_rows
+        lifetime_process_rows = lifetimes.process_rows
+        lifetime_curve_rows = lifetimes.curve_rows
+        contexts.extend(lifetimes.provenance_contexts)
+        lifetime_audit = lifetimes.audit
     selected_road_utilization = (
         True if include_road_utilization is None else include_road_utilization
     )
@@ -548,30 +604,13 @@ def prepare_transport_contribution(
                 bundle, existing_capacity_rows=parameter_rows,
                 existing_capacity_contexts=capacity_contexts,
                 physical_stock=capacity_preparation.physical_stock if capacity_preparation else None,
+                lifetime_preparation=lifetimes,
             )
         road_assumption_dataset = road.assumption_dataset
         c2a_rows = road.capacity_to_activity_rows
         flat_factor_rows = road.flat_factor_rows
         contexts.extend(road.provenance_contexts)
         road_audit = road.audit
-    lifetime_tech_rows: list[LifetimeTech] = []
-    lifetime_curve_rows: list[LifetimeSurvivalCurve] = []
-    lifetime_process_rows: list[LifetimeProcess] = []
-    lifetime_audit: dict[str, Any] = {}
-    if include_lifetimes is not False:
-        from parameterization.build_lifetime_parameters import prepare_lifetime_rows
-
-        with log_duration(LOGGER, "Lifetimes (lifetime_tech, lifetime_survival_curve)"):
-            lifetimes = prepare_lifetime_rows(
-                bundle,
-                annual_acquisitions=capacity_preparation.annual_acquisitions if capacity_preparation else None,
-                cohort_provenance_contexts=capacity_contexts,
-            )
-        lifetime_tech_rows = lifetimes.fixed_rows
-        lifetime_process_rows = lifetimes.process_rows
-        lifetime_curve_rows = lifetimes.curve_rows
-        contexts.extend(lifetimes.provenance_contexts)
-        lifetime_audit = lifetimes.audit
     efficiency_rows: list[Efficiency] = []
     split_rows: list[LimitTechInputSplitAnnual] = []
     efficiency_dataset: DataSet | None = None
@@ -603,8 +642,10 @@ def prepare_transport_contribution(
         with log_duration(LOGGER, "Transport costs (cost_invest, cost_variable)"):
             costs = prepare_cost_rows(
                 bundle, existing_capacity_rows=parameter_rows if selected_capacity else None,
+                existing_capacity_contexts=capacity_contexts if selected_capacity else None,
                 fixed_lifetime_rows=lifetime_tech_rows if include_lifetimes is not False else None,
                 survival_curve_rows=lifetime_curve_rows if include_lifetimes is not False else None,
+                lifetime_provenance_contexts=lifetimes.provenance_contexts if lifetimes is not None else None,
                 range_evidence=range_evidence,
             )
         cost_invest_rows = costs.invest_rows
@@ -625,6 +666,9 @@ def prepare_transport_contribution(
             cost_audit["efficiency_supported_tech_vintages"] = len(cost_keys)
     charger_audit: dict[str, Any] = {}
     charger_assumption_dataset = None
+    charger_groups: list[TechGroup] = []
+    charger_members: list[TechGroupMember] = []
+    charger_shares: list[LimitCapacityShare] = []
     if selected_capacity and include_ev_chargers is not False:
         from parameterization.ev_chargers import prepare_ev_charger_rows
 
@@ -646,6 +690,21 @@ def prepare_transport_contribution(
             cost_fixed_rows.extend(chargers.fixed_rows)
         contexts.extend(chargers.provenance_contexts)
         charger_audit = chargers.audit
+        charger_groups = chargers.tech_group_rows
+        charger_members = chargers.tech_group_member_rows
+        charger_shares = chargers.capacity_share_rows
+    if lifetimes is not None and selected_capacity and include_efficiencies is not False:
+        # Temoa indexes lifetime_tech only over capacity and efficiency owners.
+        # Preparation retains the complete lifetime catalogue for consumers.
+        lifetime_owners = {(row.region, row.tech) for row in [*parameter_rows, *efficiency_rows]}
+        inactive_lifetimes = sorted((row.region, row.tech) for row in lifetime_tech_rows
+                                    if (row.region, row.tech) not in lifetime_owners)
+        if inactive_lifetimes:
+            lifetime_tech_rows = [row for row in lifetime_tech_rows if (row.region, row.tech) in lifetime_owners]
+            lifetime_audit = {**lifetime_audit, "fixed_rows": len(lifetime_tech_rows),
+                              "fixed_technologies": len({row.tech for row in lifetime_tech_rows}),
+                              "inactive_fixed_lifetime_keys": inactive_lifetimes}
+            LOGGER.info("Omitted %s fixed lifetimes without an active regional technology", len(inactive_lifetimes))
     embodied = None
     if include_emission_embodied is not False:
         from parameterization.road_embodied_emissions import prepare_emission_embodied_rows
@@ -697,6 +756,12 @@ def prepare_transport_contribution(
         cost_fixed_rows=cost_fixed_rows,
         cost_variable_rows=cost_variable_rows,
         charger_audit=charger_audit,
+        charger_group_rows=charger_groups,
+        charger_group_member_rows=charger_members,
+        charger_capacity_share_rows=charger_shares,
+        charger_contract_fingerprint=_charger_contract_fingerprint(
+            charger_groups, charger_members, charger_shares,
+        ) if charger_groups or charger_members or charger_shares else None,
         provenance_contexts=contexts,
         parameter_audit=parameter_audit,
         demand_audit=demand_audit,
@@ -787,7 +852,28 @@ def _apply_ldv_range_representation(bundle: ConfigBundle, contribution: Transpor
     )
 
 
+def _charger_contract_fingerprint(groups, members, shares) -> str:
+    return hashlib.sha256(json.dumps(
+        [[row.model_dump(mode="json") for row in batch] for batch in (groups, members, shares)],
+        sort_keys=True, allow_nan=False,
+    ).encode()).hexdigest()
+
+
 def _require_transport_parameter_support(contribution: TransportContribution) -> dict[str, Any]:
+    _require_compilable_road_utilization(contribution.road_utilization_audit.get("vkt_schedules", False))
+    if (contribution.charger_group_rows or contribution.charger_group_member_rows
+            or contribution.charger_capacity_share_rows) and contribution.charger_contract_fingerprint is None:
+        raise ValueError("Prepared charger mix lacks its contract fingerprint; prepare the contribution again")
+    if contribution.charger_contract_fingerprint is not None:
+        actual = _charger_contract_fingerprint(contribution.charger_group_rows,
+                                              contribution.charger_group_member_rows,
+                                              contribution.charger_capacity_share_rows)
+        if actual != contribution.charger_contract_fingerprint:
+            raise ValueError("Prepared charger groups or capacity shares changed; prepare the contribution again")
+        group_names = {row.group_name for row in contribution.charger_group_rows}
+        technologies = {row.tech for row in contribution.rows_by_table.get("technology", [])}
+        if group_names & technologies:
+            raise ValueError("Charger group names conflict with transport technology names")
     batches = {
         "existing_capacity": contribution.parameter_rows,
         "efficiency": contribution.efficiency_rows,
@@ -847,24 +933,206 @@ def _require_transport_parameter_support(contribution: TransportContribution) ->
     return audit
 
 
-@log_duration(LOGGER, "SQLite transport insertion")
-def insert_transport_contribution(
-    connection: sqlite3.Connection,
-    contribution: TransportContribution,
-    *,
-    conflict: ConflictPolicy = "error",
-) -> dict[str, list[CanoeBaseModel]]:
-    """Insert a prepared contribution into a transaction owned by the caller."""
-    # Recheck mutable batches before any SQLite writes, including caller insertions.
+def _publication_batches(contribution: TransportContribution) -> dict[str, list[CanoeBaseModel]]:
+    """One table mapping shared by readable-ID publication and CSV export."""
+    charging, ranges = contribution.charging_profiles, contribution.range_representation
+    return {
+        **_representative_batches(contribution),
+        "demand": contribution.demand_rows,
+        "capacity_factor_tech": charging.rows if charging else [],
+        "limit_new_capacity_share": ranges.share_rows if ranges else [],
+        "limit_capacity_share": contribution.charger_capacity_share_rows,
+        "tech_group": [*(ranges.group_rows if ranges else []), *contribution.charger_group_rows],
+        "tech_group_member": [*(ranges.member_rows if ranges else []), *contribution.charger_group_member_rows],
+    }
+
+
+def _internal_datasets(contribution: TransportContribution) -> list[DataSet]:
+    ranges = contribution.range_representation
+    return [dataset for dataset in (
+        contribution.dataset, contribution.road_assumption_dataset,
+        contribution.charger_assumption_dataset, contribution.efficiency_assumption_dataset,
+        ranges.structural_dataset if ranges else None,
+    ) if dataset is not None]
+
+
+def _publication_identifiers(connection, contribution, batches):
+    _, datasets, _ = registry_rows(contribution.provenance_contexts)
+    columns = [column[1] for column in connection.execute("PRAGMA table_info(data_set)")]
+    existing = [DataSet.model_validate(dict(zip(columns, row, strict=True)))
+                for row in connection.execute("SELECT * FROM data_set")]
+    return readable_data_id_mapping(
+        datasets=[*_internal_datasets(contribution), *datasets],
+        contexts=contribution.provenance_contexts, batches=batches,
+        scenario_name=contribution.scenario_name, existing_datasets=existing,
+    )
+
+
+def _prepare_base_table(connection, specification, template_dir, bundle, data_id):
+    rows, _, result = prepare_template_table(
+        connection, specification=specification,
+        template_path=template_dir / specification.filename, data_id=data_id,
+    )
+    if specification.table == "time_period":
+        periods = bundle.scenario.periods
+        prospective = periods.period_mode == "prospective"
+        # The scenario owns the axes. The legacy template may supply sequence
+        # metadata for a coordinate that is still declared in the same role.
+        sequences = {} if prospective else {(row.period, row.flag): row.sequence for row in rows}
+        rows = [TimePeriod(period=year, flag="e", sequence=sequences.get((year, "e")))
+                for year in periods.existing]
+        rows.extend(TimePeriod(period=year, flag="f",
+                               sequence=index if prospective else sequences.get((year, "f")))
+                    for index, year in enumerate([*periods.model, periods.end_of_horizon]))
+        result = replace(result, inserted_rows=len(rows), primary_keys=_expected_keys(rows))
+    return rows, result
+
+
+def _standalone_time_axes(contribution: TransportContribution) -> tuple[list[TimeSeason], list[TimeOfDay]]:
+    """Provide a full-year slice for standalone runs without an hourly ceiling."""
+    if contribution.charging_profiles is not None and contribution.charging_profiles.audit["enabled"]:
+        return [], []
+    return (
+        [TimeSeason(season="YEAR", sequence=1, segment_fraction=1.0)],
+        [TimeOfDay(tod="ALL", sequence=1, hours=24.0)],
+    )
+
+
+EXPORT_MODELS = {model.table_name(): model for model in (
+    TransportationTechnology, Commodity, TechnologyLabel, CommodityLabel,
+    DataSet, DataSourceLabel, DataSource, Region, TimePeriod, MetadataReal,
+    ExistingCapacity, Demand, CapacityToActivity, LimitAnnualCapacityFactor,
+    LifetimeTech, LifetimeProcess, LifetimeSurvivalCurve, Efficiency,
+    LimitTechInputSplitAnnual, CostInvest, CostFixed, CostVariable, EmissionEmbodied,
+    CapacityFactorTech, TimeSeason, TimeOfDay, LimitNewCapacityShare, LimitCapacityShare,
+    TechGroup, TechGroupMember, TechGroupLabel,
+)}
+
+
+def export_processed_tables(
+    connection: sqlite3.Connection, contribution: TransportContribution, *, bundle: ConfigBundle,
+    template_dir: Path,
+) -> dict[str, Any]:
+    """Publish model-ready CSVs from the insertion handoff, without inserting rows.
+
+    Preparation identities/fingerprints stay immutable. CSVs receive the same
+    readable data IDs and compact notes as standalone insertion. SQLite FK and
+    integrity checks are not claimed by this pre-insertion export.
+    """
+    import pandas as pd
+    from validation.insertion import compact_parameter_notes
+
     contribution.support_audit.clear()
     contribution.support_audit.update(_require_transport_parameter_support(contribution))
-    embodied_rows = [EmissionEmbodied.model_validate(row.model_dump()) for row in contribution.emission_embodied_rows]
-    from validation.insertion import replace_owned_ldv_rows, replace_owned_ldv_representation
+    axes = _validate_selected_preparations(connection, contribution)
+    if not any(axes):
+        axes = _standalone_time_axes(contribution)
+    batches = _publication_batches(contribution)
+    identifiers = _publication_identifiers(connection, contribution, batches)
+    labels, datasets, sources = registry_rows(contribution.provenance_contexts)
+    batches = {**batches, **contribution.labels_by_table,
+               "data_set": [*_internal_datasets(contribution), *datasets],
+               "data_source_label": labels, "data_source": sources,
+               "time_season": list(axes[0]) if axes else [],
+               "time_of_day": list(axes[1]) if axes else [],
+               "tech_group_label": [TechGroupLabel(group_name=row.group_name)
+                                    for row in batches["tech_group"]]}
+    for specification in STANDALONE_BASE_TABLES:
+        batches[specification.table], _ = _prepare_base_table(
+            connection, specification, template_dir, bundle, contribution.dataset.data_id,
+        )
+    rates = bundle.scenario.economics
+    rate_names = ("global_discount_rate", "default_loan_rate")
+    rate_columns = _table_columns(connection, "metadata_real")
+    batches["metadata_real"] = [MetadataReal.model_validate({
+        **dict(zip(rate_columns, row, strict=True)),
+        "value": getattr(rates, row[0]) if row[0] in rate_names else row[1],
+    }) for row in connection.execute("SELECT * FROM metadata_real")]
+    note_keys = next((context.database_note_keys for context in contribution.provenance_contexts), {})
+    parameter_tables = set(_representative_batches(contribution)) - set(contribution.rows_by_table)
+    # Capacity-to-activity is published directly by insertion, without note compaction.
+    parameter_tables.discard("capacity_to_activity")
+    parameter_tables.update(("demand", "capacity_factor_tech", "limit_new_capacity_share", "limit_capacity_share"))
+    prepared = {}
+    for table, model in EXPORT_MODELS.items():
+        rows = [model.model_validate(row.model_dump()) for row in batches.get(table, [])]
+        if table in parameter_tables or table == "capacity_to_activity":
+            keys = Counter(_primary_key(row) for row in rows)
+            duplicates = [key for key, count in keys.items() if count > 1]
+            if duplicates:
+                raise TemplateLoadError(f"Duplicate processed {table} primary key: {duplicates[:8]}")
+        if table in parameter_tables:
+            rows = compact_parameter_notes(rows, note_keys.get(table, ()))
+        prepared[table] = _deduplicate_models(publish_data_ids(
+            rows, identifiers, scenario_name=contribution.scenario_name,
+        ))
+    unknown = set(batches) - set(EXPORT_MODELS)
+    if unknown:
+        raise ValueError(f"Processed export has unregistered model tables: {sorted(unknown)}")
+    dataset_ids = {row.data_id for row in prepared["data_set"]}
+    source_ids = {row.source_id for row in prepared["data_source_label"]}
+    source_pairs = {(row.source_id, row.data_id) for row in prepared["data_source"]}
+    for rows in prepared.values():
+        for row in rows:
+            if getattr(row, "data_id", None) is not None and row.data_id not in dataset_ids:
+                raise ValueError(f"Unregistered processed data_id: {row.data_id}")
+            if getattr(row, "data_source", None) is not None and row.data_source not in source_ids:
+                raise ValueError(f"Unregistered processed source: {row.data_source}")
+            if (getattr(row, "data_source", None) is not None
+                    and (row.data_source, row.data_id) not in source_pairs):
+                raise ValueError(f"Unregistered processed source/dataset pair: {(row.data_source, row.data_id)}")
+    base = resolve_artifact_path(bundle, "processed_transport_tables").resolve()
+    processed_root = resolve_input_path(bundle, "processed").resolve()
+    if not base.is_relative_to(processed_root):
+        raise ValueError("Processed table export must remain within the configured processed layer")
+    name = contribution.scenario_name
+    if not name or name in {".", ".."} or any(character in name for character in "/\\"):
+        raise ValueError("Processed export requires a scenario name without path separators")
+    destination = base / name
+    base.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=f".{name}.", dir=base) as directory:
+        stage_root = Path(directory)
+        stage = stage_root / "prepared"
+        stage.mkdir()
+        tables = {}
+        for table, rows in prepared.items():
+            model = EXPORT_MODELS[table]
+            columns = _table_columns(connection, table)
+            if set(model.model_fields) - set(columns):
+                raise ValueError(f"Processed {table} row model differs from the packaged schema")
+            path = stage / f"{table}.csv"
+            write_dataframe_atomic(pd.DataFrame([row.model_dump(mode="json") for row in rows], columns=columns), path)
+            tables[table] = {"rows": len(rows), "columns": columns, "sha256": file_sha256(path),
+                             "primary_key": list(model.__primary_key__)}
+        report = {
+            "ok": True, "mode": "processed_only", "scenario": name,
+            "directory": str(destination), "schema": schema_evidence(), "tables": tables,
+            "validation": {"row_models": True, "primary_keys": True, "provenance": True,
+                           "parameter_support": contribution.support_audit,
+                           "sqlite_insertion": False, "sqlite_integrity": "not_run"},
+            "config": {"scenario": {"path": str(bundle.scenario_path), "sha256": file_sha256(bundle.scenario_path)},
+                       "paths_sha256": file_sha256(bundle.paths_path), "sources_sha256": file_sha256(bundle.sources_path)},
+            "charging_profiles": contribution.charging_profiles.audit if contribution.charging_profiles else {"enabled": False},
+        }
+        write_text_atomic(json.dumps(report, indent=2, sort_keys=True) + "\n", stage / "manifest.json")
+        # Both directories are verified children of the configured processed root.
+        backup = stage_root / "previous"
+        if destination.exists():
+            os.replace(destination, backup)
+        try:
+            os.replace(stage, destination)
+        except BaseException:
+            if backup.exists():
+                os.replace(backup, destination)
+            raise
+    LOGGER.info("Published %s model-ready CSV tables to %s; SQLite insertion skipped for this export",
+                len(tables), destination)
+    return report
 
-    charging = contribution.charging_profiles
-    ranges = contribution.range_representation
-    profile_rows = [CapacityFactorTech.model_validate(row.model_dump()) for row in charging.rows] if charging else []
-    share_rows = [LimitNewCapacityShare.model_validate(row.model_dump()) for row in ranges.share_rows] if ranges else []
+
+def _validate_selected_preparations(connection: sqlite3.Connection, contribution: TransportContribution):
+    """Protect the shared prepared-row boundary before either CSV export or insertion."""
+    charging, ranges = contribution.charging_profiles, contribution.range_representation
     profile_axes = []
     if charging is not None:
         from parameterization.ldv_charging_profiles import validate_charging_preparation
@@ -891,32 +1159,47 @@ def insert_transport_contribution(
             contexts = {c.data_id: c for c in contribution.provenance_contexts}
             if any(contexts.get(c.data_id) != c for c in ranges.representative.provenance_contexts):
                 raise ValueError("Contribution lost representative provenance/DQ lineage")
+    return profile_axes
+
+
+@log_duration(LOGGER, "SQLite transport insertion")
+def insert_transport_contribution(
+    connection: sqlite3.Connection,
+    contribution: TransportContribution,
+    *,
+    conflict: ConflictPolicy = "error",
+) -> dict[str, list[CanoeBaseModel]]:
+    """Insert a prepared contribution into a transaction owned by the caller."""
+    # Recheck mutable batches before any SQLite writes, including caller insertions.
+    contribution.support_audit.clear()
+    contribution.support_audit.update(_require_transport_parameter_support(contribution))
+    excluded_chargers = {tech for result in contribution.load_results
+                         for tech in result.excluded_technologies}
+    if excluded_chargers:
+        placeholders = ",".join("?" for _ in excluded_chargers)
+        incompatible = [row[0] for row in connection.execute(
+            f"SELECT tech FROM technology WHERE tech IN ({placeholders})", sorted(excluded_chargers),
+        )]
+        if incompatible:
+            raise TemplateLoadError(
+                f"Caller database contains the other charger representation: {sorted(incompatible)}. "
+                "Prepare a compatible transport slice; standalone --overwrite rebuilds its configured database."
+            )
+    embodied_rows = [EmissionEmbodied.model_validate(row.model_dump()) for row in contribution.emission_embodied_rows]
+    from validation.insertion import replace_owned_ldv_rows, replace_owned_ldv_representation
+
+    charging = contribution.charging_profiles
+    ranges = contribution.range_representation
+    profile_rows = [CapacityFactorTech.model_validate(row.model_dump()) for row in charging.rows] if charging else []
+    share_rows = [LimitNewCapacityShare.model_validate(row.model_dump()) for row in ranges.share_rows] if ranges else []
+    charger_share_rows = [LimitCapacityShare.model_validate(row.model_dump())
+                          for row in contribution.charger_capacity_share_rows]
+    profile_axes = _validate_selected_preparations(connection, contribution)
     # The immutable preparation IDs above remain part of validation fingerprints.
     # Publish readable aliases only now, across every FK-linked contribution batch.
     labels, datasets, sources = registry_rows(contribution.provenance_contexts)
-    internal_datasets = [dataset for dataset in (
-        contribution.dataset, contribution.road_assumption_dataset,
-        contribution.charger_assumption_dataset,
-        contribution.efficiency_assumption_dataset, ranges.structural_dataset if ranges else None,
-    ) if dataset is not None]
-    publication_batches = {
-        **_representative_batches(contribution),
-        "demand": contribution.demand_rows,
-        "capacity_factor_tech": profile_rows,
-        "limit_new_capacity_share": share_rows,
-        "tech_group": ranges.group_rows if ranges else [],
-        "tech_group_member": ranges.member_rows if ranges else [],
-    }
-    columns = [column[1] for column in connection.execute("PRAGMA table_info(data_set)")]
-    existing_datasets = [
-        DataSet.model_validate(dict(zip(columns, row, strict=True)))
-        for row in connection.execute("SELECT * FROM data_set")
-    ]
-    published_ids = readable_data_id_mapping(
-        datasets=[*internal_datasets, *datasets], contexts=contribution.provenance_contexts,
-        batches=publication_batches, scenario_name=contribution.scenario_name,
-        existing_datasets=existing_datasets,
-    )
+    publication_batches = _publication_batches(contribution)
+    published_ids = _publication_identifiers(connection, contribution, publication_batches)
 
     def insert_published(rows, *, policy=conflict):
         published = publish_data_ids(rows, published_ids, scenario_name=contribution.scenario_name)
@@ -972,6 +1255,13 @@ def insert_transport_contribution(
         inserted.setdefault("data_set", []).extend(insert_published([contribution.road_assumption_dataset]))
     if contribution.charger_assumption_dataset is not None:
         inserted.setdefault("data_set", []).extend(insert_published([contribution.charger_assumption_dataset]))
+    if contribution.charger_group_rows:
+        group_labels = [TechGroupLabel(group_name=row.group_name) for row in contribution.charger_group_rows]
+        inserted.setdefault("tech_group_label", []).extend(insert_published(group_labels, policy="ignore_identical"))
+        for model, rows in ((TechGroup, contribution.charger_group_rows),
+                            (TechGroupMember, contribution.charger_group_member_rows)):
+            validated = [model.model_validate(row.model_dump()) for row in rows]
+            inserted.setdefault(model.table_name(), []).extend(insert_published(validated))
     if contribution.efficiency_assumption_dataset is not None:
         inserted.setdefault("data_set", []).extend(insert_published([contribution.efficiency_assumption_dataset]))
     if (contribution.parameter_rows or contribution.demand_rows
@@ -980,7 +1270,7 @@ def insert_transport_contribution(
             or contribution.lifetime_survival_curve_rows or contribution.efficiency_rows
             or contribution.input_split_rows or contribution.cost_invest_rows
             or contribution.cost_fixed_rows
-            or contribution.cost_variable_rows or embodied_rows or profile_rows or share_rows):
+            or contribution.cost_variable_rows or embodied_rows or profile_rows or share_rows or charger_share_rows):
         for registry_batch in (labels, datasets, sources):
             if registry_batch:
                 inserted.setdefault(registry_batch[0].table_name(), []).extend(insert_published(registry_batch))
@@ -1008,7 +1298,7 @@ def insert_transport_contribution(
             insert_parameter_batch(contribution.input_split_rows)
         if embodied_rows:
             insert_parameter_batch(embodied_rows)
-        for batch in (profile_rows,share_rows):
+        for batch in (profile_rows, share_rows, charger_share_rows):
             if batch:
                 insert_parameter_batch(batch)
     if contribution.capacity_to_activity_rows:
@@ -1027,6 +1317,7 @@ def bootstrap_database(
     database_path: Path,
     overwrite: bool = False,
     comparison_reference: Path | None = None,
+    export_processed: bool = False,
 ) -> dict[str, Any]:
     """Build, audit, and atomically publish one package-DDL v4 database."""
     if database_path.exists() and not overwrite:
@@ -1063,26 +1354,22 @@ def bootstrap_database(
             bundle=bundle,
             template_dir=template_dir,
         )
+        processed_report = export_processed_tables(
+            connection, contribution, bundle=bundle, template_dir=template_dir,
+        ) if export_processed else None
         base_load_results: list[TableLoadResult] = []
         inserted: dict[str, list[CanoeBaseModel]] = {}
         for specification in STANDALONE_BASE_TABLES:
-            base_rows, _, result = prepare_template_table(
-                connection,
-                specification=specification,
-                template_path=template_dir / specification.filename,
-                data_id=contribution.dataset.data_id,
+            base_rows, result = _prepare_base_table(
+                connection, specification, template_dir, bundle, contribution.dataset.data_id,
             )
-            if specification.table == "time_period" and bundle.scenario.periods.period_mode == "prospective":
-                periods = bundle.scenario.periods
-                base_rows = [TimePeriod(period=year, flag="e", sequence=None) for year in periods.existing]
-                base_rows.extend(
-                    TimePeriod(period=year, flag="f", sequence=index)
-                    for index, year in enumerate([*periods.model, periods.end_of_horizon])
-                )
-                result = replace(result, inserted_rows=len(base_rows), primary_keys=_expected_keys(base_rows))
             insert_models(connection, base_rows)
             inserted[specification.table] = base_rows
             base_load_results.append(result)
+        for axis_rows in _standalone_time_axes(contribution):
+            if axis_rows:
+                insert_models(connection, axis_rows)
+                inserted[axis_rows[0].table_name()] = axis_rows
         inserted.update(insert_transport_contribution(connection, contribution))
 
         expected_primary_keys = {
@@ -1119,6 +1406,7 @@ def bootstrap_database(
 
     return {
         "ok": True,
+        **({"processed_tables": processed_report} if processed_report else {}),
         "database": str(database_path),
         "schema": schema_evidence(),
         "source_id_mapping": source_id_mapping(bundle.sources),
@@ -1156,49 +1444,16 @@ def bootstrap_database(
 def compare_transport_database(
     bundle: ConfigBundle, candidate_path: Path, reference: Path,
 ) -> dict[str, Any]:
-    """Run the selected optional comparison before atomic database publication."""
+    """Run the selected optional v4 comparison before atomic publication."""
     comparison = bundle.scenario.comparison
-    if comparison.mode == "scenario":
-        result = compare_scenario_databases(
-            candidate_path, reference,
-            absolute_tolerance=comparison.absolute_tolerance,
-            relative_tolerance=comparison.relative_tolerance,
-            include_provenance=comparison.include_provenance,
-        )
-    elif comparison.mode == "legacy":
-        tolerances = {
-            "absolute_tolerance": comparison.absolute_tolerance,
-            "relative_tolerance": comparison.relative_tolerance,
-        }
-        result = compare_legacy_tables(
-            candidate_path,
-            reference,
-            tables=("technology", "commodity"),
-        )
-        result.update(mode="legacy", **tolerances)
-        result["existing_capacity"] = compare_legacy_existing_capacity(
-            candidate_path, reference, **tolerances,
-        )
-        result["demand"] = compare_legacy_demand(
-            candidate_path, reference, **tolerances,
-        )
-        result["lifetime_tech"] = compare_legacy_lifetime_tech(
-            candidate_path, reference, **tolerances,
-        )
-        result["efficiency"] = compare_legacy_efficiency(
-            candidate_path, reference,
-            **tolerances,
-        )
-        result["costs"] = compare_legacy_costs(
-            candidate_path, reference,
-            **tolerances,
-        )
-        result["emission_embodied"] = compare_legacy_emission_embodied(
-            candidate_path, reference, **tolerances,
-        )
-    else:
-        result = {"enabled": False, "mode": "none"}
-    return result
+    if comparison.mode == "none":
+        return {"enabled": False, "mode": "none"}
+    return compare_scenario_databases(
+        candidate_path, reference,
+        absolute_tolerance=comparison.absolute_tolerance,
+        relative_tolerance=comparison.relative_tolerance,
+        include_provenance=comparison.include_provenance,
+    )
 
 
 def write_validation_report(report: dict[str, Any], path: Path) -> None:
@@ -1214,7 +1469,7 @@ def prepare_scenario_inputs(bundle: ConfigBundle, *, download: bool = False) -> 
     retain their live row/provenance/audit handoffs. Shared outputs require serial runs.
     """
     from fetching import (
-        assorted_sources, cer_enerfuture, fueleconomy_vehicles,
+        afdc_charger_stations, assorted_sources, cer_enerfuture, dunsky_charger_inputs, fueleconomy_vehicles,
         nlr_atb_autonomie, nrcan_ceud, statcan_tables, transport_canada_izev, vehicle_population,
     )
     from parameterization.road_aggregation import build_road_aggregation_artifacts
@@ -1223,7 +1478,9 @@ def prepare_scenario_inputs(bundle: ConfigBundle, *, download: bool = False) -> 
     from parameterization.road_lifetimes_survival import require_tail_derivation
 
     require_tail_derivation(bundle)
-    scenario = bundle.scenario_path
+    # Propagate the caller's explicit root and alternate controls through every
+    # prerequisite. Reloading only its scenario path would bind to the caller cwd.
+    scenario = bundle
     LOGGER.info("Preparing scenario inputs: cache downloads %s", "enabled" if download else "disabled")
     for prepare in (
         nrcan_ceud.fetch_and_normalize,
@@ -1232,7 +1489,8 @@ def prepare_scenario_inputs(bundle: ConfigBundle, *, download: bool = False) -> 
         cer_enerfuture.fetch_and_normalize,
         nlr_atb_autonomie.fetch_and_normalize,
         assorted_sources.fetch_and_normalize,
-        assorted_sources.fetch_and_normalize_tc_dashboard,
+        afdc_charger_stations.fetch_and_normalize,
+        dunsky_charger_inputs.fetch_and_normalize,
     ):
         with log_duration(LOGGER, f"Prerequisite {prepare.__module__}.{prepare.__name__}"):
             prepare(scenario, download=download)
@@ -1270,7 +1528,7 @@ def prepare_scenario_inputs(bundle: ConfigBundle, *, download: bool = False) -> 
         from parameterization.road_lifetimes_survival import build_mto_survival_diagnostic_artifacts
 
         with log_duration(LOGGER, "Notebook reviewed-mapping diagnostics"):
-            build_mapping_diagnostic_artifacts(scenario)
+            build_mapping_diagnostic_artifacts(scenario, include_candidates=False)
         with log_duration(LOGGER, "Notebook MOVES comparison evidence"):
             assorted_sources.fetch_and_normalize_moves5_survival(scenario, download=download)
         with log_duration(LOGGER, "Notebook MTO retention diagnostics"):
@@ -1330,11 +1588,14 @@ def build_from_scenario(
     overwrite: bool = False,
     download_sources: bool = False,
     debug: bool = False,
+    processed_only: bool = False,
+    export_processed: bool = False,
 ) -> tuple[dict[str, Any], Path]:
     """Prepare sources, assemble validated rows and publish one complete scenario."""
     from utils.build_logging import scenario_build_log
 
     bundle = load_config_bundle(scenario_path)
+    _require_compilable_road_utilization(bundle.scenario.road_utilization.vkt_schedules)
     from parameterization.road_lifetimes_survival import require_tail_derivation
 
     require_tail_derivation(bundle)
@@ -1343,25 +1604,31 @@ def build_from_scenario(
             return _build_scenario(
                 bundle, overwrite=overwrite, download_sources=download_sources,
                 log_path=log_path, debug=debug,
+                processed_only=processed_only, export_processed=export_processed,
             )
 
 
 def _build_scenario(
     bundle: ConfigBundle, *, overwrite: bool, download_sources: bool,
     log_path: Path, debug: bool,
+    processed_only: bool = False, export_processed: bool = False,
 ) -> tuple[dict[str, Any], Path]:
     scenario = bundle.scenario
     periods = scenario.periods
     from parameterization.vehicle_reference import load_vehicle_reference
 
     vehicle_parameter_paths = load_vehicle_reference(bundle).paths
+    production_parameter_paths = (
+        *harmonization_rule_paths(bundle),
+        resolve_parameter_path(bundle, "conversion.yaml"),
+        resolve_parameter_path(bundle, "dunsky_charger_inputs.yaml"),
+        *vehicle_parameter_paths,
+    )
     notebook_controls = {
         path: file_sha256(path)
         for path in (
             bundle.scenario_path, bundle.paths_path, bundle.sources_path,
-            resolve_parameter_path(bundle, "rules.yaml"),
-            resolve_parameter_path(bundle, "conversion.yaml"),
-            *vehicle_parameter_paths,
+            *production_parameter_paths,
         )
     } if scenario.notebook_diagnostics else {}
     LOGGER.info(
@@ -1383,6 +1650,29 @@ def _build_scenario(
         scenario.costs.atb_trajectory, scenario.economics.cost_reference_year,
         scenario.economics.cost_reference_currency,
     )
+    if processed_only:
+        with log_duration(LOGGER, "Scenario prerequisites"):
+            prepare_scenario_inputs(bundle, download=download_sources)
+        connection = sqlite3.connect(":memory:")
+        try:
+            # The pinned DDL supplies structure/defaults for preparation reads.
+            # No transport parameters or base rows are inserted into this connection.
+            create_v4_schema(connection)
+            template_dir = resolve_input_path(bundle, "template")
+            contribution = prepare_transport_contribution(
+                connection, bundle=bundle, template_dir=template_dir,
+            )
+            report = export_processed_tables(
+                connection, contribution, bundle=bundle, template_dir=template_dir,
+            )
+        finally:
+            connection.close()
+        report.update(orchestration={"prerequisites": "replayed", "download_sources": download_sources},
+                      logging={"path": str(log_path), "verbosity": "DEBUG" if debug else "INFO"})
+        manifest = Path(report["directory"]) / "manifest.json"
+        write_validation_report(report, manifest)
+        LOGGER.info("Processed-only scenario completed: %s; SQLite output untouched", manifest)
+        return report, manifest
     database_path = resolve_configured_path(
         bundle,
         "outputs",
@@ -1399,14 +1689,13 @@ def _build_scenario(
         raise ValueError("Validation report must differ from the output database")
     comparison = bundle.scenario.comparison
     reference = None
-    if comparison.mode != "none":
+    if comparison.mode == "scenario":
         reference = resolve_repo_path(bundle.repo_root, comparison.reference_sqlite)
         if reference.resolve() == database_path.resolve():
             raise ValueError("Comparison reference must differ from the output database")
         if not reference.is_file():
             raise FileNotFoundError(f"Comparison reference is missing: {reference}")
-        if comparison.mode == "scenario":
-            validate_scenario_comparison_reference(reference)
+        validate_scenario_comparison_reference(reference)
         if validation_path.resolve() == reference.resolve():
             raise ValueError("Validation report must differ from the comparison reference")
     with log_duration(LOGGER, "Scenario prerequisites"):
@@ -1419,6 +1708,7 @@ def _build_scenario(
             template_dir=resolve_input_path(bundle, "template"),
             database_path=candidate,
             comparison_reference=reference,
+            export_processed=export_processed,
         )
         report.update(
             {
@@ -1443,11 +1733,7 @@ def _build_scenario(
                     },
                     "parameters": [
                         {"path": str(path), "sha256": file_sha256(path)}
-                        for path in (
-                            resolve_parameter_path(bundle, "rules.yaml"),
-                            resolve_parameter_path(bundle, "conversion.yaml"),
-                            *vehicle_parameter_paths,
-                        )
+                        for path in production_parameter_paths
                     ],
                     "manual_inputs": [
                         {"path": str(path), "sha256": file_sha256(path)}
@@ -1507,6 +1793,14 @@ def parse_args() -> argparse.Namespace:
         "--debug", action="store_true",
         help="Include configuration mappings, detailed audits and routine start events.",
     )
+    parser.add_argument(
+        "--processed-only", action="store_true",
+        help="Replay prerequisites and export all model-ready parameter CSVs without inserting/publishing SQLite.",
+    )
+    parser.add_argument(
+        "--export-processed", action="store_true",
+        help="Also export the prepared model-ready CSV tables during a normal SQLite build.",
+    )
     return parser.parse_args()
 
 
@@ -1522,6 +1816,8 @@ def main() -> None:
             overwrite=args.overwrite,
             download_sources=args.download_sources,
             debug=args.debug,
+            processed_only=args.processed_only,
+            export_processed=args.export_processed,
         )
     except (
         OSError,

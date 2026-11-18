@@ -153,8 +153,14 @@ def load_ldv_aggregation_weights(
     return ldv, path
 
 
-def load_fleet_aggregation_evidence(bundle: ConfigBundle) -> FleetAggregationEvidence:
-    """Read only the sources selected by the shared regional policy; never download."""
+def load_fleet_aggregation_evidence(
+    bundle: ConfigBundle, *, include_ldv: bool = True,
+) -> FleetAggregationEvidence:
+    """Read selected fleet sources, omitting LDV for truck-only consumers.
+
+    Omitted LDV evidence is an empty frame and does not enter the consumed paths.
+    Truck source selection and validation remain identical in both modes.
+    """
     rules = load_harmonization_rules(bundle, "road_aggregation")
     paths: list[Path] = []
 
@@ -165,8 +171,10 @@ def load_fleet_aggregation_evidence(bundle: ConfigBundle) -> FleetAggregationEvi
             raise ValueError(f"Empty fleet aggregation evidence: {path}")
         return frame
 
-    ldv, ldv_path = load_ldv_aggregation_weights(bundle, rules=rules)
-    paths.append(ldv_path)
+    ldv = pd.DataFrame()
+    if include_ldv:
+        ldv, ldv_path = load_ldv_aggregation_weights(bundle, rules=rules)
+        paths.append(ldv_path)
     year = bundle.scenario.existing_capacity.vehicle_population_year
     medium_shares = {}
     selected_sources = {

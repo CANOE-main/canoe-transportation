@@ -15,28 +15,113 @@ import pandas as pd
 
 from fetching import statcan_tables
 from parameterization.ceud_inputs import ceud_input_path, read_ceud_input
+from parameterization.road_aggregation import apply_vehicle_mapping, derive_aggregation_weights
 from parameterization.road_lifetimes_survival import (
-    derive_accepted_lifetime_frames,
+    accepted_lifetime_frames,
     fixed_existing_lifetimes,
     resolved_road_lifetime_rules,
+    validate_accepted_survival_inputs,
 )
 from parameterization.road_stocks_and_demands import (
     derive_sales_survival_cohorts,
     distribute_existing_road_capacity,
 )
+from parameterization.vehicle_reference import load_vehicle_reference, reference_mto_mapping
 from utils import (
     ConfigBundle,
+    harmonization_rule_paths,
     file_sha256,
     load_config_bundle,
     load_conversion_factors,
     load_harmonization_rules,
     resolve_artifact_path,
-    resolve_input_path,
+    resolve_parameter_path,
 )
+from validation.notebook_evidence import load_notebook_evidence
 
 
 COHORT_KEYS = ["profile", "region", "road_class", "vintage", "vintage_year"]
 GROUP_KEYS = ["profile", "region", "road_class"]
+
+
+def _selected_ldv_evidence(
+    statuses: pd.DataFrame, mapping: pd.DataFrame, *, year: int, road_rules: dict,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Derive one explicit edition using the production mapping/weight functions."""
+    keys = ["report_year", "VEHICLE_CLASS", "MAKE", "MODEL", "MODEL_YEAR"]
+    required = {*keys, "stock_status", "native_count"}
+    if missing := required - set(statuses):
+        raise ValueError(f"Captured Report A history lacks {sorted(missing)}")
+    stock = statuses.loc[
+        statuses.report_year.eq(year) & statuses.stock_status.eq("FIT_ACTIVE")
+        & statuses.VEHICLE_CLASS.isin(["PASSENGER", "COMMERCIAL"]),
+        [*keys, "native_count"],
+    ].rename(columns={"native_count": "FIT_ACTIVE"})
+    if stock.empty or stock.duplicated(keys).any():
+        raise ValueError(f"Captured Report A coverage is missing or duplicated for selected year {year}")
+    counts = pd.to_numeric(stock.FIT_ACTIVE, errors="raise")
+    if not np.isfinite(counts).all() or counts.lt(0).any():
+        raise ValueError("Captured Report A FIT_ACTIVE counts must be finite and nonnegative")
+    stock["FIT_ACTIVE"] = counts
+    mapped = apply_vehicle_mapping(stock, mapping, accepted_statuses=set(road_rules["accepted_mapping_statuses"]))
+    _, weights = derive_aggregation_weights(
+        mapped, vintage_bin_years=road_rules["vintage_bin_years"],
+        vintage_alignment=road_rules["vintage_alignment"],
+    )
+    weights = weights.loc[weights.weight_basis.eq(road_rules["ldv_weight_basis"])].copy()
+    if (set(weights.report_year) != {year} or set(weights.nrcan_ceud_class) != {"Car", "Light Truck"}
+            or weights.duplicated(["nrcan_ceud_class", "nlr_atb_class"]).any()
+            or not np.isfinite(weights.aggregation_weight).all() or weights.aggregation_weight.le(0).any()
+            or weights.groupby("nrcan_ceud_class").aggregation_weight.sum().sub(1).abs().gt(1e-8).any()):
+        raise ValueError("Incomplete or invalid captured Report A LDV weights")
+    return mapped, weights
+
+
+def _captured_stock_evidence(bundle: ConfigBundle, *, road_rules: dict, assorted_rules: dict) -> dict:
+    """Replace shared mutable handoffs with matching, verified recorded inputs."""
+    captured = load_notebook_evidence("vehicle_stock", repo_root=bundle.repo_root)
+    reference_rules = load_harmonization_rules(bundle, "vehicle_reference")
+    controls = {
+        **{"rules" if path.name == "rules.yaml" else f"rules:{path.name}": path
+           for path in harmonization_rule_paths(bundle)},
+        "conversion": resolve_parameter_path(bundle, "conversion.yaml"),
+        "sources": bundle.sources_path,
+        "vehicle_reference": resolve_parameter_path(bundle, reference_rules["canonical_file"]),
+        "vehicle_source_links": resolve_parameter_path(bundle, reference_rules["source_links_file"]),
+    }
+    for name, path in controls.items():
+        identity = captured.metadata["config"].get(name)
+        if identity is None or file_sha256(path) != identity["sha256"]:
+            raise ValueError(f"Stock-cohort {name} differs from captured reviewed evidence; rebuild with: "
+                             f"{captured.metadata['prepare_command']}")
+    reference = load_vehicle_reference(captured.bundle)
+    mapping = reference_mto_mapping(
+        reference, load_harmonization_rules(captured.bundle, "road_aggregation"),
+        load_harmonization_rules(captured.bundle, "nrcan_fuel_consumption_ratings")["vehicle_class_harmonization"],
+    )
+    year = bundle.scenario.existing_capacity.vehicle_population_year
+    mapped, weights = _selected_ldv_evidence(
+        pd.read_csv(captured.paths["status_long"], low_memory=False), mapping, year=year, road_rules=road_rules,
+    )
+    paths = [captured.paths[key] for key in (
+        "status_long", "source_manifest", "nhtsa_survival_input", "eia_survival_input", "moves5_survival_input",
+    )]
+    nhtsa, eia, moves = (pd.read_csv(captured.paths[key]) for key in (
+        "nhtsa_survival_input", "eia_survival_input", "moves5_survival_input",
+    ))
+    validate_accepted_survival_inputs(nhtsa, eia, assorted_rules=assorted_rules, moves5=moves)
+    manifest = Path(captured.metadata["manifest"])
+    return {
+        "mapped": mapped, "weights": weights, "nhtsa": nhtsa, "eia": eia, "moves": moves,
+        "paths": [*paths, *reference.paths, manifest, *controls.values()],
+        "metadata": {
+            "profile": "vehicle_stock", "build_id": captured.metadata["build_id"],
+            "manifest": str(manifest), "manifest_sha256": file_sha256(manifest),
+            "selected_population_year": year,
+            "transformation": "Captured complete FIT_ACTIVE history and reviewed model-year mapping; production LDV weight derivation",
+            "registered_readonly_inputs": "Selected-edition native CEUD, year-scoped Report 5, pinned StatCan caches",
+        },
+    }
 
 
 def _read_fuel_evidence(bundle: ConfigBundle) -> tuple[pd.DataFrame, pd.DataFrame, list[Path], list[str]]:
@@ -306,33 +391,43 @@ def load_stock_cohort_diagnosis(
     road_rules = load_harmonization_rules(bundle, "road_aggregation")
     assorted = load_harmonization_rules(bundle, "assorted_sources")
     regions = list(bundle.scenario.geography.regions)
+    source_paths = [ceud_input_path(bundle, region) for region in regions]
+    missing_regions = [region for region, path in zip(regions, source_paths, strict=True) if not path.is_file()]
+    if missing_regions:
+        command = f'uv run --offline python -m fetching.nrcan_ceud --scenario "{bundle.scenario_path.as_posix()}" --no-download'
+        raise FileNotFoundError(f"Missing normalized CEUD data for {', '.join(missing_regions)}. Run {command}.")
     provincial = pd.concat([read_ceud_input(bundle, region) for region in regions], ignore_index=True)
     edition = bundle.scenario.sources.selections["nrcan_ceud_transport_provincial"].year
     if not provincial.ceud_source_endpoint_year.eq(edition).all():
         raise ValueError("Diagnostic CEUD source endpoint differs from the selected registered edition")
-    source_paths = [ceud_input_path(bundle, region) for region in regions]
-    source_paths.extend(resolve_input_path(bundle, "interim", assorted["interim_subdir"], assorted[key]["output_file"])
-                        for key in ["nhtsa_cafe", "eia_nems", "epa_moves5"])
+    captured = _captured_stock_evidence(bundle, road_rules=road_rules, assorted_rules=assorted)
+    source_paths.extend(captured["paths"])
     ldv, trucks, fuel_paths, warnings = _read_fuel_evidence(bundle)
     source_paths.extend(fuel_paths)
     mto_rules = load_harmonization_rules(bundle, "ontario_vehicle_population")
+    population_year = bundle.scenario.existing_capacity.vehicle_population_year
     report5_path = resolve_artifact_path(bundle, "ontario_vehicle_population") / mto_rules["reports"][5][
-        "distribution_output_template"].format(year=bundle.scenario.existing_capacity.vehicle_population_year)
+        "distribution_output_template"].format(year=population_year)
+    if not report5_path.is_file():
+        command = (f'uv run --offline python -m fetching.vehicle_population --scenario "{bundle.scenario_path.as_posix()}" '
+                   f"--year {population_year} --no-download")
+        raise FileNotFoundError(f"Missing normalized Ontario Report 5 for {population_year}. Run {command}.")
     report5 = pd.read_csv(report5_path)
-    mapped_path = resolve_artifact_path(bundle, "road_aggregation", road_rules["mapped_current_stock_file"])
-    mapped = pd.read_csv(mapped_path, low_memory=False)
-    dashboard_path = resolve_artifact_path(bundle, "tc_ev_dashboard_interim") / assorted["tc_ev_dashboard"]["output_file"]
-    dashboard = pd.read_csv(dashboard_path)
-    source_paths.extend([mapped_path, report5_path, dashboard_path,
-                         resolve_artifact_path(bundle, "road_aggregation", road_rules["nlr_weights_file"])])
+    if (set(report5.year) != {population_year}
+            or set(report5.source_id) != {"ontario_ministry_transport_vehicle_population"}):
+        raise ValueError("Stock-cohort Report 5 identity differs from the selected population year/source")
+    mapped = captured["mapped"]
+    source_paths.append(report5_path)
     annual_frames, composition_frames, production_audits, production_curves, projections = [], [], [], [], []
     vintage_audits, reference_comparisons = [], []
     profile_frames = {}
     for profile in road_family["existing_capacity"]["survival_source_profiles"]:
         selected_bundle = _profile_bundle(bundle, profile)
         rules = _five_class_rules(selected_bundle)
-        frames = derive_accepted_lifetime_frames(
-            selected_bundle, rules=lifetime_rules, road_rules=road_rules, assorted_rules=assorted,
+        frames = accepted_lifetime_frames(
+            captured["nhtsa"], captured["eia"],
+            captured["weights"] if profile == "nhtsa_nems" else None,
+            rules=lifetime_rules, moves5=captured["moves"] if profile == "moves" else None,
         )
         selected = selected_road_survival_schedules(selected_bundle, frames["transformed_curves"])
         profile_frames[profile] = selected.assign(profile=profile)
@@ -349,7 +444,7 @@ def load_stock_cohort_diagnosis(
         reference_comparisons.append(reference_survival_comparison(sales, selected).assign(profile=profile))
         common = dict(
             provincial=provincial, report5_age=report5,
-            ldv_registrations=ldv, truck_registrations=trucks, dashboard=dashboard,
+            ldv_registrations=ldv, truck_registrations=trucks,
             regions=regions, period_config=bundle.scenario.periods,
             vehicle_population_year=bundle.scenario.existing_capacity.vehicle_population_year,
             survival_curves=False, survival_curve_max_age=maximum_age,
@@ -414,5 +509,6 @@ def load_stock_cohort_diagnosis(
         "warnings": warnings, "files": [{"path": str(path), "sha256": file_sha256(path)} for path in sorted(set(source_paths))],
         "survival_treatment": tail_settings,
         "tail_survival_threshold": tail_settings["threshold"],
+        "captured_evidence": captured["metadata"],
     }
     return result

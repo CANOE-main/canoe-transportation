@@ -11,6 +11,7 @@ from fetching.vpic_model_years import (
     VPicTemporalRequest,
     build_requests,
     fetch_and_normalize,
+    fetch_to_cache,
     normalize_evidence,
 )
 from fetching.vpic_vehicle_types import VPicResponse
@@ -88,6 +89,36 @@ def test_requests_route_pre_1996_to_canadian_specifications() -> None:
     ]
     assert "GetCanadianVehicleSpecifications" in requests[0].url
     assert "GetModelsForMakeYear" in requests[1].url
+
+
+@pytest.mark.parametrize("index", [0, 1])
+def test_invalid_download_is_rejected_before_caching(tmp_path, index):
+    request = build_requests(load_config_bundle(SCENARIO), eligible_rows())[index]
+    request = request.model_copy(update={"cache_path": tmp_path / "response.json"})
+    payload = {"Count": 1, "Message": "Incomplete response", "SearchCriteria": "Fixture", "Results": []}
+
+    class Response:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return payload
+
+    class Session:
+        def get(self, *_args, **_kwargs):
+            return Response()
+
+    with pytest.raises(ValidationError, match="does not equal"):
+        fetch_to_cache(request, session=Session(), timeout=1)
+    assert not request.cache_path.exists()
+    assert list(tmp_path.iterdir()) == []
+
+    # Recovery writes only a response that has passed its endpoint's contract.
+    payload["Count"] = 0
+    response, status = fetch_to_cache(request, session=Session(), timeout=1)
+    assert status == "downloaded"
+    assert response.count == 0
+    assert json.loads(request.cache_path.read_text()) == payload
 
 
 def test_temporal_normalization_is_affirmative_and_case_insensitive() -> None:

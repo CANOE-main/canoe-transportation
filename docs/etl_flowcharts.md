@@ -23,7 +23,7 @@ each operation. The legend below is local to these diagrams.
 - [`emission_embodied`](#emission_embodied)
 - [EV charger parameters](#ev-charger-parameters)
 - [`limit_new_capacity_share` for LDV PEV range composition](#limit_new_capacity_share-for-ld-pev-range-composition)
-- [`capacity_factor_tech` for BEV charging profiles](#capacity_factor_tech-for-bev-charging-profiles-pending-refactor)
+- [`capacity_factor_tech` for LDV charging profiles](#capacity_factor_tech-for-bev-charging-profiles-pending-refactor)
 
 ### Flowchart Legends
 
@@ -72,7 +72,7 @@ flowchart LR
 ### `existing_capacity`
 
 !!! note "Read capacity together with its lifetime representation"
-    The [ageing chapter](model/ageing.md) distinguishes acquired vehicles, physical survivors and capacity supplied to Temoa. The selected representation governs the exported denominator. #to-review
+    The [ageing chapter](model/ageing.md) distinguishes acquired vehicles, physical survivors and capacity supplied to Temoa. The selected representation governs the exported denominator. 
 
 ```mermaid
 ---
@@ -109,12 +109,9 @@ flowchart LR
   s4[("`**StatCan table**
     New LDV registrations by fuel type and province`")]
   s5[("`**StatCan table**
-    MHDV registrations by fuel type and province`")]
-  s6[("`**Transport Canada (TC) EV Dashboard**
-    Latest quarterly medium- and heavy-duty EV market shares by province; annual shares not disclosed by province`")]
+    Registered-fleet fuel shares: 4,536–11,793 kg group proxies CEUD medium trucks; heavy trucks remain diesel only`")]
 
   %% ############ Processes ###########
-  %% #to-review: Updated production cohort preparation.
   p1["`**Annual fleet cohorts**
     • *Cars and trucks:* reconstruct sales and survival; scale to NRCan CEUD stock at the base year<br>
     • *Buses and motorcycles:* distribute stocks by MTO age evidence<br>
@@ -136,17 +133,16 @@ flowchart LR
   vpic_model_years.py
   vpic_vehicle_types.py --> p1
 
-  %% #to-review: Preserve annual powertrain allocation in both lifetime modes.
   p2["`**Fleet powertrain distribution**
-    • *Cars and trucks:* apply annual registration shares to sales and surviving stock<br>
+    • *LDVs:* apply annual new-registration fuel shares to CEUD cohorts<br>
+    • *Medium trucks:* apply registered-fleet fuel shares from the accepted lower weight group to CEUD cohorts<br>
+    • Exclude unsupported fuels; preserve CEUD class totals<br>
     • *Off-road:* incumbent techs mostly use diesel or jet fuel<br>
     • Aggregate into 5-year vintages`"]
   p1 -- road_aggregation.py --> p2
   s4 -- statcan_tables.py --> p2
   s5 -- statcan_tables.py --> p2
-  s6 -- assorted_sources.py --> p2
 
-  %% #to-review: Shared source-tail rule and capacity basis.
   s7@{shape: processes, label: "**Road survival curves**
     NHTSA & NEMS, or MOVES; extend the last retirement rate to the selected survival threshold, then zero"}
   s7 -- road_lifetimes_survival.py --> p1
@@ -169,14 +165,13 @@ flowchart LR
   click s0 "https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm"
   click s1_2 "https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64"
   click s1_3 "https://www.fueleconomy.gov/feg/ws/index.shtml"
-  click s6 "https://tc.canada.ca/en/road-transportation/innovative-technologies/electric-vehicles/canada-electric-vehicle-dashboard"
 ```
 
 | Harmonization rule                                     | Affected classes      | Description                                                                                                                          |
 | ------------------------------------------------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | Fetch vehicle counts by inferred size class            | Cars and light trucks | Map make-model-vintage keys with the reviewed NRCan and [*US FuelEconomy.gov*](https://www.fueleconomy.gov/feg/ws/index.shtml) evidence crosswalk                                       |
-| Reconstruct and calibrate cohorts | Cars and trucks | `k = CEUD reference stock / sum(sales * survival)`, one factor per region/class; preserve annual acquisitions and survivors separately. [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) stock-age allocation is diagnostic only. #to-review |
-| Retain stock-age allocation | Buses and motorcycles | Keep their existing [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) age distributions and fixed lifetime treatment. #to-review |
+| Reconstruct and calibrate cohorts | Cars and trucks | `k = CEUD reference stock / sum(sales * survival)`, one factor per region/class; preserve annual acquisitions and survivors separately. [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) stock-age allocation is diagnostic only.  |
+| Retain stock-age allocation | Buses and motorcycles | Keep their existing [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) age distributions and fixed lifetime treatment.  |
 | Treat energy use<sub>province</sub>÷intensity as stock | Off-road modes        | Air, rail, and marine fleet size are estimated from the available supply capacity to satisfy demand by vintage (in demand units)      |
 | Distribute stock by age                                | Off-road modes        | Available demand supply by vintage is estimated with a fleet turnover approximation assuming an avg. annual retirement of 1÷lifetime |
 | Distribute stock<sub>age</sub> by powertrain           | Cars and light trucks | Each stock by vintage gets distributed over vehicle market shares by fuel type                                                       |
@@ -194,7 +189,7 @@ This example uses five-year vintage bins and the selected 2023 observation year:
 ### `demand`
 
 !!! note "Keep observations and projected service separate"
-    The [activity chapter](model/activity.md) explains the observed-year anchor, GDP growth and optional car/light-truck allocation. Parameter extension is not a new activity observation. #to-review
+    The [activity chapter](model/activity.md) explains the observed-year anchor, GDP growth and optional car/light-truck allocation. Parameter extension is not a new activity observation. 
 
 ```mermaid
 ---
@@ -242,7 +237,12 @@ flowchart LR
 ### `limit_annual_capacity_factor`
 
 !!! warning "Mileage profiles do not imply emitted age-dependent factors"
-    The current schema emits the supported flat class baseline. Age-dependent mileage profiles remain diagnostic audit products until a joint period/vintage interface is available. #to-review
+    The pinned SQLite contract receives flat factors calibrated to base-year
+    activity for all road classes. The separate VKT preparation command produces
+    period/vintage evidence for cars and trucks over their operating lifetimes.
+    A scenario selecting `road_utilization.vkt_schedules: true` cannot publish a
+    native database or prepare a caller contribution until that contract supports
+    both indices. #to-do
 
 ```mermaid
 ---
@@ -266,7 +266,7 @@ flowchart LR
 
   %% ############ Processes ###########
   p0["`**Annual vehicle utilization (UF)**
-    **eq. (i)** Cars/trucks: base-year activity divided by calibrated physical surviving stock and **capacity_to_activity**. Other classes retain the observed-year mean. #to-review`"]
+    **eq. (i)** Cars/trucks: base-year activity divided by calibrated physical surviving stock and **capacity_to_activity**. `"]
   s0 -- nrcan_ceud.py --> p0
   s0_2 -- inputs/0_manual_params/ --> p0
 
@@ -306,26 +306,26 @@ flowchart LR
 #### Equations
 
 ```math
-(i)\;\mathrm{UF[\text{-}]}=\frac{\mathrm{Activity[bn\;tonne\text{-}km/year]}}{\mathrm{Stock[k\;units]}\cdot \mathrm{C2A[bn\;t\text{-}km/k\;units\cdot year]}}
+(i)\;\mathrm{UF}=\frac{\mathrm{Activity}\;[\mathrm{bn\ service\text{-}km/year}]}{\mathrm{Stock}\;[\mathrm{k\ vehicles}]\cdot \mathrm{C2A}\;[\mathrm{bn\ service\text{-}km/(k\ vehicles\cdot year)}]}
 ```
 
 **UF** is the dimensionless annual utilization fraction; **Activity** is annual
 service in billion passenger-km or tonne-km; **Stock** is thousand physical
 vehicles; and **C2A** is the capacity-to-activity scaling constant in billion
-service-km per thousand vehicles per year. #to-review
+service-km per thousand vehicles per year.
 
 | Harmonization rule                          | Affected classes | Description                                                                                                                                                           |
 | ------------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Annual utilization as activity÷stock ratios | Road vehicles    | Represents how much activity a unit of capacity can deliver annually. Utilization is scaled with an arbitrary `capacity_to_activity` factor to avoid near-zero values |
+| Annual utilization from base-year activity | Road vehicles | Divide each regional class's base-year activity by the sum of retained physical stock × `capacity_to_activity`. Use native CEUD activity at the observation year and the configured demand projection for a later base year.  |
 | `capacity_to_activity` | Road vehicles    | An inconsequential scaling constant that represents the theoretical upper-bound of annual activity delivered by a thousand vehicle units operating year-round. |
-| Assume constant annual utilization          | Road vehicles    | The emitted class-level baseline applies in every active operating period. Existing technologies are keyed to actual positive stock cohorts in each region; new technologies are keyed to model vintages. |
-| Aggregate profiles and normalize            | Road vehicles    | Aggregate annual mileage profiles by vehicle size/weight class using aggregation mappings (see `efficiency` flowchart) and apply max scaling to each series           |
-| Retain age-dependent mileage evidence | Road vehicles | Prepare normalized mileage trajectories as audit artifacts; emitted annual utilization remains the class-level baseline because the schema cannot index period and vintage together. #to-review |
+| Assume constant annual utilization | Road vehicles | Apply the calibrated factor in every active operating period. Existing technologies are keyed to positive stock cohorts in each region. New technologies are keyed to model vintages.  |
+| Aggregate profiles and normalize | Cars and trucks | Aggregate annual VKT profiles by vehicle size/weight class using the same mappings as efficiency and normalize each series by its maximum.  |
+| Prepare age-dependent VKT evidence | Cars and trucks | The separate preparation holds the last supported mileage value through each operating lifetime. The audited schedule ends at retirement or the model horizon. Buses and motorcycles retain flat factors.  |
 
 ### `lifetime_tech`, `lifetime_process` and `lifetime_survival_curve`
 
 !!! warning "Registration changes are apparent retention"
-    [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) edition-to-edition counts mix retirement with administrative changes and migration. Source schedules and their extrapolated tails remain distinct from those diagnostic observations. #to-review
+    [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) edition-to-edition counts mix retirement with administrative changes and migration. Source schedules and their extrapolated tails remain distinct from those diagnostic observations. 
 
 ```mermaid
 ---
@@ -338,7 +338,6 @@ config:
 ---
 flowchart LR
   %% ############ Sources ###########
-  %% Source profile selection includes MOVES and NHTSA/NEMS. #to-review
   subgraph survival["US survival schedules"]
     direction LR
     s2[("`**NHTSA CAFE model**
@@ -370,7 +369,7 @@ flowchart LR
     • **eq. (i)** Estimate apparent retirement from make-model-vintage cohorts across Report A editions before mapping<br>
     • The MTO make-model mapping separates LDV stock exposure from unmapped and non-LDV; and aggregates evidence accordingly<br>
     • **eq. (ii)** The empirical rates by class and age are the total apparent retirement (*D*) divided by total starting exposure (*E*)<br>
-    • Production uses the selected NHTSA/NEMS or MOVES profile; MTO estimates remain diagnostic #to-review`"]
+    • Production uses the selected NHTSA/NEMS or MOVES profile; MTO estimates remain diagnostic `"]
   p4 -- "road_lifetimes_survival.py" --> p0
   s0 -. "`vehicle_population.py
     *\*diagnostic-only*`" .-> p0
@@ -395,12 +394,6 @@ flowchart LR
   s5@{shape: doc, label: "**SFU CIMS model assumptions**
     Lifetime of remaining modes"}
 
-  p2@{shape: hex, label: "**config/scenarios/**
-    *tail_derivation:* constant_retirement<br>
-    *tail_survival_threshold:* 0.005 (0.5%)<br>
-    *survival_curve_max_age:* optional hard zero cap; null derives the end age #to-review"}
-  p1 -. true .-> p2
-
   p3["`**Fixed lifetimes**
     • Median lifetimes (p<sub>survival</sub>=0.5) by default when survival curves are disabled<br>
     • Get avg. lifetimes from remaining sources`"]
@@ -408,10 +401,11 @@ flowchart LR
   s4 -- statcan_tables.py --> p3
   s5 -- inputs/0_manual_params/ --> p3
 
-  p2 -. true .-> pt["`**Annual reconciled curves**
-    Extend the last annual retirement rate to 0.5% survival, then zero; use the same schedule for stock calibration and vintage curves #to-review`"]
+  p1 -. true .-> pt["`**Annual reconciled curves**
+    Extend the last annual retirement rate to 0.5% survival, then zero; use the same schedule for stock calibration and vintage curves `"]
   pt -. "build_lifetime_parameters.py" .-> ol[/"`**lifetime_process**
-    Explicit terminal year minus model vintage [years] #to-review`"/]
+    *terminal year* - *model vintage* 
+    [years]`"/]
   pt -. "build_lifetime_parameters.py" .-> o1[/"`**lifetime_survival_curve**
     [-]`"/]
   p3 -- build_lifetime_parameters.py
@@ -425,7 +419,7 @@ flowchart LR
   click s3 "https://github.com/EIAgov/NEMS/blob/main/input/tdm/trnhdvx.xlsx"
   click s7 "https://nepis.epa.gov/Exe/ZyPDF.cgi?Dockey=P101CUN7.pdf#page=192"
   click s4 "https://doi.org/10.25318/3410025401-eng"
-  click s5 "https://github.com/EMRG-SFU/cims-models/tree/main/sources/sectors"
+  click s5 "https://github.com/EMRG-SFU/cims-models/tree/main/csv/model"
 ```
 
 #### Equations
@@ -447,15 +441,15 @@ The cumulative [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-populatio
 
 | Harmonization rule | Affected classes | Description |
 | --- | --- | --- |
-| Standardize source survival schedules | Cars and trucks | Keep [*NHTSA CAFE*](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/) cumulative values. Convert [*EIA NEMS*](https://github.com/EIAgov/NEMS/blob/main/input/tdm/trnhdvx.xlsx) scrappage and [*EPA MOVES*](https://www.epa.gov/system/files/documents/2026-09/420r26010.pdf) annual retention to cumulative survival from one at age zero. [*EPA MOVES*](https://www.epa.gov/system/files/documents/2026-09/420r26010.pdf) rate at age a supplies survival at a+1, including rate40 to age41. #to-review |
-| Map source schedules to model classes | Cars and trucks | [*NHTSA CAFE*](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/)/[*EIA NEMS*](https://github.com/EIAgov/NEMS/blob/main/input/tdm/trnhdvx.xlsx) uses [*NHTSA CAFE*](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/) cars, weighted light trucks, [*NHTSA CAFE*](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/) 2b/3 medium trucks and [*EIA NEMS*](https://github.com/EIAgov/NEMS/blob/main/input/tdm/trnhdvx.xlsx) heavy trucks. [*EPA MOVES*](https://www.epa.gov/system/files/documents/2026-09/420r26010.pdf) uses car/light/heavy schedules, with medium trucks sharing the heavy schedule. Apply configured class weights. #to-review |
-| Compile fixed lifetimes | All | With curves off, selected car/truck classes use the first age at which source survival reaches 50% or less. Remaining modes retain [*StatCan*](https://www.statcan.gc.ca/en/developers/wds) or reviewed fixed lifetimes. #to-review |
-| Select the lifetime representation | All | Curves off uses fixed lifetimes. Curves on uses annual survival and a matching process lifetime; Temoa computes period averages. #to-review |
-| Reconcile terminal survival | Cars and trucks | Retain native values, extend the last annual retirement rate to 0.5% survival, then append zero. Apply an optional hard zero age from the scenario. Use this schedule for calibration and future survival; preserve annual totals when grouping vintages and audit any adjustment required by Temoa. #to-review |
+| Standardize source survival schedules | Cars and trucks | Keep [*NHTSA CAFE*](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/) cumulative values. Convert [*EIA NEMS*](https://github.com/EIAgov/NEMS/blob/main/input/tdm/trnhdvx.xlsx) scrappage and [*EPA MOVES*](https://www.epa.gov/system/files/documents/2026-09/420r26010.pdf) annual retention to cumulative survival from one at age zero. [*EPA MOVES*](https://www.epa.gov/system/files/documents/2026-09/420r26010.pdf) rate at age a supplies survival at a+1, including `rate_40` to `age_41`.  |
+| Map source schedules to model classes | Cars and trucks | [*NHTSA CAFE*](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/)/[*EIA NEMS*](https://github.com/EIAgov/NEMS/blob/main/input/tdm/trnhdvx.xlsx) uses [*NHTSA CAFE*](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/) cars, weighted light trucks, [*NHTSA CAFE*](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/) 2b/3 medium trucks and [*EIA NEMS*](https://github.com/EIAgov/NEMS/blob/main/input/tdm/trnhdvx.xlsx) heavy trucks. [*EPA MOVES*](https://www.epa.gov/system/files/documents/2026-09/420r26010.pdf) uses car/light/heavy schedules, with medium trucks sharing the heavy schedule. Apply configured class weights.  |
+| Compile fixed lifetimes | All | With curves off, selected car/truck classes use the first age at which source survival reaches 50% or less. Remaining modes retain [*StatCan*](https://www.statcan.gc.ca/en/developers/wds) or reviewed fixed lifetimes.  |
+| Select the lifetime representation | All | Curves off uses fixed lifetimes. Curves on uses annual survival and a matching process lifetime; Temoa computes period averages.  |
+| Reconcile terminal survival | Cars and trucks | Retain native values, extend the last annual retirement rate to 0.5% survival, then append zero. Apply an optional hard zero age from the scenario. Use this schedule for calibration and future survival; preserve annual totals when grouping vintages and audit any adjustment required by Temoa.  |
 | Estimate [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) annual changes before mapping | Cars and light trucks | Compare `FIT_ACTIVE` counts for the same make-model and model year in consecutive Report A editions. Keep increases as observed rather than forcing every annual ratio between zero and one. |
 | Map and aggregate [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) diagnostics | Cars and light trucks | Attach reviewed vintage-range mappings only after the raw annual changes are calculated. Sum the starting and following counts by [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) and [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) class and age before calculating class-level rates. |
 | Limit and check [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) diagnostic evidence | Cars and light trucks | Use starting ages 0 through 35, including eligible pre-2000 model years. Report mapping coverage, age gaps, unusual rates, and sample support; do not fill missing ages or the older tail with [*NHTSA CAFE*](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/) or [*EIA NEMS*](https://github.com/EIAgov/NEMS/blob/main/input/tdm/trnhdvx.xlsx) values. |
-| Keep [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) results diagnostic | Cars and light trucks | Treat the results as changes in registered stock, not direct observations of vehicle retirement. Compare them with accepted [*NHTSA CAFE*](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/) curves only after the [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) series is derived; production uses the configured [*NHTSA CAFE*](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/)/[*EIA NEMS*](https://github.com/EIAgov/NEMS/blob/main/input/tdm/trnhdvx.xlsx) or [*EPA MOVES*](https://www.epa.gov/system/files/documents/2026-09/420r26010.pdf) profile. #to-review |
+| Keep [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) results diagnostic | Cars and light trucks | Treat the results as changes in registered stock, not direct observations of vehicle retirement. Compare them with accepted [*NHTSA CAFE*](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/) curves only after the [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) series is derived; production uses the configured [*NHTSA CAFE*](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/)/[*EIA NEMS*](https://github.com/EIAgov/NEMS/blob/main/input/tdm/trnhdvx.xlsx) or [*EPA MOVES*](https://www.epa.gov/system/files/documents/2026-09/420r26010.pdf) profile.  |
 
 **Notes:**
 
@@ -469,7 +463,7 @@ The cumulative [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-populatio
 ### `efficiency`
 
 !!! note "Keep consumption weighting and fuel boundaries explicit"
-    Average physical consumption before inversion. The [energy method](model/energy.md) explains PHEV components, trajectory indexing and optional [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) calibration. #to-review
+    Average physical consumption before inversion. The [energy method](model/energy.md) explains PHEV components, trajectory indexing and optional [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) calibration. 
 
 *Note: Some technologies are not represented in this diagram; see
 `config/parameters/rules.yaml` for implemented harmonization entries.*
@@ -541,7 +535,7 @@ flowchart LR
   s9[("`**NRCan CEUD**
     Activity, avg. annual distance travelled and stock used to derive occupancy and payload`")]
   s11@{shape: processes, label: "**Annual cohort aggregation weights**
-      Use physical surviving cohort counts by fuel and class; never acquisition-capacity weights #to-review"}
+      Use physical surviving cohort counts by fuel and class; never sales-based capacity weights "}
 
   %% ############ Processes ###########
   p2_2@{shape: hex, label: "**config/scenarios/**
@@ -608,19 +602,19 @@ flowchart LR
 | Derive regional- and long-haul activity weights | Heavy-duty trucks | Group HD truck tonne-km into regional- and long-haul activity buckets to aggregate [*ANL Autonomie*](https://vms.taps.anl.gov/tools/autonomie/) haul classes |
 | Aggregate NRCan ratings using mappings | Cars and light trucks | Within each exact model-year, size-class and powertrain/range cohort, average distinct make-models (or use the configured median), then apply [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) class weights. [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) supplies class/vintage evidence, not powertrain/range shares. |
 | Retain each range's observed consumption | Cars and light trucks | Retain each range's exact NRCan history. Form PHEV totals from CD electricity/liquid fuel and CS fuel using the matched [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) bucket's utility factor. Missing years reduce coverage; only wholly empty bins may use a recorded, configured analogue. |
-| Anchor future LDVs to Canadian cohorts | Cars and light trucks | Weight the latest historical period bin's consumption by physical survivor counts, independent of solver-capacity representation. #to-review Use each non-PEV's own [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) improvement ratio; BEV/PHEV ranges use BEV300/PHEV35 anchors: `C_range(y) = C_anchor × ATB_range(y) / ATB_anchor(reference)`. Use observed years in the latest configured historical bin, through `base_year`, to establish the anchor; use the configured [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) bridge reference year. #to-review |
+| Anchor future LDVs to Canadian cohorts | Cars and light trucks | Weight the latest historical period bin's consumption by physical survivor counts, independent of solver-capacity representation. Use each non-PEV's own [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) improvement ratio; BEV/PHEV ranges use BEV300/PHEV35 anchors: `C_range(y) = C_anchor × ATB_range(y) / ATB_anchor(reference)`. Use observed years in the latest configured historical bin, through `base_year`, to establish the anchor; use the configured [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) bridge reference year.  |
 | Derive emerging truck history | MD/HD trucks | Multiply annual [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) diesel consumption by the aggregated [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) target/diesel consumption ratio at the first projection reference year. All truck histories use average fleet consumption as vintage proxies; emerging histories (e.g., battery trucks) are derived, not observed model-year efficiencies. |
 | Project from the latest truck cohort | MD/HD trucks | Weight the latest period bin's incumbent or derived emerging consumption by its own cohort counts. Use an explicit diesel cohort proxy when an emerging powertrain has no positive own counts. Apply each powertrain's [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) future/reference consumption ratio (diesel's for gasoline); hold the load factor averaged with the same cohort weights. |
 | Special handling of buses | Transit, school, intercity | Existing school/transit efficiencies are indexed backwards from [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) using [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) historical service-intensity ratios. Intercity buses use an [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) transit diesel baseline with [*EPRI REGEN*](https://us-regen-docs.epri.com/v2025/assumptions/transportation.html) powertrain/diesel consumption ratios; HEVs retain the [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) transit HEV/diesel ratio. |
 | Special handling of motorcycles | Motorcycles | Future efficiencies retain the [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) baseline and apply [*JGCRI GCAM*](https://github.com/JGCRI/gcam-core/tree/master/input/gcamdata/inst/extdata/energy) consumption ratios from `UCD_trn_data_CORE.csv`; where motorcycle `engine > 250 cc`. |
-| Prepare period consumptions | All | Through `base_year`, use the [existing-period year bins](#existing-period-handling). Average car/truck consumption per distance and occupancy/payload with cohort counts before lifetime filtering/redistribution; renormalize over observed years and report covered stock. Normalize each existing LDV PEV range over its supported years, then apply the complete [*EPA OMEGA*](https://github.com/USEPA/EPA_OMEGA_Model) share vector. Weight annual bus, motorcycle and off-road consumption/intensity equally; derive future consumption at interval-end years. |
+| Prepare period consumptions | All | - Through `base_year`, use the [existing-period year bins](#existing-period-handling).<br>- Average consumption per distance and occupancy/payload for all road classes, including buses and motorcycles, with their annual cohort counts before lifetime filtering/redistribution;<br>- Renormalize over observed years and report covered stock. Normalize each existing LDV PEV range over its supported years, then apply the complete [*EPA OMEGA*](https://github.com/USEPA/EPA_OMEGA_Model) share vector.<br>- Use only cohorts within the configured historical-year bin; preserve older bus cohorts separately for capacity reconciliation. Weight historical non-road consumption or intensity equally.<br>- New legacy road vintages aggregate supported annual consumption and load over a trailing window ending at the opening label.<br>- Non-road vintages use an opening point in legacy; new vintages use a closing point in prospective.  |
 | Convert to service-output efficiency units | All | Finally, divide aggregated occupancy/payload by aggregated energy per vehicle-km. For [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) energy-per-service inputs, invert the aggregated intensity once. Convert fuel economy and relative efficiency factors to consumption before indexing or averaging, using configured HHVs and units. |
 
 #### Notes
 
 - Annual PHEV blend technologies use `limit_tech_input_split_annual` for their utility-weighted annual average fuel/electricity consumption split.
 !!! note "PHEV architecture changes the comparison basis"
-    Current [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) parameters use Voltec EREV PHEVs. The retained legacy comparison uses parallel PHEVs from [*ANL Autonomie*](https://vms.taps.anl.gov/tools/autonomie/); their parameter differences include that architecture choice. #to-review
+    Current [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) parameters use Voltec EREV PHEVs. The retained legacy comparison uses parallel PHEVs from [*ANL Autonomie*](https://vms.taps.anl.gov/tools/autonomie/); their parameter differences include that architecture choice. 
 - Demand from other off-road modes includes vehicles not registered for on−road travel such as ATVs, snowmobiles, golf carts and some military vehicles, as per [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) notes; assumed to consume diesel only, passed directly as units of PJ for complete secondary-energy accounting.
 
 #### Vehicle make-model to vehicle classes mapping
@@ -628,16 +622,16 @@ flowchart LR
 The [canonical vehicle reference](../config/parameters/vehicle_reference.csv) owns
 year-scoped vehicle identities and classes. The [source-link table](../config/parameters/vehicle_source_links.csv)
 owns native labels and their supporting evidence. Mapping uses those reviewed
-scopes rather than model-name-only examples. #to-review
+scopes rather than model-name-only examples. 
 
 ### `cost_invest`
 
 !!! warning "Diagram limitation: price factors differ by vehicle family"
     Parameterization divides [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data)
     retail prices by 1.5 for LDVs and 1.2 for MHDVs; retail MSRP is retained
-    separately for the LDV repair equation. #to-review
-    The diagram's common 1.5 label omits this distinction. #to-fix: the MHDV
-    markup label must show 1.2 to describe current investment costs accurately.
+    separately for the LDV repair equation. 
+    The preserved diagram shows a common 1.5 label. Use the family-specific
+    divisors above when tracing the current investment calculation.
 
 *Note: Some technologies are not represented in this diagram; see
 `config/parameters/rules.yaml` for implemented harmonization entries.*
@@ -714,7 +708,7 @@ flowchart LR
   %% --- Hyperlinks ---
   click s8_bus "https://us-regen-docs.epri.com/v2025/assumptions/transportation.html#on-road-fleet-vehicles"
   click s8 "https://us-regen-docs.epri.com/v2025/assumptions/transportation.html#non-road-vehicles"
-  click s7 "https://github.com/EMRG-SFU/cims-models/tree/main/sources/sectors"
+  click s7 "https://github.com/EMRG-SFU/cims-models/tree/main/csv/model"
   click s2 "https://vms.taps.anl.gov/research-highlights/vehicle-technologies/u-s-doe-vto-hfto-r-d-benefits/"
   click s3 "https://open.canada.ca/data/en/dataset/07c42deb-9435-43b9-a416-7ce316f3893d"
   click s9 "https://www.faa.gov/regulations_policies/policy_guidance/benefit_cost"
@@ -723,12 +717,12 @@ flowchart LR
 **Cost per block-hour** is maintenance cost per aircraft operating hour;
 **Block speed** is distance per hour; **Seats** or **Tonnes** is carrying
 capacity; and **Load factor** is the occupied fraction. The quotient is cost
-per passenger-distance or tonne-distance, before unit harmonization. #to-review
+per passenger-distance or tonne-distance, before unit harmonization. 
 
 | Harmonization rule | Affected classes | Description |
 | --- | --- | --- |
 | Reuse road aggregation maps | - Cars and light trucks<br>- MD/HD trucks<br>- Heavy-duty trucks | - Map vehicle make/model counts to size classes that align with [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) and [*ANL Autonomie*](https://vms.taps.anl.gov/tools/autonomie/) projections<br>- Map truck weight-rating counts to classes that align with [*ANL Autonomie*](https://vms.taps.anl.gov/tools/autonomie/) truck projection classes<br>- Group HD truck tonne-km into regional- and long-haul activity buckets to aggregate [*ANL Autonomie*](https://vms.taps.anl.gov/tools/autonomie/) haul classes |
-| Revert vehicle prices back into manufacturing costs | Road vehicles | Current [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) treatment divides retail prices by RPE 1.5 for LDVs and 1.2 for MHDVs; the resulting manufacturing-cost proxy retains its source and dollar-year evidence. #to-review |
+| Revert vehicle prices back into manufacturing costs | Road vehicles | Current [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) treatment divides retail prices by RPE 1.5 for LDVs and 1.2 for MHDVs; the resulting manufacturing-cost proxy retains its source and dollar-year evidence.  |
 | Aggregate manufacturing costs using mappings | Cars and trucks | Use mapped weights to aggregate [*ANL Autonomie*](https://vms.taps.anl.gov/tools/autonomie/) projected manufacturing costs of cars, LD, MD, and HD trucks, and school and transit buses |
 | CAPEX of new off-road demand capacity | Off-road modes | Obtain input capital costs of building new supply capacity that satisfies off-road demand, derived as dollars per demand unit |
 | Special handling of buses | Intercity buses | Use [*EPRI REGEN*](https://us-regen-docs.epri.com/v2025/assumptions/transportation.html) vehicle purchase cost assumptions for intercity buses |
@@ -738,7 +732,7 @@ per passenger-distance or tonne-distance, before unit harmonization. #to-review
 ### `cost_variable`
 
 !!! warning "Use the empirical relationship within its stated limits"
-    The [technology-cost chapter](model/technology.md#maintenance-and-repair) explains repair evidence, age handling and price-basis limitations. Convert vehicle-distance costs using the same occupancy/payload as efficiency. #to-review
+    The [technology-cost chapter](model/technology.md#maintenance-and-repair) explains repair evidence, age handling and price-basis limitations. Convert vehicle-distance costs using the same occupancy/payload as efficiency. 
 
 *Note: Some technologies are not represented in this diagram; see
 `config/parameters/rules.yaml` for implemented harmonization entries.*
@@ -845,10 +839,10 @@ flowchart LR
 In these relationships, **Repair** and **Maint.** are repair and scheduled
 maintenance per vehicle-mile; **age** is years; **size** and **pwt** are
 dimensionless size/powertrain multipliers; **C** is the source age coefficient;
-**price** is retail MSRP on its registered currency/year basis; $\boldsymbol{\beta}$
-has reciprocal-currency units; **m** is the medium/heavy-truck slope in source
+**price** is retail MSRP rebased to 2020 USD, and $\boldsymbol{\beta}$ has
+reciprocal units of 2020 USD. **m** is the medium/heavy-truck slope in source
 currency per mile per year; and **b** is its intercept in source currency per mile. Detailed coefficients
-and transfer limitations are retained in [cost assumptions](assumptions.md#cost_variable). #to-review
+and transfer limitations are retained in [cost assumptions](assumptions.md#cost_variable). 
 
 #### Off-road M&R equations
 
@@ -863,17 +857,17 @@ and transfer limitations are retained in [cost assumptions](assumptions.md#cost_
 **Cost per block-hour** is maintenance cost per aircraft operating hour;
 **Block speed** is distance per hour; **Seats** or **Tonnes** is carrying
 capacity; and **Load factor** is the occupied fraction. The quotient is cost
-per passenger-distance or tonne-distance, before unit harmonization. #to-review
+per passenger-distance or tonne-distance, before unit harmonization. 
 
 | Harmonization rule | Affected classes | Description |
 | --- | --- | --- |
 | Reuse road aggregation maps | - Cars and light trucks<br>- MD/HD trucks<br>- Heavy-duty trucks | - Map vehicle make/model counts to size classes that align with [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) and [*ANL Autonomie*](https://vms.taps.anl.gov/tools/autonomie/) projections<br>- Map truck weight-rating counts to classes that align with [*ANL Autonomie*](https://vms.taps.anl.gov/tools/autonomie/) truck projection classes<br>- Group HD truck tonne-km into regional- and long-haul activity buckets to aggregate [*ANL Autonomie*](https://vms.taps.anl.gov/tools/autonomie/) haul classes |
-| Vehicle prices used in repair cost empirical model | LDVs | Use the registered retail MSRP in the empirical repair relationship, retaining its source-year/currency basis. The investment-cost RPE divisor does not modify this input. #to-review |
+| Vehicle prices used in repair cost empirical model | LDVs | Rebase each class and powertrain’s retail MSRP from 2022 to 2020 USD with the [*BEA U.S. GDP implicit price deflator*](https://downloads.regulations.gov/BOEM-2024-0037-0002/content.pdf) before evaluating repair costs. The RPE divisor applies to investment costs.  |
 | Aggregate M&R costs using mappings | Cars and trucks | Use mapped weights to aggregate M&R cost curves of cars, LD, MD, and HD trucks, and transit buses |
 | Variable costs from off-road | Off-road modes | - Estimate annual variable costs of rail and marine vessels with CAPEX-to-OPEX ratios used in the [*OEO*](https://github.com/TemoaProject/oeo/tree/master/database_documentation) model<br>- Estimate M&R costs per demand unit with empirical data from the [*FAA Economic Values*](https://www.faa.gov/regulations_policies/policy_guidance/benefit_cost), converting miles to km and tons to tonnes; same annual utilization and load factors are used for CAPEX and OPEX |
 | Special handling of buses | School and intercity buses | Assume same CAPEX-to-OPEX ratios as those from transit buses |
-| Special handling of motorcycles | Motorcycles | Use [*JGCRI GCAM*](https://github.com/JGCRI/gcam-core/tree/master/input/gcamdata/inst/extdata/energy) Canada transportation inputs from `UCD_trn_data_CORE.csv` for future motorcycle (engine >250 cc) M&R costs |
-| Harmonize currency units | All | - Convert values using foreign currencies and/or different dollar years into reference currency-year<br>- Harmonize denominators; convert miles into km and multiply by [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) load factors |
+| Normalize annual maintenance to service | Motorcycles | Use [*JGCRI GCAM*](https://github.com/JGCRI/gcam-core/tree/master/input/gcamdata/inst/extdata/energy) Canada transportation maintenance for motorcycles (engine >250 cc) in `UCD_trn_data_CORE.csv`. Convert cost per vehicle-year to cost per service distance using the shared calibrated annual service per physical motorcycle.  |
+| Harmonize currency and service units | All | Convert costs to the scenario's currency and dollar year. For road costs per vehicle-mile, convert to cost per vehicle-km and divide by passengers or tonnes carried per vehicle to obtain cost per service-km. Extend source-year schedules over active cohort periods using the documented endpoint policies.  |
 
 #### Notes
 
@@ -882,7 +876,8 @@ per passenger-distance or tonne-distance, before unit harmonization. #to-review
 ### `emission_embodied`
 
 !!! note "Preserve lifetime vehicle-cycle totals"
-    These factors apply to new manufacture, with separate gas units and a defined vehicle-cycle scope. They are distinct from fuel-cycle and operating emissions. #to-review
+    These factors apply to new manufacture, with separate gas units and a defined vehicle-cycle scope. They are distinct from fuel-cycle and operating emissions. 
+    Read the preserved diagram's common mass label with the table below.
 
 ```mermaid
 ---
@@ -929,20 +924,15 @@ flowchart LR
   click s1 "https://greet.anl.gov/"
 ```
 
-**Cost per block-hour** is maintenance cost per aircraft operating hour;
-**Block speed** is distance per hour; **Seats** or **Tonnes** is carrying
-capacity; and **Load factor** is the occupied fraction. The quotient is cost
-per passenger-distance or tonne-distance, before unit harmonization. #to-review
-
 | Harmonization rule | Affected classes | Description |
 | --- | --- | --- |
 | Reuse road aggregation maps | - Cars and LD trucks<br>- MD/HD trucks<br>- Heavy-duty trucks | - Map vehicle make/model counts to size classes that align with [*NRCan Ratings*](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64) and [*ANL Autonomie*](https://vms.taps.anl.gov/tools/autonomie/) projections<br>- Map truck weight-rating counts to classes that align with [*ANL Autonomie*](https://vms.taps.anl.gov/tools/autonomie/) truck projection classes<br>- Group HD truck tonne-km into regional- and long-haul activity buckets to aggregate [*ANL Autonomie*](https://vms.taps.anl.gov/tools/autonomie/) haul classes |
-| Vehicle manufacturing emissions | Cars and trucks | - Default vehicle-lifetime emissions from [*ANL GREET*](https://greet.anl.gov/greet/versions.html)-2 are extracted directly, solved for model year 2025 and normalized by k tonnes per thousand vehicles manufactured; model years 2030 through 2050 remain available.<br>- [*ANL GREET*](https://greet.anl.gov/greet/versions.html) 2 calculates the emissions associated with the production and processing of vehicle materials, the manufacturing and assembly of the vehicle, and the EOL decomissioning. EOL credits from material recycling are not considered. Emissions from the transportation of raw and processed materials for each process step are neglected. |
+| Vehicle manufacturing emissions | Cars and trucks | The registered GREET vehicle-cycle results use a 2025 simulation with imported 2020 LDV cohort evidence. Hold the factors through 2050. Report CO₂ in kt per thousand vehicles and CH₄ and N₂O in tonnes per thousand vehicles. Materials, manufacturing and decommissioning enter these totals. The boundary excludes material transport and recycling credits. [Vehicle-cycle assumptions](assumptions.md#emission_embodied).  |
 
 ### EV charger parameters
 
 !!! warning "Port count, rated power and throughput are different quantities"
-    Use expenditure divided by rated power for charger costs. The [infrastructure chapter](model/infrastructure.md) defines utilization, loss accounting and the different hydrogen-refueling capacity basis. #to-review
+    Use CAPEX divided by rated power for charger costs. The [infrastructure chapter](model/infrastructure.md) defines utilization, loss accounting and the different hydrogen-refueling capacity basis. 
 
 ```mermaid
 ---
@@ -960,90 +950,140 @@ flowchart LR
     • *EV-to-port ratios*: Tables 7 and 37; 1 LDEV: 1 LD charger, including residential ports, and 1.5 MHDEV: 1 MHD charger<br>
     • *MHD chargers:* Table 19 assumptions for power levels, charging time, and daily throughput<br>
     • *LDV and MHDV charger CAPEX:* Tables 12 and 21; per-port installation and equipment cost estimates<br>
-    • *LDV and MHDV charger type shares:* Tables 6 and 38; estimated charging infrastructure needs, used only to aggregate capital and fixed costs"}
-  s2[("`**Transport Canada (TC) EV Dashboard**
-    • *Public LD chargers by type:* Cumulative number of public L2 and DCFC chargers<br>
-    • *Public LD chargers by province:* Latest aggregated total public LD charger count`")]
+    • *LDV charger power:* Table 12 cost-matched DCFC ratings and Table 30 L1/L2 ratings <br>
+    • *LDV and MHDV charger type shares:* Tables 6 and 38; estimated annual charging infrastructure needs by type "}
+  %% : AFDC observed provincial port composition.
+  s2[("`**AFDC Alternative Fueling Station Locator**
+    • Pinned Canadian public/open station inventory<br>
+    • Observed L1, L2 and DCFC EVSE ports by province and territory`")]
   s3@{shape: doc, label: "**Pollution Probe 2024 Charging Experience Survey**
-    Home charging access to L1 and L2 chargers, based on responses from ~2,000 representative EV owners; 84% and 15% of owners had L2 and L1 chargers, respectively"}
+    Reported home L1/L2 charging among surveyed EV owners informs the private LDV port split "}
   s4@{shape: doc, label: "**NLR 2024 Assessment of Alternative Fueling Infrastructure**
     L1 residential charger installation cost per port; excluding charger cost since these tend to be included with PEV acquisition"}
   s5@{shape: docs, label: "**CMU OEO model assumptions**
       Fixed costs of charging infrastructure set to 1% of CAPEX (Borlaug et al. 2021)"}
-  oi[/"`***Physical surviving stock***
+  s6@{shape: doc, label: "**Jonas et al. 2023 residential charging telemetry**
+    Table 2; active charging at residential L2 ports in BC/QC, 2018–2019; approximately 2 hours/day supports a home-utilization proxy "}
+  s7[("`**CER Canada's Energy Future**
+    Currency exchange rates and GDP deflator by scenario `")]
+  oi[/"`***Surviving BEV stock***
     [k vehicles]
-    *Retrieve LD and MHD EV survivors at base_year; not acquisition capacity* #to-review`"/]
+    *Retrieve LD and MHD EV survivors at base_year; not new capacity (sales)*`"/]
 
   %% ############ Processes ###########
-  p0["`**Aggregated capital and fixed costs**
-    Match per-port CAPEX and rated kW at each cost source year; convert money to CAD2020.<br>
+  p0_2["`**Charger counts, costs and power**
+    • Interpolate disjoint Table 6/38 component counts; hold counts after 2040<br>
+    • Match per-port costs and ratings by source year<br>
+    • *LDV DCFC*: 125/175/250/300 kW in 2025/2030/2035/2040; hold 300 kW thereafter `"]
+  s1 -- dunsky_charger_inputs.py --> p0_2
+
+  p0_3@{shape: hex, label: "**config/scenarios/**
+    *charger_type_classes:* aggregated or explicit<br>
+    *Explicit:* LDV public L2/fast/private; MHDV overnight/fast "}
+
+  p0["`**Capital and fixed costs**
+    Convert monetary inputs to CAD2020.<br>
     • *Capital rate*: Σ(count share × cost/port) / Σ(count share × rated kW)<br>
-    • *Units*: CAD/kW = million CAD/GW<br>
+    • *Aggregated*: pool by LDV/MHDV class; *explicit*: pool by charger type<br>
     • *Annual fixed O&M*: 1% of capital rate during the vintage's lifetime<br>
-    Prospective vintage 2025 uses source 2030; existing costs use the first model year. #to-review`"]
-  p0_2@{shape: hex, label: "**inputs/0_manual_params/**
-    Native per-port CAPEX, power trajectories and port-count shares:
-    • *(L1, L2, DCFC)* = [0.12, 0.87, 0.01]
-    • *(50, 350, 2000) kW* = [0.82, 0.16, 0.02]<br>
-    Derive power shares; hold final source values through 2050. #to-review"}
+    Prospective vintage 2025 uses source 2030; existing costs use the first model year. `"]
+  p0_2 -- charger_representation.py --> p0
+  p0_3 -- charger_representation.py --> p0
   s4 & s5 -- inputs/0_manual_params/ --> p0
-  s1 --> p0_2 -- ev_chargers.py --> p0
-  p0 -- ev_chargers.py --> o0 & o0_2
+  s7 -- cer_enerfuture.py --> p0
+  p0 -- ev_chargers.py --> o0
   o0[/"`***cost_invest***
-    [$M 2020CAD/GW]`"/]
-  o0_2[/"`***cost_fixed***
-    [$M 2020CAD/GW]`"/]
+    [$M 2020CAD/GW]<br>
+    ***cost_fixed***
+    [$M 2020CAD/GW/year]`"/]
 
-  p1["`**Annual EV charger utilization rate**
-    • *All chargers*: reviewed mean UF = 0.20 for existing/new vintages<br>
-    • *Profiled LDV*: scale hourly ceilings to mean UF; annual floor = UF × 0.98<br>
-    • *Other chargers*: annual equality to UF, without slack. #to-review`"]
-  p1_2@{shape: hex, label: "**inputs/0_manual_params/**
-    • *LDV and MHDV UF*: common 0.20<br>
-    Reviewed override for the vintage-indexed annual limit. #to-review"}
-  s1 --> p1_2 -- ev_chargers.py --> p1
-  p1 -- ev_chargers.py --> o1[/"`***limit_annual_capacity_factor***
-    *Indexed by capacity vintage*<br>
-    *LDV with profile: ≥ 0.196*
-    *LDV w/o profile: = 0.20*
-    *MHDV: = 0.20* #to-review`"/]
+  p1["`**Aggregated charger utilization**
+    • *LDV/MHDV*: reviewed mean UF = 0.20 / 0.30 for existing/new vintages<br>
+    • *Profiled LDV*: scale hourly ceilings to mean UF; annual floor = 0.196<br>
+    • *Other chargers*: annual equality to UF, without slack. `"]
+  p0_3 -- aggregated --> p1
+  s1 -- inputs/0_manual_params/ --> p1
 
-  p2["`**Existing charging infrastructure capacity**
-    • Fetch TC total public LD chargers by province and distribute by type using national shares<br>
-    • EV-to-charger port ratios determine total ports, from which public port capacity is known<br>
-    • Thus, the remainder LD charger capacity is private, distributed by L1/L2 shares from Pollution Probe survey<br>
-    • MHD charger capacity derived with EV-to-port ratio and distributed with Dunsky's share estimates<br>
-    Convert ports to GW with first-model-year registered ratings; 2025 LDV DCFC is 125 kW. #to-review`"]
+  p4["`**Explicit charger utilization**
+    • *LDV*: Table 31 public/workplace UFs and the home proxy<br>
+    • *MHDV*: Table 19 session hours × vehicles/day × 300 days/year ÷ 8,760<br>
+    • Pool UFs by rated capacity (ports × kW); apply annual equality to each type<br>
+    Requires *travel_behavior_source: none*; type-specific hourly profiles are not registered. #to-do`"]
+  p0_3 -. explicit .-> p4
+  s1 -. "dunsky_charger_inputs.py" .-> p4
+  p0_2 -. "charger_representation.py" .-> p4
+  p4_2@{shape: hex, label: "**config/scenarios/**
+    *ld_home_utilization:* 0.08<br>
+    Residential L2 proxy extended to home L1, other provinces and future years "}
+  s6 -. "supports proxy" .-> p4_2 -. "charger_representation.py" .-> p4
+
+  p1 -- ev_chargers.py --> o1
+  p4 -. "ev_chargers.py" .-> o1
+  o1[/"`***limit_annual_capacity_factor***
+    *Indexed by capacity vintage* [-]`"/]
+
   p2_2@{shape: hex, label: "**config/scenarios/**
-    • *LDEV_to_port_ratio* = 1
-    • *MHDEV_to_port_ratio* = 1.5"}
-  s1 --> p2_2 -- ev_chargers.py --> p2
-  s1 -- inputs/0_manual_params/ --> p2
-  s2 -- assorted_sources.py --> p2
-  s3 -- inputs/0_manual_params/ --> p2
-  oi -- ev_chargers.py --> p2
-  p2 -- ev_chargers.py --> o2[/"`***existing_capacity***
+    *evs_per_port:* [1.0, 1.5, 1.5]
+    LDV, medium trucks, heavy trucks; apply separately "}
+  s1 --> p2_2
+  p2["`**Existing charger port requirements**
+    • Apply EV-to-port ratios to surviving BEV stock; sum AFDC public ports for LDV by province<br>
+    • Subtract public LDV ports to infer private ports; combine BC and territories for BCT. `"]
+  oi & p2_2 -- ev_chargers.py --> p2
+  s2 -- afdc_charger_stations.py --> p2
+
+  p5["`**Existing charging infrastructure capacity**
+    • *Aggregated*: distribute private LDV ports by L1/L2 shares; use rounded 2025 Table 38 MHDV 50/350-kW shares<br>
+    • *Explicit*: retain public L2/fast, audit omitted public L1; use Table 6 private rating and first-model-year national Table 38 MHDV mix<br>
+    Convert ports to GW with first-model-year ratings. `"]
+  p2 -- ev_chargers.py --> p5
+  p0_2 -- ev_chargers.py --> p5
+  p0_3 -- ev_chargers.py --> p5
+  s3 -- inputs/0_manual_params/ --> p5
+  p5 -- ev_chargers.py --> o2
+  o2[/"`***existing_capacity***
     [GW]`"/]
+
+  p6["`**Charger capacity composition**
+    • Convert Table 6/38 counts × matched kW to available-GW equality shares<br>
+    • Group LDV public L2/fast, LDV public/private and MHDV overnight/fast<br>
+    Use the period evaluation year; mixed-vintage capacity is an equivalent-stock approximation. `"]
+  p0_3 -. explicit .-> p6
+  p0_2 -. "charger_representation.py" .-> p6
+  p6 -. "ev_chargers.py" .-> o3[/"`***limit_capacity_share***
+    [-]
+    *Indexed by operating period; operator: =* `"/]
+  p6 -. "ev_chargers.py" .-> o4[/"`***tech_group, tech_group_member***
+    Charger-type and parent-group membership `"/]
 
   %% --- Hyperlinks ---
   click s1 "https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada#a34"
-  click s2 "https://tc.canada.ca/en/road-transportation/innovative-technologies/electric-vehicles/canada-electric-vehicle-dashboard"
+  click s2 "https://afdc.energy.gov/stations/"
   click s3 "https://www.pollutionprobe.org/pollution-probe-2024-canadian-electric-vehicle-owner-charging-experience-survey-report/"
   click s4 "https://docs.nlr.gov/docs/fy24osti/88513.pdf"
   click s5 "https://github.com/TemoaProject/oeo/blob/master/database_documentation/TransportationSector.ipynb"
+  click s6 "https://doi.org/10.3390/en16041592"
+  click s7 "https://www.cer-rec.gc.ca/en/data-analysis/canada-energy-future/"
 ```
+
+The evaluation year is the operating period's closing year in `prospective` mode;
+`legacy` uses its opening year for the same installed mix.
 
 | Harmonization rule | Affected classes | Description |
 | --- | --- | --- |
-| Aggregated capital and fixed costs | LDV and MHDV chargers | Match native per-port costs and ratings by source year; convert currency, then divide total port expenditure by total rated power. Derive power shares from count shares × kW. Fixed O&M is 1% annually within the vintage lifetime. #to-review |
-| Annual EV charger UF | LDV and MHDV chargers | Reviewed common UF = 0.20 for every existing/new vintage. Profiled LDV ceilings have mean 0.20 and annual floor 0.196; no-profile LDV and MHDV use equality 0.20. #to-review |
-| Existing charging capacity | LDV and MHDV chargers | Preserve TC public counts, reviewed EV-to-port ratios and private/type mixes. Convert ports with first-model-year registered power trajectories; audit the selected source year and ratings. #to-review |
-| Charger efficiency | LDV and MHDV chargers | Unity accounting transfer avoids repeating losses embedded in vehicle consumption. Reviewed ICCT factors remain unapplied; motorcycle losses are omitted, and [*EPRI REGEN*](https://us-regen-docs.epri.com/v2025/assumptions/transportation.html)'s intercity-bus boundary is undisclosed. #to-review |
+| Charger type representation | LDV and MHDV chargers | `ev_chargers.charger_type_classes` selects aggregated LDV/MHDV technologies with separate existing/new IDs, or five explicit types: LDV public L2, public fast and private; MHDV overnight and fast. Both cost branches use disjoint Dunsky Table 6/38 component counts, interpolated annually and held after 2040.  |
+| Aggregated capital and fixed costs | LDV and MHDV chargers | Match native per-port costs and ratings by source year; convert currency, then divide total port expenditure by total rated power. Derive power shares from count shares × kW. Fixed O&M is 1% annually within the vintage lifetime. |
+| Capital and fixed costs by charger type | Explicit chargers | Apply the same expenditure-to-power calculation within each type. Private L2 uses public-L2 cost; public overnight MHDV cost scales linearly from the 50-kW cost. Existing cohorts receive fixed costs but no investment row.  |
+| Annual EV charger UF | Aggregated LDV and MHDV chargers | Read reviewed mean annual utilization from `charger_parameters.csv`: LDV 0.20 and MHDV 0.30 for existing/new vintages. Profiled LDV uses an annual floor of UF × 0.98; unprofiled LDV and MHDV use annual equality. The manual input retains the source basis and rounded MHDV derivation.  |
+| Annual utilization by charger type | Explicit chargers | Use Table 31 public/workplace UFs and the scenario home proxy, supported by [*Jonas et al.*](https://doi.org/10.3390/en16041592) residential L2 telemetry; extending it to home L1, other provinces and future years is assumed.<br>- MHDV UF = Table 19 session hours × vehicles/day × 300 operating days/year ÷ 8,760. Pool by rated power; apply Table 31 DCFC UF directly with the cost-matched rating. Set `charging_profiles.travel_behavior_source: none`.  |
+| Existing charging capacity | LDV and MHDV chargers | Use observed AFDC provincial public ports and physical surviving BEV stock; apply scenario ratios separately to LDV, medium trucks and heavy trucks.<br>- Aggregated mode retains reviewed private LDV and MHDV mixes; explicit mode uses Dunsky type composition and audits omitted public L1.<br>- Convert ports with first-model-year ratings.  |
+| Charger capacity composition | Explicit chargers | Convert Dunsky counts × rated kW into `limit_capacity_share` equalities within the configured groups. Use the operating-period opening year in legacy and the closing year in prospective. Available GW across vintages represents an equivalent installed stock mix.  |
+| Charger efficiency | LDV and MHDV chargers | Assume direct transfer because vehicle electricity consumption already includes charging losses. Reviewed ICCT factors remain unapplied; motorcycle losses are omitted, and [*EPRI REGEN*](https://us-regen-docs.epri.com/v2025/assumptions/transportation.html)'s intercity-bus boundary is undisclosed.  |
 
 ### `limit_new_capacity_share` for LD-PEV range composition
 
 !!! note "Within-family shares leave total technology adoption open"
-    The [range method](model/technology.md#range-is-a-representation-choice) explains the evidence and optimizer choices. Frozen charging composition is not reweighted by the new-vehicle shares. #to-review
+    The [range method](model/technology.md#range-is-a-representation-choice) explains the evidence and optimizer choices. Frozen charging composition is not reweighted by the new-vehicle shares. 
 
 ```mermaid
 ---
@@ -1117,15 +1157,16 @@ flowchart LR
 | Representative aggregates | Light-duty BEVs and PHEVs | Use supplied, validated parameter batches, without share constraints; require complete coverage, matching units, and identical utilization, fixed lifetimes, and range survival curves. Its PHEV horizon-mean energy split conserves total energy; component-fuel differences are audited. |
 | Existing stock and charging composition | Existing LD BEVs/PHEVs | Existing representatives reuse [*EPA OMEGA*](https://github.com/USEPA/EPA_OMEGA_Model) weights for range-specific parameters independently of the new-vehicle mode, preserving stock totals and cohort ages. Frozen charging profiles already contain fleet/range composition; do not multiply them by these shares again. |
 
-### `capacity_factor_tech` for BEV charging profiles; pending refactor
+### `capacity_factor_tech` for LDV charging profiles {#capacity_factor_tech-for-bev-charging-profiles-pending-refactor}
 
-The preserved diagram describes inherited simulation choices. Current ingestion
-reads registered minute-resolution output, computes hourly means, and scales the
-native 8,760-hour mean to the selected annual utilization; it does not rerun the
-simulation or add a rolling filter. Final representative-period weights need a
-separate mean-consistency correction. #to-review
-
-Registered [*RAMP-mobility*](https://github.com/RAMP-project/RAMP-mobility) outputs provide the charging shapes. The native build reads the registered minute-resolution series and prepares hourly means; it does not generate new travel simulations. #to-review
+!!! info "Current charging-profile ingestion"
+    The preserved diagram shows the historical workflow, including a retired
+    directory and a 15-minute rolling resample. Current ingestion reads one of six
+    frozen Ontario RAMP simulations from `inputs/0_external_models/ramp_mobility/`
+    and takes arithmetic means of its minute-resolution power by elapsed hour.
+    The source reference uses Toronto time with daylight saving time. The hourly
+    result constrains pooled LDV chargers, including charging for PHEVs and
+    motorcycles. See [charging profiles](model/charging.md).
 
 ```mermaid
 ---
@@ -1229,15 +1270,14 @@ flowchart LR
   click p2 "https://github.com/RAMP-project/RAMP-mobility"
 ```
 
-**Representative period clustering (pending refactor).** The current calculation
-uses the ordinary mean of 8,760 equal-duration hours. After selecting or clustering
-representative periods, rescale the charging shape using the final model time-slice
-weights: cluster frequency × slice duration, normalized to fractions of the year.
-An unweighted mean of representative slices can change annual utilization. #to-review
+**Representative period clustering in CANOE-main.** Native scaling uses 8,760
+equal-duration hours. For a selected or clustered subset of days, use final
+time-slice weights proportional to cluster frequency times slice duration.
+An unweighted mean of representative slices can change annual utilization.
 
 For representative shape $\boldsymbol{p_i}$, normalized annual weights $\boldsymbol{w_i}$, and annual charger
 utilization target $\boldsymbol{U}$, use the same weights as the model's annual energy balance:
-#to-review
+
 
 ```math
 \mu_w = \sum_i w_i p_i,\quad \sum_i w_i = 1,\qquad
@@ -1247,10 +1287,10 @@ utilization target $\boldsymbol{U}$, use the same weights as the model's annual 
 
 For **`U = 0.20`**, the weighted mean of charging ceilings must remain 20%. Do not
 multiply each **`CF_i`** by its weight again. The annual utilization floor remains
-separate (`0.98 × U = 0.196` for new LDV chargers). Check the weighted mean and
+separate (`0.98 × U = 0.196` for existing and new profiled LDV chargers). Check the weighted mean and
 `0 ≤ CF_i ≤ 1`; reject infeasible scaling rather than clipping. Apply this rescaling
 in the upstream clustering step; the current transport projection requires a
-complete mapping that preserves the full-year integral. #to-review
+complete mapping that preserves the full-year integral.
 
 ### Compact manual parameter selectors
 

@@ -23,37 +23,41 @@ annual utilization $\boldsymbol{u}$:
 
 $$Q=\sum_v N_v a u,\qquad u=\frac{D^{backend}_b}{\sum_vN_v a}.$$
 
-For the five sales-derived car and truck classes, **$D^{backend}_b$ is the
-backend's projected service demand at `base_year` $b$**. Under the GDP-indexed
-selection, it equals the latest observed CEUD activity multiplied by
-$G_b/G_{t_0}$. The optional car-demand extrapolation retains its selected car /
-passenger-light-truck split at that same calendar year. Stock extension and the
-interval-end demand for the first future period do not replace this reference-year
-target.
+Each road class uses its own regional service target $D^{backend}_b$ at
+`base_year` $b$. This comes from the selected CEUD observation when $b=t_0$ and
+from the demand projection below when $b>t_0$. The same flat factor applies to
+existing and new vintages. These calculations cover cars, trucks, buses and
+motorcycles.
 
 !!! tip "Modeler note: activity uses physical survivors"
-    Cars and trucks use calibrated physical survivors, including when curve-mode
-    SQLite capacity contains installed-equivalent acquisitions. Nonpositive
-    denominators and utilization outside $[0,1]$ fail. The manual C2A value is used
-    directly; explanatory speed/load/hours columns do not recompute it.
+    Use retained physical survivors in the denominator. Curve-mode car and truck
+    SQLite capacity describes installed-equivalent acquisitions, a different
+    quantity. Validation rejects nonpositive denominators and utilization outside
+    $[0,1]$. The reviewed C2A table provides the value directly.
 
 !!! warning "Calibration closure: what activity agreement establishes"
-    This fits projected reference-year demand by construction. It does not independently validate
-    stock, load, mileage or future available capacity. Buses and motorcycles retain
-    the mean of the latest five eligible observed annual ratios, excluding 2020–2021.
+    The fitted factors reproduce the reference-year service target under the
+    assumed stock and C2A. Historical utilization ratios and their mean remain
+    audit evidence. Independent validation of load, mileage and future capacity
+    requires other observations.
 
-## Age-dependent mileage: prepared, not fully represented
+## Age-dependent mileage evidence
 
-[*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) mileage schedules describe how travel changes with vehicle age. Shared class
-and vocation weights aggregate those profiles; normalizing to a peak of one
-retains the relative age pattern while [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) supplies the level.
+The optional research route uses NLR ATB mileage profiles for cars and trucks.
+It holds each native class's last mileage beyond its source-supported age, then
+aggregates with the shared class and vocation weights. Normalizing to a peak of
+one preserves the relative age pattern. Multiplying by the calibrated regional
+class factor sets the level. Buses and motorcycles retain flat factors.
 
-!!! warning "Current limitation: age-dependent mileage is audit evidence"
-    The current v4 annual-factor interface cannot simultaneously index operating
-    period and vintage. The opt-in VKT pathway therefore prepares age-dependent audit
-    tables, while emitted annual factors remain the class-level baseline. It must not
-    be described as active age-dependent utilization in Temoa. This limitation matters
-    when interpreting both retirement and energy comparisons.
+The audit covers each operating period through fixed retirement, averaging only
+operating years in a partial final period. With survival curves, coverage extends
+through the model horizon and stops at each process's retirement endpoint.
+
+!!! warning "The pinned schema supports flat road utilization"
+    Age-dependent factors require both operating period and vintage. The pinned
+    v4 annual-factor table lacks that joint index, so standalone compilation and
+    caller-owned preparation reject `vkt_schedules: true`. Use the separate
+    [research route](../scenario_configuration.md#age-dependent-road-mileage) for VKT evidence.
 
 ## Observed activity is not future demand
 
@@ -66,7 +70,8 @@ $$D_{rt}=Q_{r,t_0}\frac{G_t}{G_{t_0}}.$$
     The GDP ratio is dimensionless; $\boldsymbol{D}$ retains the service units of $\boldsymbol{Q}$. National GDP
     growth is transferred to provinces. Holding or extrapolating [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) historical
     inputs through a later reference year does not move the demand anchor to an
-    invented observation. Prospective periods use their interval-end projection year.
+    invented observation. Prospective periods evaluate the closing year and legacy
+    periods use the opening year. Both use the same observed-year anchor.
 
 !!! note "Modeler choice: allocate a common passenger-demand total"
     The optional extrapolated car-demand selection uses a historical non-pandemic

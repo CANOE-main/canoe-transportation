@@ -1,13 +1,13 @@
 # Scenario configuration
 
 Copy **every section and field** in `default.yaml` when creating a scenario.
-Change selections and output names; keep the same version-3 contract. All implemented
-parameter layers run by default. There are no per-layer enable flags.
+Change selections and output names while keeping the version-3 contract. The
+builder assembles the parameter families required by the selected model.
 
 Source identity, availability, access, native metadata, notes and DQ belong in
 `config/sources.yaml`. Each scenario owns its regional fleet aggregation selections
 under `aggregation_sources`. Extraction and modelling rules belong in
-`config/parameters/rules.yaml`, grouped under `fetching` and `parameterization`.
+the [parameter partitions](../parameters/AGENTS.md), routed by `config/parameters/rules.yaml`.
 Reusable conversions belong in `config/parameters/conversion.yaml`.
 
 ## Supported roles and lifecycle
@@ -16,12 +16,13 @@ Keep one YAML per demonstrated, repeatable workflow. The current supported set i
 
 | File | Role and current scope |
 | --- | --- |
-| `default.yaml` | Canonical production entrypoint/template: ten provinces, prospective 2025, sales-derived calibrated cohorts, [*EPA MOVES*](https://www.epa.gov/system/files/documents/2026-09/420r26010.pdf) fixed lifetimes and new-capacity range shares. Its run label remains `baseline`. |
-| `legacy_comparison.yaml` | Reproducible legacy-timing comparison: ten provinces, observed 2023, [*NHTSA CAFE*](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/)/[*EIA NEMS*](https://github.com/EIAgov/NEMS/blob/main/input/tdm/trnhdvx.xlsx) survival-curve selection and configured legacy SQLite comparison. Uses the shared constant-retirement tail to 0.5% survival, then zero. |
+| `default.yaml` | Production template for ten model regions, including `BCT` for British Columbia and the territories. Uses prospective periods anchored at 2025, sales-derived calibrated cohorts, [*EPA MOVES*](https://www.epa.gov/system/files/documents/2026-09/420r26010.pdf) survival curves and new-capacity range shares. Its run label remains `baseline`. |
+| `validation_opening_periods.yaml` | Ten-region verification of opening-period conditions with observed 2023 cohorts and [*NHTSA CAFE*](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/)/[*EIA NEMS*](https://github.com/EIAgov/NEMS/blob/main/input/tdm/trnhdvx.xlsx) survival curves. Uses the shared constant-retirement tail to 0.5% survival or less, then zero. |
 | `validation_baseline.yaml` | Ontario prospective-2025 comparison for both legacy variants: 2023 [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) held constant for historical parameters, sales-survival stock anchored to [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm), [*EPA MOVES*](https://www.epa.gov/system/files/documents/2026-09/420r26010.pdf) fixed lifetimes and representative new LDV ranges. |
 | `validation_energy_calibration.yaml` | Matched Ontario calibration-on comparison: same fleet/activity/source/representation as validation_baseline, optional [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) reported-liquid-energy adjustment enabled and its diagnostic evidence captured. Scientific acceptance remains separate. |
 | `validation_energy_calibration_regions.yaml` | Prospective-2025 calibration anchor evidence for all ten model regions, including the existing BC-plus-territories `BCT` region. Uses the Ontario calibration pair's methods and source selections with broader geography and no Ontario-only legacy comparison. It does not replace the matched Ontario OFF/ON audit. |
-| `notebook_diagnostics.yaml` | Shared stock/efficiency notebook prerequisite: Ontario observed-2023, [*NHTSA CAFE*](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/)/[*EIA NEMS*](https://github.com/EIAgov/NEMS/blob/main/input/tdm/trnhdvx.xlsx) curves, explicit future ranges, both captured diagnostics, no charging profile or embodied emissions. |
+| `notebook_diagnostics.yaml` | Shared stock/efficiency notebook prerequisite for observed Ontario 2023. Uses [*NHTSA CAFE*](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/)/[*EIA NEMS*](https://github.com/EIAgov/NEMS/blob/main/input/tdm/trnhdvx.xlsx) curves and within-family capacity shares for future plug-in vehicle ranges. Charging profiles and embodied emissions are disabled. |
+| `validation_charging_nhts_uncontrolled.yaml` | Ontario charging case using production settings, distinct output names and comparison disabled. The six registered NHTS/TTS and uncontrolled/night/day profile combinations remain selectable through `charging_profiles`; use a complete temporary scenario for an alternative. Suitable for processed CSV preparation or a complete build. |
 
 Retain these names and selections. For a new supported comparison, use a concise
 `validation_<question>.yaml` name; add another diagnostic
@@ -46,7 +47,7 @@ Remove task scratch after its useful results and configuration identities have b
 recorded in their existing report or task owner. Promote a temporary scenario only for
 a recurring supported workflow, with a documented consumer and appropriate validation.
 The transportation-validation notebook uses
-`transportation_research.notebook_scenario` in `config/parameters/rules.yaml`, currently
+`transportation_research.notebook_scenario` in `config/parameters/transport_diagnostic_controls.yaml`, currently
 `validation_baseline.yaml`. Both fleet and charger captures must match that live YAML
 and the same fresh database/build fingerprints. Regenerate both after changing it.
 
@@ -62,16 +63,16 @@ blanket generated-output deletion to clean them.
 | --- | --- |
 | `scenario` | Run name, description, and purpose. |
 | `geography.regions` | Regions covered by the registered inputs and template. Quote `"ON"` to avoid YAML 1.1 boolean parsing. |
-| `periods` | Period mode, parameter base year, existing vintage labels, model periods, and step. Prospective periods use end conditions; legacy retains the previous historical bins and future timing. Source observations retain their own dates. |
-| `sources.selections` | [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) provincial/national years, [*Transport Canada EV Dashboard*](https://tc.canada.ca/en/road-transportation/innovative-technologies/electric-vehicles/canada-electric-vehicle-dashboard) dashboard year, and [*CER CEF*](https://www.cer-rec.gc.ca/en/data-analysis/canada-energy-future/) edition. Other sources have pinned registry releases or their own discovery contract; an unused edition/year selector is rejected. |
+| `periods` | Period mode, parameter base year, existing vintage labels, model periods, and step. Prospective evaluates closing conditions and legacy evaluates opening conditions. Source observations retain their own dates. |
+| `sources.selections` | [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) provincial/national years, and [*CER CEF*](https://www.cer-rec.gc.ca/en/data-analysis/canada-energy-future/) edition. AFDC has an explicitly dated pinned registry snapshot. Other sources have pinned registry releases or their own discovery contract; an unused edition/year selector is rejected. |
 | `sources.nrcan_ceud_beyond_observed` | `error`, `constant`, or `extrapolated` for stock and historical parameter views through base_year. Extrapolated uses `ceud_inputs.cagr` controls, omitting intervals touching 2020–2021. Demand always anchors at the actual selected-edition observation and uses [*CER CEF*](https://www.cer-rec.gc.ca/en/data-analysis/canada-energy-future/) real GDP to base_year and future projection years; the optional passenger split shares the CAGR estimator, not this endpoint policy. |
 | `aggregation_sources` | Regional fleet evidence shared across parameters: stock ages, LDV classes, medium-truck classes and heavy-truck haul activity. Every scenario declares the same four roles, with its own selections. |
 | `economics.cer_scenario` | [*CER CEF*](https://www.cer-rec.gc.ca/en/data-analysis/canada-energy-future/) trajectory used for currency harmonization, independently of demand. It must exist in the selected [*CER CEF*](https://www.cer-rec.gc.ca/en/data-analysis/canada-energy-future/) edition. |
 | Other `economics` fields | Discount and loan rates, CAD currency, and reference dollar year for costs. |
 | `outputs` | Database filename, validation report, and setup log. Artifact directories and the automatic build-log naming template remain owned by `config/paths.yaml`. |
-| `comparison` | Optional diagnostics: `mode: none`, `legacy`, or `scenario`, reference SQLite path, numerical tolerances, and provenance inclusion. Integrity validation always runs. |
+| `comparison` | Optional comparison with a second current schema-v4 database. Configure `mode: scenario`, a reference SQLite path, numerical tolerances, and provenance inclusion. Use `mode: none` to disable comparison. Integrity validation always runs. |
 | `row_note_overrides.technology` | Replace `technology.notes` by exact technology key for this scenario. Keep `{}` to retain template notes; unknown keys fail. This does not change parameter values or source notes. |
-| `notebook_diagnostics` | Optional list containing `vehicle_stock`, `efficiency` and/or `ceud_calibration`; omitted means no notebook preparation. The stock/efficiency diagnostic preset selects the first two. The calibrated validation preset selects the third, which requires energy calibration enabled. These captured review artifacts never parameterize production rows. |
+| `notebook_diagnostics` | Optional list of capture types. Use `vehicle_stock` and `efficiency` for the road diagnostic preset, `ceud_calibration` for the Ontario calibration audit, and `ceud_calibration_regions` for regional anchors. Both calibration captures require energy calibration enabled. Omission leaves notebook capture disabled. |
 
 All registry sources marked `active` are available to implemented ETL layers. Scenarios
 do not maintain a second active-source list. A source year selects registered evidence;
@@ -93,7 +94,7 @@ path and verbosity. Scenario YAMLs need no separate build-log filename.
 Prepare both notebooks with one offline native build:
 
 ```text
-uv run python src/build_transport.py --scenario config/scenarios/notebook_diagnostics.yaml --overwrite
+uv run --offline python src/build_transport.py --scenario config/scenarios/notebook_diagnostics.yaml --overwrite
 ```
 
 The preset compiles an Ontario database with explicit future PEV ranges and prepares
@@ -138,36 +139,36 @@ current [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) values. [*NRCa
 | `lifetimes.survival_curve_max_age` | `null` derives each end age using the selected survival threshold, then zero. A positive integer shortens any longer derived curve by forcing zero at that age and audits the removed stock. |
 | `lifetimes.tail_survival_threshold` | Surviving fraction that ends the derived tail; default `0.005` means 0.5%. The final positive year is followed by zero. |
 | `lifetimes.tail_derivation` | Only `constant_retirement` is supported: keep native survival, extend the final annual retirement rate to the selected threshold or less, retain that positive year, then append zero. Select the surviving fraction with `tail_survival_threshold`. |
-| `existing_capacity.vehicle_population_year` | [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) age-evidence year for LDVs, trucks, motorcycles, and buses. It must match the reviewed LDV aggregation artifact and the available Report 5 edition. |
+| `existing_capacity.vehicle_population_year` | [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) edition used for LDV and medium-truck aggregation and for Report 5 bus and motorcycle age allocation. `null` or omission follows `periods.base_year`. An explicit year must have registered Report A, 4 and 5 evidence. Car and truck cohorts use sales and survival. |
 | `existing_capacity.cleanup_tolerance` | Retain positive road/bus/off-road capacity at or above this threshold in each row's native capacity unit. This is a capacity cutoff, independent of comparison tolerances; it does not trim costs or round parameters. Charger capacities have their own preparation. |
 | `demand.cer_scenario` | [*CER CEF*](https://www.cer-rec.gc.ca/en/data-analysis/canada-energy-future/) demand trajectory, also used for the normalized default-source marker. Must exist in the selected [*CER CEF*](https://www.cer-rec.gc.ca/en/data-analysis/canada-energy-future/) edition. |
 | `demand.future_car_demand` | `GDP-indexed` or `extrapolated`. Extrapolation uses configured historical car CAGR; light trucks receive the remainder of the unchanged GDP-indexed combined passenger demand. History and harmonization remain in rules. |
-| `road_utilization.vkt_schedules` | `false` uses flat [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) utilization. `true` prepares age-dependent mileage artifacts for supported classes. |
-| Road mileage age | Derived from the explicit survival age cap or the longest derived class endpoint. Missing mileage coverage fails explicitly. |
-| `efficiencies.atb_trajectory` | `Advanced`, `Conservative`, `Constant`, or `Mid`; selected from the pinned [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) release. |
+| `road_utilization.vkt_schedules` | Keep `false` for native compilation and caller-owned contributions. Select `true` in a separate [age-dependent mileage study](#age-dependent-road-mileage). |
+| `efficiencies.atb_trajectory` | `Advanced`, `Conservative`, or `Mid`; selected from the pinned [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) release. For the three publisher-defined vocational exceptions, Conservative selects native Constant with that label retained in audits. Global Constant was discontinued for most 2024 vehicle types and is rejected before I/O; native reference rows remain available. |
 | `efficiencies.ceud_energy_calibration` | Required boolean. `false` preserves uncalibrated efficiency. `true` fits supported [*NRCan CEUD*](https://oee.nrcan.gc.ca/corporate/statistics/neud/dpa/menus/trends/comprehensive_tables/list.cfm) gasoline/diesel class totals on matched physical stock/activity, retaining unadjusted evidence and unsupported coverage. Requires fixed road lifetimes and flat utilization. The effective class multiplier transfers to all powertrains/years; electricity is not independently calibrated. See the [energy method](../../docs/model/energy.md#optional-ceud-energy-calibration). |
 | `costs.atb_trajectory` | The same [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) choices, independently selectable from efficiencies. |
-| `ev_chargers.ld_evs_per_port` | Positive LDV electric vehicles per charger port. |
-| `ev_chargers.mhd_evs_per_port` | Positive medium/heavy-duty electric vehicles per charger port. |
-| `charging_profiles.travel_behavior_source` | `none`, `nhts`, or `tts` household travel-survey source for the frozen Ontario simulation. The selected shape applies unchanged to shared LDV chargers in every configured region. |
-| `charging_profiles.time_mapping` | Null uses elapsed-hour D001-D365/H01-H24 labels after Toronto-calendar hourly means. A complete `hour_index,season,tod` CSV projects the 8760 physical hours onto inherited CANOE slices; slice durations must agree with season fractions and TOD hours. This selects temporal aggregation/labels, not a time zone. Python callers can supply the same mapping as a DataFrame with their season/TOD rows. |
+| `ev_chargers.evs_per_port` | Three positive ratios in order: LDV, medium trucks, heavy trucks. |
+| `ev_chargers.charger_type_classes` | `aggregated` uses LDV/MHDV archetypes; `explicit` separates public L2, public fast, private LDV, overnight MHDV and fast MHDV chargers. Explicit requires `charging_profiles.travel_behavior_source: none` until type-specific profiles are registered. |
+| `ev_chargers.ld_home_utilization` | Empirical home active-charging fraction, used only by explicit infrastructure. The reviewed default is 0.08; aggregate UF remains the manual 0.20/0.30. |
+| `charging_profiles.travel_behavior_source` | `none`, `nhts`, or `tts` travel evidence for the registered corrected Ontario RAMP simulation. Production uses NHTS uncontrolled by default. The shape proxies shared LDV charging in every selected region. |
+| `charging_profiles.charging_strategy` | `uncontrolled` (default), `night`, or `day`. Ordinary charging occurs at arrival, preferentially 22:00–07:00, or preferentially 07:00–18:00 Toronto time, respectively. Controlled cases spread energy over eligible parked minutes; low SOC/next-trip emergencies can charge outside those windows. |
+| `charging_profiles.time_mapping` | Null uses elapsed-hour D001–D365/H01–H24 labels after Toronto-calendar hourly means. On caller-supplied axes, a complete `hour_index,season,tod` CSV maps all 8,760 physical hours to the receiving slices. Slice durations must agree with season fractions and TOD hours. Python callers can supply the same mapping as a DataFrame alongside both axes. |
 | `BEV_PHEV_range_representation.mode` | `none` preserves new variants and adds no range rules. `new_capacity_shares` prepares minimum (`ge`) shares of new class/powertrain capacity from the registered [*EPA OMEGA*](https://github.com/USEPA/EPA_OMEGA_Model) baseline sales/CD-range evidence. `representative_archetype` replaces new LDV range variants with one BEV/PHEV per category and emits no range constraints. Existing BEVs/PHEVs always use representatives with [*EPA OMEGA*](https://github.com/USEPA/EPA_OMEGA_Model) weights, independently of this selection. |
 | `embodied_emissions` | Enables the road vehicle-cycle layer. When false, preparation requires no embodied [*ANL GREET*](https://greet.anl.gov/greet/versions.html) workbooks or result bank and inserts no embodied rows. |
 | `embodied_materials` | `conventional` or `lightweight`, for LDVs only. MHDV values and provenance are independent of this selection. The registered release's glider selector mismatch is accepted because the affected saved range inputs are identical; unequal inputs require a reviewed correction before lightweight use. |
 
-!!! warning "Age-dependent mileage is not emitted as period-by-vintage utilization"
-    The current v4 capacity-factor table lacks the joint vintage/period grain needed for
-    age-dependent road utilization. Enabling VKT schedules retains those rows as audit
-    artifacts; only supported flat classes enter that table. Charger utilization uses
-    supported vintage-indexed rows and does not require that extra period dimension.
-
-!!! warning "Charging profiles carry frozen travel assumptions"
-    The frozen charging shapes already contain inherited fleet/range/charger composition.
+!!! warning "Charging profiles carry explicit inherited travel assumptions"
+    The six corrected, hash-registered profiles and metadata live under
+    `inputs/0_external_models/ramp_mobility/`, alongside aggregate survey input databases
+    and the pinned simulation source. Frozen legacy v5 profiles are comparison evidence,
+    not production inputs. New profiles correct charging-loss/SOC and UTC weather alignment
+    and already contain inherited fleet/range/charger composition.
     They are peak-normalized hourly power shapes; no new market shares are multiplied into
     them. Elapsed-hour labels preserve all 8760 physical hours, including Toronto DST, and
     do not identify summer wall-clock hours. The selected Ontario/shared-charger proxies
     apply the BEV shape to LDV BEV/PHEV/motorcycle charging in all regions. [*Ontario TTS*](https://dmg.utoronto.ca/transportation-tomorrow-survey/) remains a
-    weekday-only simulation. Hourly factors are not directly comparable with the legacy
+    weekday-derived simulation with weekday evidence repeated on weekends. NHTS uses
+    unweighted filtered trip-takers and midpoint trip occurrences. Hourly factors are not directly comparable with the legacy
     clustered/rescaled profiles. Select `charging_profiles.travel_behavior_source: none` to retain the
     annual charger utilization without hourly profile factors.
 
@@ -181,9 +182,8 @@ current [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data) values. [*NRCa
     zero-sales buckets. It never substitutes catalogue counts or renormalizes unknown sales.
 
 The `epa_omega_baseline` registration supplies the reviewed compact sales/range
-extract. Verify its registered identity or recreate a missing extract with
-`uv run --offline python -m fetching.epa_omega_baseline --verify-legacy-identity`.
-Routine preparation reads the registered extract.
+extract. Validate and normalize the pinned extract with
+`uv run --offline python -m fetching.epa_omega_baseline`.
 
 !!! warning "Representative PHEVs preserve total energy with a shared blend"
     Representative preparation accepts the already-prepared parameter batches through
@@ -216,6 +216,26 @@ annual-rate division. Current vintage coordinates follow `ScenarioPeriods`.
     defaults. Explicit component scores override source scores one indicator at a time.
     Blank placeholders do not prevent scenario builds. Source `database_note` fields remain
     empty until annotated; component notes may override them.
+
+### Age-dependent road mileage
+
+To prepare VKT research evidence, first build the same scenario with flat
+utilization to replay the registered source prerequisites. Keep its other
+selections and set `road_utilization.vkt_schedules: true` in a complete temporary
+scenario. Run the road-utilization owner serially against the corresponding
+prepared evidence.
+
+```sh
+uv run --offline python -m parameterization.road_utilization --scenario path/to/vkt.yaml
+```
+
+The calculation holds each native NLR ATB class at its final source-supported
+mileage before aggregation. Fixed-lifetime factors cover all operating periods
+and average only operating years in a partial final period. Curve-mode factors
+cover the model horizon while each process remains alive. Buses and motorcycles
+retain flat factors. SQLite compilation and caller-owned insertion require
+`vkt_schedules: false` because the pinned v4 table lacks the joint
+operating-period/vintage index.
 
 ## Period modes and observed years
 
@@ -250,11 +270,15 @@ Temoa end a grouped curve early. Report that adjustment without recalibrating it
 method is assessed in `docs/insights/stock_cohort_diagnosis.py`.
 
 !!! warning "Calibration closure is conditional on the selected evidence"
-    Utilization is the backend's projected `base_year` demand divided by calibrated
-    physical surviving stock times C2A. The demand owner projects native CEUD
-    observations with CER real GDP; the optional historical car-CAGR selection
-    changes the car/light-truck split while preserving that passenger-LDV total.
-    Existing efficiency aggregation and EV charger counts also use survivors.
+    All road classes use one flat annual utilization factor per region and class.
+    Divide activity at `periods.base_year` by the retained physical stock's annual
+    service capacity (the sum of stock × C2A across its technologies and vintages).
+    At the CEUD observation year, this matches the observed activity. For a later base
+    year, the demand owner projects activity from native CEUD with CER real GDP,
+    and the selected CEUD extension determines stock. The optional historical car
+    CAGR changes the car/light-truck split while preserving the passenger-LDV total.
+    The prior observed-year utilization mean remains diagnostic evidence.
+    Existing efficiency aggregation and EV charger counts also use physical survivors.
     Acquisition weights construct the combined vintage survival curves. Calibration closes stock and
     activity by construction. Optional efficiency calibration subsequently fits the
     supported CEUD liquid-energy boundary at unchanged activity; total-energy
@@ -274,7 +298,7 @@ separate aligned NRCan/[*NLR ATB*](https://atb.nlr.gov/transportation/2024/data)
 !!! note "Period labels differ from evidence years"
     `periods.period_mode: prospective` is the template default. A period begins on
     December 31 of its label year and ends at the next model label: 2025 covers
-    2026–2030, and all year-varying future inputs use 2030 conditions. The final label,
+    2026–2030, and time-varying inputs that describe closing conditions target 2030. The final label,
     2045, uses 2050 inputs; 2050 is added to SQLite only as the horizon marker.
     Source values that do not vary by year retain their source evidence and dates.
 
@@ -296,8 +320,9 @@ BEV override use the latest bin containing observations: vintage 2020 in the
 template. Irregular existing labels are supported; each next label closes the
 preceding interval.
 
-For the supported legacy comparison, use `period_mode: legacy` and include the
-observation year as the last existing label:
+For opening-period conditions, use `period_mode: legacy` and include the
+observation year as the last existing label. The `validation_opening_periods.yaml`
+preset uses this grid.
 
 ```yaml
 periods:
@@ -313,12 +338,27 @@ lifetimes:
   tail_survival_threshold: 0.005  # Surviving fraction: 0.5%, then zero
 ```
 
-Legacy cohorts go to the next existing label: 2016–2020 → 2020 and 2021–2023 →
-2023. Future efficiency and GDP already used period ends, while costs and charger
-schedules used period labels; legacy preserves this mixed timing. The name
-`legacy` makes that distinction explicit. Both modes retain the same stock
-calibration, source selections, native evidence dates and dollar-year conversions.
-The `period_mapping` reports list historical years, empty bins and future read years.
+Legacy existing cohorts use the closing label of their historical bin. On this grid,
+2016–2020 maps to vintage 2020, and 2021–2023 maps to vintage 2023. For future
+periods and vintages, legacy evaluates opening conditions. Demand and explicit
+charger installed-capacity shares at period 2025 therefore target 2025, as do
+purchase costs and vintage-specific charger utilization. This intentionally changes
+the prior comparison convention, which used 2030 for demand, efficiency and explicit
+installed-capacity shares. Source-native dates, stock calibration and monetary
+reference years retain their separate meanings.
+
+New legacy road efficiency uses a trailing annual evidence window as wide as
+`periods.step`. Vintage 2025 uses 2021–2025 where the selected technology has
+support. Eligible years have equal weight for this new-vintage representation.
+The existing 2023 vintage still owns the corresponding historical stock. Non-road
+efficiencies use point targets, with source-specific holds and improvement rules.
+See [the efficiency assumptions](../../docs/assumptions.md#efficiency) for the
+bridge, proxies and fixed PHEV input split.
+
+The `period_mapping` reports list historical bins, empty bins, evaluation years
+and new road efficiency windows. The five operating labels are 2025–2045, and
+2050 is the terminal boundary in both modes. Standalone SQLite publication uses
+the configured period and vintage grid.
 
 ## Shared regional aggregation
 
@@ -358,10 +398,10 @@ again after charger rows have been added and immediately before caller-owned ins
 
 | Support check | Current guarantee |
 | --- | --- |
-| Remove negligible capacity and dependent historical rows | Capacity cutoff and retained-key generation, followed by historical efficiency/cost support checks. Historical vintages come from the scenario. |
-| Remove costs without efficiency | All prepared investment, fixed, and variable cost keys must have efficiency at the same region, technology, and vintage, including future investments and chargers. |
-| Remove unsupported new-technology annual factors | New technology factors must have efficiency at their exact v4 vintage. The check uses the vintage-based v4 factor table; prepared age-dependent profiles remain audit artifacts. |
-| Remove technology-only scaling/lifetime entries without efficiency | Retained as defaults: these entries do not activate a technology/vintage. Inactive existing technology and not-yet-parameterized template defaults are useful. |
+| Remove negligible capacity and dependent historical rows | Historical efficiency, costs, process lifetimes and survival curves are checked against retained capacity keys. Historical vintages come from the scenario. |
+| Require efficiency for every cost key | Investment, fixed and variable cost keys must have efficiency at the same region, technology and vintage, including future investments and chargers. |
+| Require support for new-technology annual factors | New technology factors must have efficiency at their exact v4 vintage. Prepared age-dependent profiles remain audit artifacts. |
+| Omit inactive fixed-lifetime rows | Complete builds publish a `lifetime_tech` row only when that region and technology have capacity or efficiency. Preparation retains the full lifetime catalogue for parameter calculations. Technology-level capacity-to-activity defaults can remain without stock or efficiency. |
 
 !!! warning "Support gaps stop insertion"
     Unexpected assembled support gaps fail before database writes rather than silently
@@ -371,23 +411,20 @@ again after charger rows have been added and immediately before caller-owned ins
 
 ## SQLite comparisons
 
-Use `comparison.mode: legacy` for the registered old baseline. Its adapters compare
-Ontario transport rows and reconcile selected old table names and unit labels. It is
-a parity diagnostic, and differences are not automatically accepted tolerances.
-
 For a second current-backend scenario, set `comparison.mode: scenario` and point
 `comparison.reference_sqlite` to its existing database (for example,
-`outputs/sqlite/canoe_transport_other_scenario.sqlite`). This compares all tables and
-regions on exact primary keys, reports missing keys and changed values, and compares
-units/text exactly. Numerical values use `absolute_tolerance` and `relative_tolerance`.
+`outputs/sqlite/canoe_transport_other_scenario.sqlite`). This compares all regions
+and included tables on their primary-key fields after any provenance exclusions.
+It reports missing keys and changed values, with exact comparison for units and
+text. Numerical values use `absolute_tolerance` and `relative_tolerance`.
 Unkeyed solver output tables use exact row multisets, preserving duplicate counts.
 Schema mismatches or duplicate model keys after excluding provenance are reported as
 non-comparable. This is a database difference report, not a solver-feasibility check.
 
 `include_provenance: false` excludes source registry tables, source IDs, dataset IDs,
-DQ scores, and notes. Set it to `true` to compare those too in scenario mode. Legacy
-mode requires `false` because old provenance is not the v4 contract. References are
-opened read-only; an enabled comparison needs an existing reference different from the
+DQ scores, and notes. Set it to `true` when checking those fields. Some dataset IDs
+can differ across workspaces because normalized evidence records local input paths.
+References are opened read-only. An enabled comparison needs an existing reference different from the
 output database. `mode: none` disables only comparison; keep every template field,
 using `reference_sqlite: null` if unused. Results live under `comparison` in the
 configured validation report; integrity/provenance/FK checks live under `validation`.
@@ -398,9 +435,44 @@ Configuration loading rejects unknown fields, missing parameter controls, duplic
 keys, inactive/unsupported source selectors, invalid period grids, unregistered [*NLR ATB*](https://atb.nlr.gov/transportation/2024/data)/[*CER CEF*](https://www.cer-rec.gc.ca/en/data-analysis/canada-energy-future/)
 choices, invalid DQ scores, and rates outside zero to one. Scenario paths are accepted by
 the existing Python entrypoints. Build a complete scenario with
-`uv run python src/build_transport.py --scenario <scenario.yaml> --overwrite`.
+`uv run --offline python src/build_transport.py --scenario <scenario.yaml> --overwrite`.
 The command replays production prerequisites from registered caches on every invocation,
 offline by default. `--download-sources` permits acquisition of missing caches; it does not
 refresh existing caches. Paths and all model/source selections stay in YAML. Run scenarios
 serially while derived artifact paths are shared. Manual review, optional diagnostics and
 external-model generation remain explicit operations.
+
+To stop at all model-ready parameter tables without inserting transport parameters or
+publishing SQLite, use the same entrypoint:
+
+```powershell
+uv run --offline python src/build_transport.py --scenario config/scenarios/default.yaml --processed-only
+```
+
+This replays the same production prerequisites and contribution preparation, then writes
+schema-column CSVs with headers for empty tables, supporting axes, source and dataset
+lookups, and a manifest beneath `inputs/2_processed/scenario_tables/<scenario.name>/`.
+The in-memory schema supplies preparation contracts for row-model, key, provenance and
+parameter-support checks. A complete build also publishes SQLite, runs its foreign-key and
+integrity checks, and publishes any selected notebook captures. Add `--export-processed`
+to that build for the same CSV export.
+
+For fast charging-only iteration, the existing parameter owner needs no database build:
+
+```powershell
+uv run --offline python -m parameterization.ldv_charging_profiles --scenario config/scenarios/validation_charging_nhts_uncontrolled.yaml
+```
+
+To select the other registered combinations, copy the complete YAML to an
+ignored temporary path and change `charging_profiles.travel_behavior_source`
+(`nhts` or `tts`) or `charging_profiles.charging_strategy` (`uncontrolled`,
+`night` or `day`). Run prepared cases serially. Outputs are retained separately
+under `inputs/2_processed/ldv_charging_profiles/{nhts,tts}/{uncontrolled,night,day}/`.
+Each contains `capacity_factor_tech.csv`, season/TOD tables, dataset/source lookups,
+`hourly_mapping.csv` and `hourly_calendar.csv`. The latter maps elapsed-hour keys to local
+and UTC timestamps; H01–H24 are not summer wall-clock labels. With the current reviewed
+LDV utilization, all six Ontario factor tables have mean 0.20 for each charger technology.
+The CLI prepares factors on the native full-hour axes. To target a different
+calendar, use the caller-owned preparation API with the receiving season and
+time-of-day axes and a complete mapping. The [integration chapter](../../docs/model/integration.md#connect-supply-emissions-and-time)
+explains how to check the factors against the final representative-period weights.

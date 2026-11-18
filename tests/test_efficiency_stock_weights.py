@@ -16,13 +16,16 @@ from validation.provenance import resolve_provenance
 @pytest.fixture
 def handoff(tmp_path):
     bundle = load_config_bundle("config/scenarios/default.yaml")
+    bundle = replace(bundle, scenario=bundle.scenario.model_copy(update={
+        "lifetimes": bundle.scenario.lifetimes.model_copy(update={"survival_curves": False}),
+    }))
     routes = dict(bundle.paths.artifacts)
     for family in ("existing_capacity_interim", "existing_capacity_validation"):
         routes[family] = routes[family].model_copy(update={"path": str(tmp_path / family)})
     bundle = replace(bundle, paths=bundle.paths.model_copy(update={"artifacts": routes}))
     rules = load_harmonization_rules(bundle, "efficiencies")
     stock_rules = load_harmonization_rules(bundle, "road_stocks_and_demands")["existing_capacity"]
-    path = resolve_artifact_path(bundle, "existing_capacity_interim", stock_rules["fuel_shares_file"])
+    path = resolve_artifact_path(bundle, "existing_capacity_interim", stock_rules["annual_stock_file"])
     path.parent.mkdir(parents=True)
     stock = pd.DataFrame([
         {"region": "ON", "road_class": "cars", "tech": "T_LDV_C_BEV_EX",
@@ -48,6 +51,39 @@ def handoff(tmp_path):
     return bundle, path, stock, inputs
 
 
+def publish_stock_case(handoff, *, mode, tech, period_mode, vintage, records):
+    """Publish a private, fully reconciled cohort family on either period grid."""
+    bundle, path, _, original = handoff
+    period_payload = bundle.scenario.periods.model_dump()
+    if period_mode == "legacy":
+        period_payload.update(
+            period_mode="legacy", existing=[2000, 2005, 2010, 2015, 2020, 2025],
+            model=[2030, 2035, 2040, 2045],
+        )
+    periods = type(bundle.scenario.periods).model_validate(period_payload)
+    bundle = replace(bundle, scenario=bundle.scenario.model_copy(update={"periods": periods}))
+    stock = pd.DataFrame([
+        {"region": "ON", "road_class": mode, "tech": tech, "vintage": vintage,
+         "vintage_year": year, "raw_capacity": raw, "capacity": count}
+        for year, raw, count in records
+    ])
+    inputs = deepcopy(original)
+    inputs["relationships"] = pd.DataFrame([{"mode": mode, "tech": tech}])
+    inputs["rows"][0] = inputs["rows"][0].model_copy(update={
+        "tech": tech, "vintage": vintage, "capacity": float(stock.capacity.sum()),
+    })
+    stock.to_csv(path, index=False)
+    inputs["audit"] = {
+        "period_mapping": periods.audit(),
+        "annual_stock_evidence": {"path": str(path), "sha256": file_sha256(path)},
+    }
+    publish_capacity_handoff(
+        bundle, **{key: inputs[key] for key in ("rows", "contexts", "audit")},
+        artifact_paths=[path],
+    )
+    return bundle, path, stock, inputs
+
+
 def test_fresh_annual_stock_reconciles_capacity_but_retains_raw_cohort_weights(handoff):
     bundle, path, stock, inputs = handoff
     actual_path, selected, components = layer.historical_stock_evidence(bundle, **inputs)
@@ -60,6 +96,126 @@ def test_fresh_annual_stock_reconciles_capacity_but_retains_raw_cohort_weights(h
     assert selected.loc[selected.capacity.eq(0), "raw_capacity"].sum() == 8
     assert selected.raw_capacity.sum() != inputs["rows"][0].capacity
     assert components == {("ON", "T_LDV_C_BEV_EX", 2020): (("statcan_transport_tables", "20-10-0021-01"),)}
+
+
+@pytest.mark.parametrize("problem", ["missing_motorcycles", "duplicate", "unknown"])
+def test_configuration_cannot_silently_restore_road_class_weighting_exceptions(handoff, problem):
+    bundle, _, _, inputs = handoff
+    inputs = deepcopy(inputs)
+    modes = inputs["rules"]["historical_stock_weighted_modes"]
+    if problem == "missing_motorcycles":
+        modes.remove("motorcycles")
+    elif problem == "duplicate":
+        modes.append("cars")
+    else:
+        modes.append("unregistered_class")
+    with pytest.raises(ValueError, match="include every road class exactly once"):
+        layer.historical_stock_evidence(bundle, **inputs)
+
+
+@pytest.mark.parametrize("mode,tech", [
+    ("cars", "T_LDV_C_BEV_EX"),
+    ("motorcycles", "T_LDV_M_GSL_EX"),
+    ("school_buses", "T_HDV_BS_DSL_EX"),
+    ("urban_transit", "T_HDV_BT_DSL_EX"),
+    ("inter_city_buses", "T_HDV_BIC_DSL_EX"),
+])
+@pytest.mark.parametrize("period_mode,years", [
+    ("prospective", [2021, 2022, 2023]),
+    ("legacy", [2016, 2017, 2018]),
+])
+def test_all_road_classes_use_raw_physical_cohorts_independently_of_lifetime_redistribution(
+    handoff, mode, tech, period_mode, years,
+):
+    original_raw_weights = [8, 3, 1]
+    efficiencies = []
+    for redistributed_capacity in ([0, 4, 6], [5, 5, 0]):
+        bundle, _, _, inputs = publish_stock_case(
+            handoff, mode=mode, tech=tech, period_mode=period_mode, vintage=2020,
+            records=list(zip(years, original_raw_weights, redistributed_capacity, strict=True)),
+        )
+        _, selected, components = layer.historical_stock_evidence(bundle, **inputs)
+        assert selected.vintage_year.tolist() == years
+        assert selected.capacity.tolist() == redistributed_capacity
+        assert selected.raw_capacity.tolist() == original_raw_weights
+        assert (selected.raw_capacity / selected.raw_capacity.sum()).tolist() == pytest.approx(
+            [2 / 3, 1 / 4, 1 / 12],
+        )
+        assert ("ON", tech, 2020) in components
+        result = layer.aggregate_consumption_period([
+            {"native_intensity": consumption, "load_factor": load, "native_unit": "MJ/vkm"}
+            for consumption, load in [(2, 1), (4, 2), (8, 3)]
+        ], selected.raw_capacity.tolist())
+        efficiencies.append(result["efficiency"])
+    # Raw vehicle counts determine the representative consumption and load;
+    # redistributing survivor capacity does not change the observed cohort mix.
+    assert efficiencies == pytest.approx([17 / 36, 17 / 36])
+
+
+@pytest.mark.parametrize("period_mode,supported_years", [
+    ("prospective", [2000, 2001]),
+    ("legacy", [1996, 2000]),
+])
+def test_old_bus_cohorts_reconcile_before_out_of_history_weights_are_excluded(
+    handoff, period_mode, supported_years,
+):
+    records = [(1990, 90, 3), (supported_years[0], 8, 4), (supported_years[1], 2, 3)]
+    bundle, _, original, inputs = publish_stock_case(
+        handoff, mode="urban_transit", tech="T_HDV_BT_DSL_EX",
+        period_mode=period_mode, vintage=2000, records=records,
+    )
+    _, selected, _ = layer.historical_stock_evidence(bundle, **inputs)
+    assert original.capacity.sum() == inputs["rows"][0].capacity == 10
+    # The old physical cohort remains necessary for capacity reconciliation,
+    # but cannot become a synthetic observation at its clipped fuel-source year.
+    assert selected.vintage_year.tolist() == supported_years
+    assert selected.capacity.sum() == 7
+    assert selected.raw_capacity.tolist() == [8, 2]
+    assert (selected.raw_capacity / selected.raw_capacity.sum()).tolist() == pytest.approx([.8, .2])
+    assert original.loc[original.vintage_year.eq(1990), "vintage_year"].tolist() == [1990]
+
+
+@pytest.mark.parametrize("period_mode", ["prospective", "legacy"])
+def test_bus_cohort_without_positive_observed_history_cannot_supply_weights(handoff, period_mode):
+    bundle, _, _, inputs = publish_stock_case(
+        handoff, mode="urban_transit", tech="T_HDV_BT_DSL_EX",
+        period_mode=period_mode, vintage=2000, records=[(1990, 12, 10)],
+    )
+    with pytest.raises(ValueError, match="Missing positive raw age-distribution stock"):
+        layer.historical_stock_evidence(bundle, **inputs)
+
+
+@pytest.mark.parametrize("mode,tech", [
+    ("motorcycles", "T_LDV_M_GSL_EX"),
+    ("urban_transit", "T_HDV_BT_DSL_EX"),
+])
+@pytest.mark.parametrize("problem,message", [
+    ("missing", "Missing or mismatched age-distribution support"),
+    ("duplicate", "Duplicate annual age-distribution cohort"),
+    ("path", "configured capacity evidence"),
+    ("hash", "changed after capacity preparation"),
+])
+def test_bus_and_motorcycle_weights_require_complete_fresh_identifiable_support(
+    handoff, mode, tech, problem, message,
+):
+    bundle, path, stock, inputs = publish_stock_case(
+        handoff, mode=mode, tech=tech, period_mode="prospective", vintage=2020,
+        records=[(2021, 8, 0), (2022, 3, 4), (2023, 1, 6)],
+    )
+    if problem == "path":
+        inputs["audit"]["annual_stock_evidence"]["path"] = str(path.with_name("other_stock.csv"))
+    elif problem == "hash":
+        path.write_text(path.read_text() + "\n")
+    else:
+        stock = stock.iloc[0:0] if problem == "missing" else pd.concat([stock, stock.iloc[[0]]])
+        stock.to_csv(path, index=False)
+        inputs["audit"]["annual_stock_evidence"]["sha256"] = file_sha256(path)
+        publish_capacity_handoff(
+            bundle, **{key: inputs[key] for key in ("rows", "contexts", "audit")},
+            artifact_paths=[path],
+        )
+    with pytest.raises(ValueError, match=message):
+        layer.historical_stock_evidence(bundle, **inputs)
 
 
 @pytest.mark.parametrize("problem,expected", [
@@ -91,6 +247,8 @@ def test_annual_stock_rejects_inconsistent_capacity_handoff(handoff, problem, ex
     ("nonfinite", "non-finite capacity"),
     ("negative_raw", "negative stock"),
     ("nonfinite_raw", "non-finite raw_capacity"),
+    ("negative_solver", "negative stock"),
+    ("nonfinite_solver", "non-finite solver_capacity_k_vehicles"),
     ("duplicate", "Duplicate annual"),
     ("year", "scenario vintage mapping"),
     ("zero", "reconcile to prepared capacity"),
@@ -109,6 +267,9 @@ def test_annual_stock_rejects_invalid_or_absent_weight_support(handoff, problem,
     elif problem == "nonfinite_raw":
         stock["raw_capacity"] = stock.raw_capacity.astype(float)
         stock.loc[0, "raw_capacity"] = float("inf")
+    elif problem in {"negative_solver", "nonfinite_solver"}:
+        stock["solver_capacity_k_vehicles"] = stock.capacity.astype(float)
+        stock.loc[0, "solver_capacity_k_vehicles"] = -1 if problem == "negative_solver" else float("inf")
     elif problem == "duplicate":
         stock = pd.concat([stock, stock.iloc[[0]]], ignore_index=True)
     elif problem == "year":

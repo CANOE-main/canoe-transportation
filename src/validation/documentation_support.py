@@ -19,9 +19,13 @@ import numpy as np
 import pandas as pd
 from pydantic import BaseModel, ConfigDict, Field
 
+from parameterization.road_aggregation import apply_vehicle_mapping
+from parameterization.vehicle_reference import load_vehicle_reference, reference_mto_mapping
 from utils import (
-    file_sha256, find_repo_root, load_config_bundle, load_harmonization_rules, load_yaml,
-    resolve_configured_path, resolve_repo_path, write_dataframe_atomic, write_text_atomic,
+    file_sha256, find_repo_root, harmonization_rule_fingerprints, harmonization_rule_paths,
+    load_config_bundle, load_harmonization_rules, load_yaml,
+    resolve_configured_path, resolve_repo_path,
+    write_dataframe_atomic, write_text_atomic,
 )
 from validation.config_models import PathsConfig
 from validation.ldv_composition_benchmark import _statcan
@@ -189,7 +193,26 @@ def build_fleet_100(*, repo_root: Path | None = None) -> FleetPresentationEviden
     root, _, settings, config = _controls(repo_root)
     stock = load_notebook_evidence("vehicle_stock", repo_root=root)
     efficiency = load_notebook_evidence("efficiency", repo_root=root)
-    mapped = pd.read_csv(stock.paths["mapped_fleet"])
+    # The captured production handoff follows its scenario's selected edition.
+    # Presentation years instead use the complete captured Report A history and
+    # the same captured reviewed mapping, without consulting mutable ETL files.
+    statuses = pd.read_csv(stock.paths["status_long"], low_memory=False)
+    required = {"report_year", "stock_status", "VEHICLE_CLASS", "MAKE", "MODEL", "MODEL_YEAR", "native_count"}
+    if missing := required - set(statuses):
+        raise ValueError(f"Captured MTO status history lacks {sorted(missing)}")
+    selected = statuses.loc[
+        statuses.report_year.eq(settings.mto_report_year)
+        & statuses.stock_status.eq("FIT_ACTIVE")
+        & statuses.VEHICLE_CLASS.isin(["PASSENGER", "COMMERCIAL"]),
+        ["report_year", "VEHICLE_CLASS", "MAKE", "MODEL", "MODEL_YEAR", "native_count"],
+    ].rename(columns={"native_count": "FIT_ACTIVE"})
+    road_rules = load_harmonization_rules(stock.bundle, "road_aggregation")
+    reference = load_vehicle_reference(stock.bundle)
+    mapping = reference_mto_mapping(
+        reference, road_rules,
+        load_harmonization_rules(stock.bundle, "nrcan_fuel_consumption_ratings")["vehicle_class_harmonization"],
+    )
+    mapped = apply_vehicle_mapping(selected, mapping, accepted_statuses=set(road_rules["accepted_mapping_statuses"]))
     native_registrations = pd.read_csv(efficiency.paths["benchmark_statcan_new"])
     spec = load_harmonization_rules(efficiency.bundle, "ldv_composition_benchmark")
     geography = load_harmonization_rules(efficiency.bundle, "statcan_tables")["geography"]
@@ -198,6 +221,15 @@ def build_fleet_100(*, repo_root: Path | None = None) -> FleetPresentationEviden
     selected_year = int(shares.loc[shares.dimension.eq("Powertrain"), "source_year"].iloc[0])
     excluded = annual.loc[annual.year.eq(selected_year) & ~annual.powertrain.isin(settings.powertrains),
                           ["vehicle_group", "year", "powertrain", "count", "status"]]
+    input_files = {
+        "mto_status_history": stock.paths["status_long"],
+        "mto_source_manifest": stock.paths["source_manifest"],
+        "reviewed_vehicle_reference": reference.paths[0],
+        "reviewed_vehicle_source_links": reference.paths[1],
+        **{"stock_rules" if path.name == "rules.yaml" else f"stock_rules:{path.name}": path
+           for path in harmonization_rule_paths(stock.bundle)},
+        "benchmark_statcan_new": efficiency.paths["benchmark_statcan_new"],
+    }
     metadata = {
         "figure_id": settings.figure_id, "reference_year": settings.reference_year,
         "stock_build": stock.metadata["build_id"], "efficiency_build": efficiency.metadata["build_id"],
@@ -205,10 +237,15 @@ def build_fleet_100(*, repo_root: Path | None = None) -> FleetPresentationEviden
         "settings_sha256": file_sha256(config), "settings_path": str(config.relative_to(root)),
         "generator": "validation.documentation_support.fleet_100_chart",
         "generator_sha256": file_sha256(Path(__file__)),
+        "mto_mapping": {
+            "report_year": settings.mto_report_year,
+            "stock_status": "FIT_ACTIVE",
+            "transformation": "apply_vehicle_mapping with captured reviewed identities and model-year applicability",
+        },
         "excluded_powertrain_counts": excluded.astype(object).where(excluded.notna(), None).to_dict("records"),
         "input_files": {
-            "mapped_fleet": {"path": str(stock.paths["mapped_fleet"].relative_to(root)), "sha256": file_sha256(stock.paths["mapped_fleet"])},
-            "benchmark_statcan_new": {"path": str(efficiency.paths["benchmark_statcan_new"].relative_to(root)), "sha256": file_sha256(efficiency.paths["benchmark_statcan_new"])},
+            name: {"path": str(path.relative_to(root)), "sha256": file_sha256(path)}
+            for name, path in input_files.items()
         },
         "manifest_hashes": {
             "vehicle_stock": file_sha256(Path(stock.metadata["manifest"])),
@@ -324,9 +361,12 @@ def build_nonroad_evidence(*, repo_root: Path | None = None) -> NonroadPresentat
     scenario_path = resolve_repo_path(root, settings.scenario)
     if report["config"]["scenario"]["sha256"] != file_sha256(scenario_path):
         raise ValueError("Non-road scenario changed after its recorded build")
-    rules_record = next(item for item in report["config"]["parameters"] if Path(item["path"]).name == "rules.yaml")
-    if file_sha256(Path(rules_record["path"])) != rules_record["sha256"]:
-        raise ValueError("Non-road technology classification rules changed after the recorded build")
+    rules_before = harmonization_rule_fingerprints(bundle)
+    for name, digest in rules_before.items():
+        records = [item for item in report["config"]["parameters"]
+                   if str(item["path"]).replace("\\", "/").rsplit("/", 1)[-1] == name]
+        if len(records) != 1 or records[0]["sha256"] != digest:
+            raise ValueError("Non-road technology classification rules changed after the recorded build")
     existing_suffix = load_harmonization_rules(bundle, "efficiencies")["existing_suffix"]
     with closing(open_sqlite_readonly(database)) as connection:
         rows = pd.read_sql_query("SELECT e.*, t.category, t.sub_category FROM efficiency e JOIN technology t ON e.tech=t.tech", connection)
@@ -335,8 +375,9 @@ def build_nonroad_evidence(*, repo_root: Path | None = None) -> NonroadPresentat
                     & rows.vintage.isin(bundle.scenario.periods.model)
                     & ~rows.tech.str.endswith(existing_suffix)].copy()
     capacity = capacity.loc[capacity.region.eq(settings.region) & capacity.category.isin(settings.modes)]
-    if file_sha256(database) != database_hash or file_sha256(report_path) != report_hash:
-        raise ValueError("Non-road database changed while its final parameters were captured")
+    if (file_sha256(database) != database_hash or file_sha256(report_path) != report_hash
+            or harmonization_rule_fingerprints(bundle) != rules_before):
+        raise ValueError("Non-road database or rules changed while its final parameters were captured")
     validate_nonroad_rows(rows, settings)
     metadata = {
         "figure_id": settings.figure_id, "scenario": bundle.scenario.scenario.name,

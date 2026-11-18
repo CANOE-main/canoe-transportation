@@ -1022,11 +1022,13 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
     if missing_rating_year is not None:
         original_consumption = RoadEfficiencyEvidence.derive_consumption
 
-        def with_missing_observation(self, region, mode, powertrain, year, *, allow_analogue=False):
+        def with_missing_observation(self, region, mode, powertrain, year, *, allow_analogue=False, new_cohort=False):
             if mode == "cars" and powertrain.startswith(("bev", "phev")) and year == missing_rating_year:
                 assert not allow_analogue, "A partially observed period must not fill gaps with an analogue"
                 return None
-            return original_consumption(self, region, mode, powertrain, year, allow_analogue=allow_analogue)
+            return original_consumption(
+                self, region, mode, powertrain, year, allow_analogue=allow_analogue, new_cohort=new_cohort,
+            )
 
         monkeypatch.setattr(RoadEfficiencyEvidence, "derive_consumption", with_missing_observation)
     capacity = [
@@ -1042,10 +1044,9 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
         SimpleNamespace(region="ON", tech="T_HDV_BT_GSL_EX", vintage=2023, capacity=0),
     ]
     if include_bus_capacity:
-        capacity.append(
-            SimpleNamespace(
-                region="ON", tech="T_HDV_BT_DSL_EX", vintage=2020, capacity=1
-            )
+        capacity.extend(
+            SimpleNamespace(region="ON", tech=tech, vintage=2020, capacity=1)
+            for tech in ("T_HDV_BT_DSL_EX", "T_HDV_BS_DSL_EX", "T_HDV_BIC_DSL_EX", "T_LDV_M_GSL_EX")
         )
     from validation.provenance import resolve_provenance
 
@@ -1064,6 +1065,10 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
         "T_LDV_C_GSL_EX": "cars",
         "T_LDV_LTP_GSL_EX": "passenger_light_trucks",
         "T_LDV_LTF_GSL_EX": "freight_light_trucks",
+        "T_HDV_BT_DSL_EX": "urban_transit",
+        "T_HDV_BS_DSL_EX": "school_buses",
+        "T_HDV_BIC_DSL_EX": "inter_city_buses",
+        "T_LDV_M_GSL_EX": "motorcycles",
     }
     for row in capacity:
         row.data_id = capacity_context.data_id
@@ -1075,7 +1080,7 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
                               "tech": row.tech, "vintage": row.vintage, "vintage_year": year, "capacity": amount,
                               "raw_capacity": cohorts[-index - 1][1]}
                              for index, (year, amount) in enumerate(cohorts))
-    stock_file = load_harmonization_rules(configured, "road_stocks_and_demands")["existing_capacity"]["fuel_shares_file"]
+    stock_file = load_harmonization_rules(configured, "road_stocks_and_demands")["existing_capacity"]["annual_stock_file"]
     stock_path = output_path(configured, "existing_capacity_interim", stock_file)
     stock_path.parent.mkdir(parents=True)
     pd.DataFrame(stock_records).to_csv(stock_path, index=False)
@@ -1126,15 +1131,10 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
         "T_LDV_LTP_BEV400_N": "bev_400_miles",
     }
     atb_evidence = pd.read_csv(tmp_path / "efficiencies_interim/aggregated_atb_consumption.csv")
-    future_ltp = atb_evidence.loc[
+    ltp_atb = atb_evidence.loc[
         atb_evidence.region.eq("ON") & atb_evidence["mode"].eq("passenger_light_trucks")
-        & atb_evidence.year.eq(2030)
-    ].groupby("powertrain").weighted_consumption.sum()
-    atb_anchor_2023 = atb_evidence.loc[
-        atb_evidence.region.eq("ON") & atb_evidence["mode"].eq("passenger_light_trucks")
-        & atb_evidence.year.eq(2023) & atb_evidence.powertrain.eq("bev_300_miles"),
-        "weighted_consumption",
-    ].sum()
+    ].groupby(["powertrain", "year"]).weighted_consumption.sum()
+    atb_anchor_2023 = ltp_atb.loc["bev_300_miles", 2023]
     rating_evidence = pd.read_csv(tmp_path / "efficiencies_interim/aggregated_rating_consumption.csv")
     annual_ratings = rating_evidence.assign(
         weighted_mj=rating_evidence.class_mean_mj_per_vkm * rating_evidence.weight,
@@ -1153,11 +1153,15 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
         for row in first.efficiency_rows
         if row.vintage == 2025 and row.tech in ltp_bev_ranges
     }
-    assert actual_ltp_bev == pytest.approx({
-        tech: ltp_anchor_load / (ltp_anchor_consumption * future_ltp[bucket] / atb_anchor_2023)
-        for tech, bucket in ltp_bev_ranges.items()
-    }, rel=1e-12)
-    assert [actual_ltp_bev[tech] for tech in ltp_bev_ranges] == sorted(actual_ltp_bev.values(), reverse=True)
+    for tech, bucket in ltp_bev_ranges.items():
+        observed = annual_ratings.reindex(pd.MultiIndex.from_product(
+            [["Light Truck"], [bucket], [2021, 2022, 2023]],
+        )).dropna().droplevel([0, 1])
+        atb_2024 = (ltp_atb.loc[bucket, 2023] + ltp_atb.loc[bucket, 2025]) / 2
+        consumptions = [*observed, ltp_anchor_consumption * atb_2024 / atb_anchor_2023,
+                        ltp_anchor_consumption * ltp_atb.loc[bucket, 2025] / atb_anchor_2023]
+        loads = [*ltp_load.loc[observed.index], ltp_anchor_load, ltp_anchor_load]
+        assert actual_ltp_bev[tech] == pytest.approx(sum(loads) / sum(consumptions), rel=1e-12)
     assert {r.vintage for r in first.efficiency_rows if r.tech == "T_MDV_T_BEV_EX"} == {
         2023
     }
@@ -1178,11 +1182,17 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
     assert len(periods) == len(first.efficiency_rows)
     assert "efficiency" not in annual
     assert periods.efficiency.tolist() == pytest.approx((periods.load_factor / periods.native_intensity).tolist())
-    assert set(annual.loc[annual.vintage.eq(2025), "source_year"]) == {2030}
-    projected_bevs = annual.loc[annual.tech.isin(ltp_bev_ranges) & annual.vintage.eq(2025)]
+    new_road = annual.loc[annual.kind.eq("road") & annual.vintage.eq(2025)]
+    assert set(new_road.evaluation_year) == set(range(2021, 2026))
+    assert new_road.evaluation_window_end.eq(2025).all()
+    assert new_road.temporal_weight_basis.eq("new_cohort_equal_supported_years").all()
+    assert new_road.cohort_stock_k_vehicles.isna().all()
+    projected_bevs = new_road.loc[new_road.tech.isin(ltp_bev_ranges) & new_road.evaluation_year.gt(2023)]
     assert set(projected_bevs.treatment) == {"NRCan_cohort_anchor_ATB_relative_projection"}
     assert set(projected_bevs.projection_anchor_powertrain) == {"bev_300_miles"}
-    assert projected_bevs.projection_source_years.map(json.loads).tolist() == [[2021, 2022, 2023]] * 4
+    assert projected_bevs.projection_source_years.map(json.loads).tolist() == [[2021, 2022, 2023]] * 8
+    assert projected_bevs.loc[projected_bevs.evaluation_year.eq(2024),
+                             "projection_atb_source_years"].map(json.loads).tolist() == [[2023, 2025]] * 4
     assert projected_bevs.projection_reference_year.eq(2023).all()
     assert set(projected_bevs.projection_stock_powertrain) == {"gasoline"}
     assert projected_bevs.projection_stock_proxy.eq(True).all()
@@ -1201,7 +1211,9 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
     expected_medium = (medium.load_factor * medium.temporal_weight).sum() / (medium.native_intensity * medium.temporal_weight).sum()
     assert medium_row.efficiency == pytest.approx(expected_medium)
     assert medium_row.efficiency != pytest.approx((medium.load_factor / medium.native_intensity * medium.temporal_weight).sum(), rel=1e-10)
-    assert annual.loc[annual.vintage.eq(2025), "temporal_weight"].eq(1).all()
+    assert new_road.groupby("tech").temporal_weight.sum().tolist() == pytest.approx(
+        [1] * new_road.tech.nunique()
+    )
     weights = first.audit["existing_ev_representatives"]["weights"]
     for powertrain, tech in (("BEV", "T_LDV_C_BEV_EX"), ("PHEV", "T_LDV_C_GSL_PHEV_EX")):
         component_rows = annual.loc[
@@ -1276,10 +1288,10 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
             )
         )
         shared_bus, _ = prepare_bus_annual_efficiency_evidence(configured, provincial)
-        bus_annual = annual.loc[annual.tech.eq("T_HDV_BT_DSL_EX")]
+        bus_annual = annual.loc[annual.tech.eq("T_HDV_BT_DSL_EX")].sort_values("source_year")
         assert set(bus_annual.source_year) == {2016, 2017, 2018, 2019, 2020}
-        assert bus_annual.temporal_weight.eq(.2).all()
-        assert set(bus_annual.temporal_weight_basis) == {"equal_annual_observations"}
+        assert bus_annual.temporal_weight.tolist() == pytest.approx([.3, .25, .2, .15, .1])
+        assert set(bus_annual.temporal_weight_basis) == {"age_distribution_cohort_stock"}
         expected_bus = shared_bus.loc[
             shared_bus.tech.eq("T_HDV_BT_DSL_EX")
             & shared_bus.year.isin(bus_annual.source_year)
@@ -1292,9 +1304,26 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
             row for row in first.efficiency_rows if row.tech == "T_HDV_BT_DSL_EX"
         )
         assert bus_row.efficiency == pytest.approx(
-            bus_annual.load_factor.mean() / bus_annual.native_intensity.mean(), abs=1e-12
+            (bus_annual.load_factor * bus_annual.temporal_weight).sum()
+            / (bus_annual.native_intensity * bus_annual.temporal_weight).sum(), abs=1e-12
         )
+        assert bus_row.efficiency != pytest.approx(
+            bus_annual.load_factor.mean() / bus_annual.native_intensity.mean(), rel=1e-10
+        )
+        for tech in ("T_HDV_BS_DSL_EX", "T_HDV_BIC_DSL_EX", "T_LDV_M_GSL_EX"):
+            observations = annual.loc[annual.tech.eq(tech)].sort_values("source_year")
+            assert observations.source_year.tolist() == [2016, 2017, 2018, 2019, 2020]
+            assert observations.temporal_weight.tolist() == pytest.approx([.3, .25, .2, .15, .1])
+            assert observations.temporal_weight_basis.eq("age_distribution_cohort_stock").all()
+            actual = next(row for row in first.efficiency_rows if row.tech == tech)
+            assert actual.efficiency == pytest.approx(
+                (observations.load_factor * observations.temporal_weight).sum()
+                / (observations.native_intensity * observations.temporal_weight).sum()
+            )
+            context = next(item for item in first.provenance_contexts if item.data_id == actual.data_id)
+            assert "statcan_transport_tables" in {item.source_key for item in context.contributors}
     assert first.audit["phev_energy_basis"] == "greet_hhv_fuel_plus_electricity"
+    assert first.audit["phev_split_horizon_sample_years"] == [2030, 2035, 2040, 2045, 2050]
     with sqlite3.connect(tmp_path / "transport.sqlite") as connection:
         create_v4_schema(connection)
         for model, file in ((Region, "region.csv"), (TimePeriod, "time_period.csv")):
@@ -1339,34 +1368,6 @@ def test_offline_deterministic_preparation_and_caller_owned_insertion(
         assert connection.execute("SELECT COUNT(*) FROM limit_tech_input_split").fetchone()[0] == 0
         connection.rollback()
         assert connection.execute("SELECT COUNT(*) FROM efficiency").fetchone()[0] == 0
-
-
-def test_legacy_efficiency_comparison_does_not_invent_network_aliases(tmp_path):
-    from validation.legacy_compare import compare_legacy_efficiency
-
-    candidate, reference = tmp_path / "candidate.sqlite", tmp_path / "legacy.sqlite"
-    for path, value, output in (
-        (candidate, 2.0, "T_D_pkm"),
-        (reference, 1.0, "T_D_pkm"),
-    ):
-        with sqlite3.connect(path) as connection:
-            connection.execute(
-                "CREATE TABLE efficiency(region, tech, vintage, input_comm, output_comm, efficiency)"
-            )
-            connection.execute(
-                "INSERT INTO efficiency VALUES('ON','T_ONE',2025,'T_gsl',?,?)",
-                (output, value),
-            )
-    result = compare_legacy_efficiency(
-        candidate, reference, absolute_tolerance=1e-9, relative_tolerance=1e-6
-    )
-    assert result["shared_keys"] == result["value_differences"] == 1
-    with sqlite3.connect(reference) as connection:
-        connection.execute("UPDATE efficiency SET output_comm='T_annual_pkm'")
-    result = compare_legacy_efficiency(
-        candidate, reference, absolute_tolerance=1e-9, relative_tolerance=1e-6
-    )
-    assert result["shared_keys"] == 0
 
 
 def test_efficiency_metadata_uses_the_designated_component_dq():
@@ -1422,14 +1423,17 @@ def test_efficiency_metadata_narrows_road_family_powertrain_and_time():
     }
     bundle = SimpleNamespace(scenario=SimpleNamespace(periods=SimpleNamespace(base_year=2023)))
 
-    def components(mode, powertrain, year):
+    def components(mode, powertrain, year, result=None):
         return layer.efficiency_components(
             bundle, mode, rules, {"activity_series": {mode: {"table_id": 27}}}, {},
-            region="ON", powertrain=powertrain, year=year, result={},
+            region="ON", powertrain=powertrain, year=year, result=result or {},
             manual=pd.DataFrame(), rating_inputs=None, baseline_inputs=None,
         )
 
     assert components("motorcycles", "gasoline", 2020) == [(layer.CEUD, 32)]
+    assert components("motorcycles", "bev", 2023, {"index_source_year": 2020})[-1] == (
+        "jgcri_gcam_motorcycle_inputs", "canada_motorcycle_inputs",
+    )
     assert components("motorcycles", "gasoline", 2030)[-1] == (
         "jgcri_gcam_motorcycle_inputs", "canada_motorcycle_inputs",
     )

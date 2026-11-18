@@ -2,13 +2,16 @@
 
 from dataclasses import replace
 from pathlib import Path
+import shutil
+import tempfile
 from types import SimpleNamespace
 
 import pandas as pd
 import pytest
 
 from parameterization import build_costs as layer
-from utils import load_config_bundle, load_harmonization_rules, resolve_input_path
+from utils import harmonization_rule_paths, load_config_bundle, load_harmonization_rules, resolve_input_path
+from validation.provenance import resolve_provenance
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,14 +25,105 @@ TECHNOLOGIES = {
 }
 
 
+def test_cost_fingerprints_capture_every_rule_member_with_portable_external_roles(tmp_path):
+    bundle = load_config_bundle("config/scenarios/default.yaml", repo_root=ROOT)
+    artifact_root = tmp_path / "artifacts"
+    artifact_root.mkdir()
+    evidence = artifact_root / "cost.csv"
+    evidence.write_text("cost\n1\n", encoding="utf-8")
+    rule_paths = harmonization_rule_paths(bundle)
+    selected = []
+    for name in ("original", "relocated"):
+        controls = tmp_path / name
+        controls.mkdir()
+        for path in (*rule_paths, ROOT / "config/parameters/conversion.yaml"):
+            shutil.copyfile(path, controls / path.name)
+        (controls / "source").mkdir()
+        (controls / "scenario").mkdir()
+        shutil.copyfile(bundle.sources_path, controls / "source/shared.yaml")
+        shutil.copyfile(bundle.scenario_path, controls / "scenario/shared.yaml")
+        selected.append(replace(bundle, repo_root=artifact_root,
+            paths=bundle.paths.model_copy(update={
+                "config": bundle.paths.config.model_copy(update={"parameters": str(controls)}),
+            }), sources_path=controls / "source/shared.yaml", scenario_path=controls / "scenario/shared.yaml"))
+    original = dict(layer._cost_input_fingerprints(selected[0], [evidence]))
+    relocated = dict(layer._cost_input_fingerprints(selected[1], [evidence]))
+    expected = {"cost.csv", "configuration:rules", "configuration:conversion",
+                "configuration:sources", "configuration:scenario",
+                *(f"configuration:rules:{path.name}" for path in rule_paths[1:])}
+    assert set(original) == expected
+    assert original == relocated
+    assert original["configuration:sources"] != original["configuration:scenario"]
+    for index, path in enumerate(harmonization_rule_paths(selected[1])):
+        before = path.read_bytes()
+        path.write_bytes(before + b"\n# Reviewed source or parameter control.\n")
+        changed = dict(layer._cost_input_fingerprints(selected[1], [evidence]))
+        role = "configuration:rules" if index == 0 else f"configuration:rules:{path.name}"
+        assert {key for key in expected if original[key] != changed[key]} == {role}
+        path.write_bytes(before)
+
+
 @pytest.fixture(scope="module")
-def harmonized_costs(tmp_path_factory):
+def harmonized_costs(tmp_path_factory, request):
     """Exercise native cost families without publishing any shared artifacts."""
     bundle = load_config_bundle("config/scenarios/default.yaml", repo_root=ROOT)
     scenario = bundle.scenario.model_dump(mode="python")
     scenario["geography"]["regions"] = ["ON"]
     scenario["periods"]["model"] = [2025]
     bundle = replace(bundle, scenario=type(bundle.scenario).model_validate(scenario))
+    # A caller can select controls independently of the conventional config tree.
+    # Both parsing and provenance fingerprints must use that selected tree.
+    # conftest deliberately routes ordinary pytest scratch into the checkout.
+    # Allocate this one controls directory through the OS defaults so it really
+    # exercises accepted absolute configuration paths outside the artifact root.
+    with pytest.MonkeyPatch.context() as patch:
+        for variable in ("TMPDIR", "TEMP", "TMP"):
+            patch.delenv(variable, raising=False)
+        patch.setattr(tempfile, "tempdir", None)
+        external = tempfile.TemporaryDirectory(prefix="canoe-cost-controls-")
+    request.addfinalizer(external.cleanup)
+    controls = Path(external.name) / "original"
+    controls.mkdir()
+    assert not controls.is_relative_to(bundle.repo_root)
+    rule_paths = harmonization_rule_paths(bundle)
+    for path in (*rule_paths, ROOT / "config/parameters/conversion.yaml"):
+        shutil.copyfile(path, controls / path.name)
+    shutil.copyfile(bundle.sources_path, controls / "sources.yaml")
+    shutil.copyfile(bundle.scenario_path, controls / "scenario.yaml")
+    bundle = replace(
+        bundle,
+        paths=bundle.paths.model_copy(update={
+            "config": bundle.paths.config.model_copy(update={
+                "parameters": str(controls),
+            }),
+        }),
+        sources_path=controls / "sources.yaml",
+        scenario_path=controls / "scenario.yaml",
+    )
+    relocated = Path(external.name) / "relocated"
+    shutil.copytree(controls, relocated)
+    (relocated / "scenario").mkdir()
+    # Equal basenames represent different configuration roles, never one input.
+    shutil.copyfile(controls / "sources.yaml", relocated / "shared.yaml")
+    shutil.copyfile(controls / "scenario.yaml", relocated / "scenario/shared.yaml")
+    relocated_bundle = replace(
+        bundle,
+        paths=bundle.paths.model_copy(update={
+            "config": bundle.paths.config.model_copy(update={"parameters": str(relocated)}),
+        }),
+        sources_path=relocated / "shared.yaml", scenario_path=relocated / "scenario/shared.yaml",
+    )
+    changed = Path(external.name) / "comment_only"
+    shutil.copytree(controls, changed)
+    with (changed / "conversion.yaml").open("a", encoding="utf-8") as handle:
+        handle.write("\n# Reviewed configuration evidence comment.\n")
+    changed_bundle = replace(
+        bundle,
+        paths=bundle.paths.model_copy(update={
+            "config": bundle.paths.config.model_copy(update={"parameters": str(changed)}),
+        }),
+        sources_path=changed / "sources.yaml", scenario_path=changed / "scenario.yaml",
+    )
     old_sources = bundle.sources.model_dump(mode="python")
     for source, component, year in (
         (layer.BEAN, "mhdv_maintenance_coefficients", 2019),
@@ -38,10 +132,26 @@ def harmonized_costs(tmp_path_factory):
         adapter = old_sources["sources"][source]["components"][component]["adapter"]
         adapter.update(native_cost_dollar_year=year, cost_metadata_status="provisional_review")
     previous = replace(bundle, sources=type(bundle.sources).model_validate(old_sources))
+    lifetime_context = resolve_provenance(
+        bundle.sources, source_key="epa_moves_heavy_truck_survival",
+        component_key="heavy_truck_survival_rates",
+        transformation="synthetic_cost_currency_lifetime_fixture", transformation_version="1",
+    )
     lifetimes = [
-        SimpleNamespace(region="ON", tech=tech, lifetime=30, data_id="fixture-lifetime")
+        SimpleNamespace(region="ON", tech=tech, lifetime=30, data_id=lifetime_context.data_id)
         for tech in TECHNOLOGIES
     ]
+    stock_context = resolve_provenance(
+        bundle.sources, source_key=layer.CEUD, component_key=32,
+        transformation="synthetic_cost_currency_stock_fixture", transformation_version="1",
+    )
+    stock_reference = SimpleNamespace(
+        existing_capacity_rows=[SimpleNamespace(
+            region="ON", tech="T_LDV_M_GSL_EX", vintage=2020, capacity=212.253,
+            data_id=stock_context.data_id,
+        )],
+        provenance_contexts=[stock_context],
+    )
     assorted = load_harmonization_rules(bundle, "assorted_sources")
     atb = load_harmonization_rules(bundle, "nlr_atb_autonomie")
     source_by_file = {
@@ -66,7 +176,19 @@ def harmonized_costs(tmp_path_factory):
     evidence = {}
     rules = load_harmonization_rules(bundle, "costs")
     with pytest.MonkeyPatch.context() as patch:
+        original_sha256 = layer.file_sha256
+
+        def configured_sha256(path):
+            assert Path(path) not in {
+                *rule_paths,
+                ROOT / "config/parameters/conversion.yaml",
+                ROOT / "config/sources.yaml",
+            }, "Cost provenance must fingerprint the caller-selected controls"
+            return original_sha256(path)
+
+        patch.setattr(layer, "file_sha256", configured_sha256)
         patch.setattr(layer, "_read", selected_read)
+        patch.setattr("parameterization.build_existing_capacity.prepare_existing_capacity_rows", lambda _: stock_reference)
         # No existing technologies are requested; avoid generating unrelated range audits.
         patch.setattr(
             layer, "existing_range_weights",
@@ -80,7 +202,10 @@ def harmonized_costs(tmp_path_factory):
             ("ON", "urban_transit"): {"Class 8 Transit Heavy": 1.0},
             ("ON", "inter_city_buses"): {"Class 8 Transit Heavy": 1.0},
         })
-        for name, configured in (("reviewed", bundle), ("previous", previous)):
+        for name, configured in (
+            ("reviewed", bundle), ("previous", previous),
+            ("relocated", relocated_bundle), ("comment_only", changed_bundle),
+        ):
             output = tmp_path_factory.mktemp(f"cost_currency_{name}")
 
             def isolated_artifact_path(configured_bundle, artifact, *parts):
@@ -91,6 +216,7 @@ def harmonized_costs(tmp_path_factory):
             results[name] = layer.prepare_cost_rows(
                 configured, existing_capacity_rows=[],
                 fixed_lifetime_rows=lifetimes, survival_curve_rows=[],
+                lifetime_provenance_contexts=[lifetime_context],
             )
             evidence[name] = pd.read_csv(
                 output / "costs_interim" / rules["files"]["currency_audit"]
@@ -116,6 +242,26 @@ def harmonized_costs(tmp_path_factory):
         )
 
     return bundle, results, evidence, usd_to_cad_2020
+
+
+def test_external_control_relocation_and_hash_changes_preserve_cost_values(harmonized_costs):
+    _, results, _, _ = harmonized_costs
+    reviewed, relocated, changed = (results[name] for name in ("reviewed", "relocated", "comment_only"))
+    assert reviewed.audit["input_digest"] == relocated.audit["input_digest"]
+    assert reviewed.audit["input_digest"] != changed.audit["input_digest"]
+    for family in ("invest_rows", "variable_rows"):
+        original_rows, moved_rows, changed_rows = (getattr(result, family) for result in (reviewed, relocated, changed))
+        assert original_rows == moved_rows
+        assert [row.model_dump(exclude={"data_id"}) for row in original_rows] == [
+            row.model_dump(exclude={"data_id"}) for row in changed_rows
+        ]
+        assert {row.data_id for row in original_rows}.isdisjoint(row.data_id for row in changed_rows)
+
+
+def test_external_controls_do_not_relax_cost_data_file_boundaries(harmonized_costs):
+    bundle, _, _, _ = harmonized_costs
+    with pytest.raises(ValueError):
+        layer._cost_input_fingerprints(bundle, [bundle.sources_path])
 
 
 @pytest.mark.parametrize(

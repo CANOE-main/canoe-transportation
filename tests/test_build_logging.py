@@ -179,11 +179,17 @@ def test_log_rejects_destinations_outside_log_directory_before_writing(log_bundl
 ])
 def test_log_rejects_artifact_and_configuration_collisions_before_append(log_bundle, collision):
     root = log_bundle.repo_root
+    reference_path = "outputs/sqlite/comparison_reference.sqlite"
+    if collision == "reference":
+        comparison = log_bundle.scenario.comparison.model_copy(update={
+            "mode": "scenario", "reference_sqlite": reference_path,
+        })
+        log_bundle = replace(log_bundle, scenario=log_bundle.scenario.model_copy(update={"comparison": comparison}))
     paths = {
         "database": root / log_bundle.paths.outputs.sqlite / log_bundle.scenario.outputs.sqlite_name,
         "validation": root / log_bundle.scenario.outputs.validation_report,
         "setup": root / log_bundle.scenario.outputs.setup_log,
-        "reference": root / log_bundle.scenario.comparison.reference_sqlite,
+        "reference": root / reference_path,
         "scenario": log_bundle.scenario_path,
         "paths": log_bundle.paths_path,
         "sources": log_bundle.sources_path,
@@ -220,7 +226,7 @@ def test_log_rejects_hardlink_to_output_report(log_bundle):
 
 
 @pytest.mark.parametrize("yaml_name, scenario_name", [
-    ("default", "baseline"), ("legacy_comparison", "legacy_comparison"),
+    ("default", "baseline"), ("validation_opening_periods", "validation_opening_periods"),
     ("notebook_diagnostics", "notebook_diagnostics"),
 ])
 def test_every_bundled_scenario_inherits_run_and_yaml_names(log_bundle, yaml_name, scenario_name):

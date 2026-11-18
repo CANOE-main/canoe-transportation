@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "source_revision": "63b791f4b3376742c84cdbd6e7a9b9b414357c98",
+  "purpose": "Mapped LDV and MHDV charger cost evidence. The variable-cost export contains no mapped charger rows.",
+  "files": {
+    "CostInvest.csv": {
+      "sha256": "61d35215ca994cff5f8297bd1400eef8745984353bfc63810a0e7d757209659c",
+      "bytes": 4298,
+      "source": {
+        "path": "legacy_backend/legacy_variant_lih_wei_branch/CostInvest.csv",
+        "sha256": "61d35215ca994cff5f8297bd1400eef8745984353bfc63810a0e7d757209659c",
+        "bytes": 4298
+      },
+      "operation": "unchanged source bytes",
+      "source_rows": 24,
+      "retained_rows": 24,
+      "selection": {
+        "tech": [
+          "T_LDV_BEV_CHRG",
+          "T_LDV_PHEV_CHRG",
+          "T_MDV_CHRG",
+          "T_HDV_CHRG"
+        ]
+      }
+    },
+    "CostFixed.csv": {
+      "sha256": "8b20dda7642b524aba2f33e77c6f10bdeee847ca1b1aac3eabe9c58edb4696b9",
+      "bytes": 2688,
+      "source": {
+        "path": "legacy_backend/legacy_variant_lih_wei_branch/CostFixed.csv",
+        "sha256": "8b20dda7642b524aba2f33e77c6f10bdeee847ca1b1aac3eabe9c58edb4696b9",
+        "bytes": 2688
+      },
+      "operation": "unchanged source bytes",
+      "source_rows": 69,
+      "retained_rows": 69,
+      "selection": {
+        "tech": [
+          "T_LDV_BEV_CHRG",
+          "T_LDV_PHEV_CHRG",
+          "T_MDV_CHRG",
+          "T_HDV_CHRG"
+        ]
+      }
+    },
+    "CostVariable_ALL.csv": {
+      "sha256": "1fb3b0102bd30e17a0f093d2150cbfb271949a14bdee68461307928038ceec88",
+      "bytes": 106,
+      "source": {
+        "path": "legacy_backend/legacy_variant_lih_wei_branch/CostVariable_ALL.csv",
+        "sha256": "a8548fab68e748f0b0d3cce5fd658c136d0f22b84affc4de4c8bc690d3b64336",
+        "bytes": 5157346
+      },
+      "operation": "source header, no mapped charger rows",
+      "source_rows": 11937,
+      "retained_rows": 0,
+      "selection": {
+        "tech": [
+          "T_LDV_BEV_CHRG",
+          "T_LDV_PHEV_CHRG",
+          "T_MDV_CHRG",
+          "T_HDV_CHRG"
+        ]
+      }
+    }
+  }
+}

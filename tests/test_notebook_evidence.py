@@ -13,7 +13,8 @@ import pytest
 from pydantic import ValidationError
 import yaml
 
-from utils import file_sha256, load_config_bundle, load_harmonization_rules
+from utils import (file_sha256, harmonization_rule_paths, load_config_bundle,
+                   load_harmonization_rules, load_rules_config, load_yaml)
 from validation import notebook_evidence as layer
 from validation.config_models import ScenarioConfig
 
@@ -41,6 +42,32 @@ def prepared(tmp_path, monkeypatch):
     return bundle, report, table
 
 
+def test_regional_calibration_capture_survives_later_ontario_capture(prepared, monkeypatch):
+    bundle, report, table = prepared
+    monkeypatch.setattr("validation.ceud_calibration_diagnostic.collect_calibration_inputs",
+                        lambda bundle: {"sample": table})
+    scenario = bundle.scenario.model_copy(deep=True)
+    scenario.efficiencies.ceud_energy_calibration = True
+    scenario.lifetimes.survival_curves = False
+    scenario.notebook_diagnostics = ["ceud_calibration_regions"]
+    bundle = replace(bundle, scenario=scenario)
+    bundle.scenario_path.write_text(yaml.safe_dump(scenario.model_dump(mode="json")), encoding="utf-8")
+    regional = layer.stage_notebook_evidence(bundle, report)
+    layer.publish_notebook_evidence(regional)
+
+    table.write_text("year,value\n2023,9\n", encoding="utf-8")
+    scenario.notebook_diagnostics = ["ceud_calibration"]
+    bundle.scenario_path.write_text(yaml.safe_dump(scenario.model_dump(mode="json")), encoding="utf-8")
+    ontario = layer.stage_notebook_evidence(bundle, report)
+    layer.publish_notebook_evidence(ontario)
+    assert not layer.prune_notebook_evidence(ontario)
+    assert set(json.loads(ontario.index_path.read_text())["bundles"]) == {"ceud_calibration", "ceud_calibration_regions"}
+    for profile, expected in [("ceud_calibration_regions", 7), ("ceud_calibration", 9)]:
+        captured = layer.load_notebook_evidence(profile, repo_root=bundle.repo_root)
+        assert pd.read_csv(captured.paths["sample"]).value.item() == expected
+    assert "validation_energy_calibration_regions.yaml" in layer.prepare_command(bundle.repo_root, profile="ceud_calibration_regions")
+
+
 def test_capture_does_not_publish_until_build_succeeds(prepared):
     bundle, report, _ = prepared
     publication = layer.stage_notebook_evidence(bundle, report)
@@ -61,7 +88,9 @@ def test_capture_does_not_publish_until_build_succeeds(prepared):
         source_map = bundle.repo_root / "config/parameters" / reference[key]
         assert recorded_map.read_bytes() == source_map.read_bytes()
         assert not pd.read_csv(recorded_map).empty
-    assert {"vehicle_reference", "vehicle_source_links"} <= loaded.metadata["config"].keys()
+    assert {"vehicle_reference", "vehicle_source_links", "dunsky_charger_inputs"} <= loaded.metadata["config"].keys()
+    extraction = Path(mapping) / "dunsky_charger_inputs.yaml"
+    assert extraction.read_bytes() == (bundle.repo_root / "config/parameters/dunsky_charger_inputs.yaml").read_bytes()
     assert "mapping" not in loaded.metadata["config"]
     assert "vehicle_reference_notes" not in loaded.metadata["config"]
 
@@ -207,7 +236,7 @@ def test_live_data_and_config_edits_do_not_reinterpret_recorded_build(prepared):
     layer.publish_notebook_evidence(layer.stage_notebook_evidence(bundle, report))
     table.write_text("year,value\n2024,999\n", encoding="utf-8")
     bundle.scenario_path.write_text("invalid: edited after build\n", encoding="utf-8")
-    rules_path = bundle.repo_root / "config/parameters/rules.yaml"
+    rules_path = bundle.repo_root / "config/parameters/vehicle_efficiency_and_emissions.yaml"
     rules = yaml.safe_load(rules_path.read_text(encoding="utf-8"))
     rules["parameterization"]["efficiencies"]["transformation_version"] = "later"
     rules_path.write_text(yaml.safe_dump(rules), encoding="utf-8")
@@ -215,6 +244,92 @@ def test_live_data_and_config_edits_do_not_reinterpret_recorded_build(prepared):
     assert pd.read_csv(loaded.paths["sample"]).to_dict("records") == [{"year": 2023, "value": 7}]
     assert loaded.bundle.scenario.periods.base_year == bundle.scenario.periods.base_year
     assert load_harmonization_rules(loaded.bundle, "efficiencies")["transformation_version"] == original_version
+
+
+def test_partition_capture_records_and_uses_the_complete_declared_rules(prepared):
+    bundle, report, _ = prepared
+    layer.publish_notebook_evidence(layer.stage_notebook_evidence(bundle, report))
+
+    loaded = layer.load_notebook_evidence("vehicle_stock", repo_root=bundle.repo_root)
+
+    members = harmonization_rule_paths(bundle)
+    expected_keys = {"rules" if path.name == "rules.yaml" else f"rules:{path.name}" for path in members}
+    assert {key for key in loaded.metadata["config"] if key == "rules" or key.startswith("rules:")} == expected_keys
+    recorded_members = harmonization_rule_paths(loaded.bundle)
+    assert {path.name: path.read_bytes() for path in recorded_members} == {
+        path.name: path.read_bytes() for path in members
+    }
+    assert all(path.parent == Path(loaded.bundle.paths.config.parameters) for path in recorded_members)
+
+
+@pytest.mark.parametrize("fault", ["corrupt_chunk", "missing_chunk", "missing_record", "undeclared_record"])
+def test_partition_capture_rejects_incomplete_or_unverified_members_before_validation(prepared, monkeypatch, fault):
+    bundle, report, _ = prepared
+    layer.publish_notebook_evidence(layer.stage_notebook_evidence(bundle, report))
+    loaded = layer.load_notebook_evidence("vehicle_stock", repo_root=bundle.repo_root)
+    manifest_path = Path(loaded.metadata["manifest"])
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    key = next(name for name in manifest["config"] if name.startswith("rules:"))
+    record = manifest["config"][key]
+    chunk = manifest_path.parent / record["path"]
+    if fault == "corrupt_chunk":
+        chunk.write_bytes(chunk.read_bytes() + b"\n# changed captured member\n")
+    elif fault == "missing_chunk":
+        chunk.unlink()
+    elif fault == "missing_record":
+        del manifest["config"][key]
+    else:
+        rogue = chunk.parent / "undeclared.yaml"
+        rogue.write_bytes(chunk.read_bytes())
+        manifest["config"]["rules:undeclared.yaml"] = {
+            **record, "path": rogue.relative_to(manifest_path.parent).as_posix(),
+            "sha256": file_sha256(rogue),
+        }
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    monkeypatch.setattr(layer, "load_config_bundle", lambda *_, **__: pytest.fail(
+        "Unverified rules must be rejected before configuration validation"))
+
+    with pytest.raises(ValueError, match="Rebuild with:"):
+        layer.load_notebook_evidence("vehicle_stock", repo_root=bundle.repo_root)
+
+
+@pytest.mark.parametrize("fault", ["invalid_reference", "missing_partition"])
+def test_captured_parameter_root_is_bound_before_validation_despite_live_rule_poison(prepared, fault):
+    bundle, report, _ = prepared
+    layer.publish_notebook_evidence(layer.stage_notebook_evidence(bundle, report))
+    path = bundle.repo_root / "config/parameters/fleet_stock_and_activity.yaml"
+    if fault == "invalid_reference":
+        payload = load_yaml(path)
+        profiles = payload["parameterization"]["road_stocks_and_demands"]["existing_capacity"]["survival_source_profiles"]
+        selected = profiles[bundle.scenario.lifetimes.road_lifetime_survival_source]
+        next(item for item in selected.values() if "source_id" in item)["source_id"] = "unregistered_live_poison"
+        path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    else:
+        path.unlink()
+    with pytest.raises((FileNotFoundError, ValueError), match="unknown or inactive|Missing declared rules partition"):
+        load_config_bundle(bundle.scenario_path, repo_root=bundle.repo_root)
+
+    loaded = layer.load_notebook_evidence("vehicle_stock", repo_root=bundle.repo_root)
+
+    assert Path(loaded.bundle.paths.config.parameters) != path.parent
+    assert "unregistered_live_poison" not in str(load_harmonization_rules(loaded.bundle, "road_stocks_and_demands"))
+
+
+def test_legacy_monolithic_capture_remains_readable_under_current_partitioned_controls(prepared):
+    bundle, report, _ = prepared
+    directory = bundle.repo_root / "config/parameters"
+    index = directory / "rules.yaml"
+    current_manifest = index.read_bytes()
+    legacy = load_rules_config(directory)
+    index.write_text(yaml.safe_dump(legacy, sort_keys=False), encoding="utf-8")
+    layer.publish_notebook_evidence(layer.stage_notebook_evidence(bundle, report))
+    index.write_bytes(current_manifest)
+
+    loaded = layer.load_notebook_evidence("vehicle_stock", repo_root=bundle.repo_root)
+
+    assert not any(key.startswith("rules:") for key in loaded.metadata["config"])
+    assert len(harmonization_rule_paths(loaded.bundle)) == 1
+    assert load_rules_config(Path(loaded.bundle.paths.config.parameters)) == legacy
 
 
 def test_next_successful_build_refreshes_data_then_prunes_superseded_snapshot(prepared):

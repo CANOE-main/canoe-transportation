@@ -7,7 +7,7 @@ does not prepare production parameters or modify its reference files or database
 
 import argparse
 from contextlib import closing
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 import json
 import logging
 from math import isclose, isfinite
@@ -19,7 +19,7 @@ import pandas as pd
 from pydantic import Field, model_validator
 
 from parameterization.currency import CerCurrencyConverter
-from parameterization.ev_chargers import _manual_value, _period_value
+from parameterization.ev_chargers import _manual_value, production_representation, prepare_charger_utilization_targets
 from parameterization.manual_parameters import validate_manual_registry
 from utils import (
     ConfigBundle, file_sha256, load_config_bundle, load_harmonization_rules,
@@ -28,10 +28,12 @@ from utils import (
 )
 from validation.config_models import MappingModel, ScenarioPeriods
 from validation.sqlite_utils import open_sqlite_readonly, quote_identifier
+from validation.transportation_reference import read_reference_manifest
 
 
 LOGGER = logging.getLogger(__name__)
 COST_TABLES = ("cost_invest", "cost_fixed", "cost_variable")
+type UtilizationTargets = dict[str | tuple[str, int] | tuple[str, str, int], float]
 
 
 class ReferenceCostBasis(MappingModel):
@@ -50,6 +52,7 @@ class ChargerGroup(MappingModel):
 
 class ChargingComparisonRules(MappingModel):
     reference_route: str
+    reference_manifest: str | None = Field(default=None, min_length=1)
     report_route: str
     files: dict[str, str]
     groups: dict[str, ChargerGroup]
@@ -109,6 +112,8 @@ def read_reference_costs(
 ) -> tuple[dict[str, pd.DataFrame], dict[str, Any]]:
     """Retain original columns and logical CSV row numbers for the mapped subset."""
     owners = {tech for group in rules.groups.values() for tech in group.reference_technologies}
+    curated = (read_reference_manifest(directory, rules.reference_manifest)["files"]
+               if rules.reference_manifest else None)
     frames, files = {}, {}
     for table, filename in rules.files.items():
         path = directory / filename
@@ -116,6 +121,18 @@ def read_reference_costs(
         if {"tech", "cost"} - set(all_rows):
             raise ValueError(f"Reference {filename} lacks technology or cost columns")
         selected = all_rows.loc[all_rows.tech.isin(owners)].copy()
+        source_rows = len(all_rows)
+        source = {}
+        if curated is not None:
+            record = curated.get(filename)
+            if (not record or set(record["selection"]["tech"]) != owners
+                    or len(selected) != record["retained_rows"] or len(selected) != len(all_rows)
+                    or record["source_rows"] < len(all_rows)):
+                raise ValueError(f"Curated charger selection or coverage differs: {filename}")
+            source_rows = record["source_rows"]
+            if len(all_rows) not in (0, source_rows):
+                raise ValueError(f"Curated charger rows require original record numbers: {filename}")
+            source = {"source": record["source"], "curated_rows": len(all_rows)}
         selected["reference_csv_row"] = selected.index + 2
         selected["reference_file"] = filename
         selected["original_cost_text"] = selected["cost"]
@@ -123,8 +140,8 @@ def read_reference_costs(
         frames[table] = _validate_cost_frame(selected, table)
         files[table] = {
             "path": str(path), "sha256": file_sha256(path),
-            "total_rows": len(all_rows), "selected_rows": len(selected),
-            "excluded_rows": len(all_rows) - len(selected), "columns": list(all_rows.columns),
+            "total_rows": source_rows, "selected_rows": len(selected),
+            "excluded_rows": source_rows - len(selected), "columns": list(all_rows.columns), **source,
         }
     if frames["cost_invest"].empty:
         raise ValueError("Reference files contain no mapped charger investment rows")
@@ -194,7 +211,7 @@ def fixed_cost_ratios(reference: dict[str, pd.DataFrame]) -> pd.DataFrame:
 
 def backend_cost_basis(
     backend: dict[str, pd.DataFrame], *, rules: ChargingComparisonRules,
-    periods: ScenarioPeriods, utilization: dict[str, float],
+    periods: ScenarioPeriods, utilization: UtilizationTargets,
     fixed_to_capex_ratio: float, target_year: int,
 ) -> pd.DataFrame:
     """Expose built rates independently of legacy coverage or denominator choices.
@@ -239,7 +256,7 @@ def backend_cost_basis(
         c2a = float(conversion.c2a.iloc[0]) if len(conversion) == 1 else None
         if c2a is None or not isfinite(c2a) or c2a <= 0:
             raise ValueError(f"Missing positive charger capacity-to-activity: {row['region']}/{row['tech']}")
-        target = utilization.get(row["tech"])
+        target = utilization.get((row["region"], row["tech"], row["vintage"]), utilization.get((row["tech"], row["vintage"]), utilization.get(row["tech"])))
         if target is None or not isfinite(target) or not 0 < target <= 1:
             raise ValueError(f"Missing positive annual utilization target: {row['tech']}")
         throughput = c2a * target
@@ -248,7 +265,7 @@ def backend_cost_basis(
             "charger_class": category, "region": row["region"], "tech": row["tech"],
             "vintage": row["vintage"],
             "source_year": (min(periods.model) if kind == "existing"
-                            else periods.projection_year(row["vintage"], legacy_at_end=False)),
+                            else periods.evaluation_year(row["vintage"])),
             "source_year_status": ("existing_first_model_year_proxy" if kind == "existing"
                                    else "new_projection_year"),
             "cost_mcad_per_gw": cost, "c2a": c2a, "utilization": target,
@@ -268,7 +285,7 @@ def backend_cost_basis(
 def compare_cost_frames(
     reference: dict[str, pd.DataFrame], backend: dict[str, pd.DataFrame], *,
     rules: ChargingComparisonRules, periods: ScenarioPeriods,
-    converter: CerCurrencyConverter, utilization: dict[str, float],
+    converter: CerCurrencyConverter, utilization: UtilizationTargets,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Compare rates by source year, keeping timing and unit uncertainty explicit.
 
@@ -277,7 +294,7 @@ def compare_cost_frames(
     throughput sensitivity, not observed dispatch or an inferred reference factor.
     """
     refs = {tech: name for name, group in rules.groups.items() for tech in group.reference_technologies}
-    new_by_source = {periods.projection_year(v, legacy_at_end=False): v for v in periods.model}
+    new_by_source = {periods.evaluation_year(v): v for v in periods.model}
     if len(new_by_source) != len(periods.model):
         raise ValueError("Backend cost source years do not map uniquely to vintages")
     confirmed = rules.reference_basis is not None and rules.reference_basis.denominator is not None
@@ -312,7 +329,7 @@ def compare_cost_frames(
             c2a = float(c2a_rows.c2a.iloc[0]) if len(c2a_rows) == 1 else None
             if current_cost is not None and (c2a is None or not isfinite(c2a) or c2a <= 0):
                 raise ValueError(f"Missing positive charger capacity-to-activity: {row['region']}/{tech}")
-            target = utilization.get(tech)
+            target = utilization.get((row["region"], tech, vintage), utilization.get((tech, vintage), utilization.get(tech)))
             for status, basis in bases:
                 denominator = basis.denominator if basis else None
                 value, difference, relative, factor, normalized = None, None, None, None, None
@@ -388,70 +405,61 @@ def verify_build_snapshot(bundle: ConfigBundle, database: Path, report: dict[str
                 raise ValueError(f"Charging comparison input changed since build: {path}")
 
 
-def _source_components_for_year(
-    manual: pd.DataFrame, *, category: str, source_year: int,
-    converter: CerCurrencyConverter,
-) -> pd.DataFrame:
-    """Independently reconstruct fleet expenditure divided by installed power.
-
-    Native capex is currency per port. CAD per kW is numerically equal to million
-    CAD per GW; the million-currency and million-kW factors cancel. Count shares
-    weight expenditure and power before division, never normalized rates alone.
-    """
-    kinds = [str(row.parameter).removesuffix("_capex_aggregation") for row in manual.itertuples()
-             if row.category == "charger" and row.sub_category == category
-             and str(row.parameter).endswith("_capex_aggregation")]
-    if not kinds or len(set(kinds)) != len(kinds):
-        raise ValueError("Charger cost component shares are missing or duplicated")
-    shares = {kind: _manual_value(manual, category, f"{kind}_capex_aggregation", "through_2050")
-              for kind in kinds}
-    if not isclose(sum(shares.values()), 1, rel_tol=0, abs_tol=1e-9):
-        raise ValueError("Charger cost component shares do not sum to one")
-    records = []
-    for kind, share in shares.items():
-        capex = _period_value(manual, category, f"{kind}_capex", source_year)
-        power = _period_value(manual, category, f"{kind}_rated_power", source_year)
-        if capex.unit not in {"CAD", "USD"} or not str(capex.currency_year).isdigit():
-            raise ValueError("Charger component requires currency per port and a dollar year")
-        capex_value, power_kw = float(capex.value), float(power.value)
-        if power.unit != "kW" or not isfinite(power_kw) or power_kw <= 0:
-            raise ValueError("Charger component requires positive rated power in kW")
-        if not isfinite(capex_value) or capex_value <= 0:
-            raise ValueError("Charger component requires positive per-port capex")
-        conversion = converter.convert(capex_value, currency=capex.unit, dollar_year=int(capex.currency_year))
-        records.append({
-            "charger_class": category, "source_year": source_year, "charger_type": kind,
-            "count_share": share, "source_cost_per_port": capex_value,
-            "source_unit": capex.unit, "cost_source_period": capex.period,
-            "power_source_period": power.period, "rated_power_kw": power_kw,
-            **asdict(conversion), "cad_2020_cost_per_port": conversion.target_cad_value,
-            "weighted_cad_2020_cost_per_port": share * conversion.target_cad_value,
-            "weighted_rated_power_kw": share * power_kw,
-            "cad_2020_cost_per_gw": conversion.target_cad_value / power_kw,
-            "source_notes": capex.notes, "power_notes": power.notes,
-            "aggregation_basis": "total_expenditure_per_rated_power",
-        })
-    result = pd.DataFrame(records)
-    mean_power_kw = float(result.weighted_rated_power_kw.sum())
-    result["fleet_mean_rated_power_kw"] = mean_power_kw
-    result["power_share"] = result.weighted_rated_power_kw / mean_power_kw
-    result["weighted_cost_per_gw"] = result.weighted_cad_2020_cost_per_port / mean_power_kw
+def _source_components_for_year(representation, *, category: str, source_year: int) -> pd.DataFrame:
+    """Audit shared physical components by expenditure over installed rated power."""
+    components = representation.components
+    required = {"vehicle_class", "year", "archetype", "component", "ports", "power_kw",
+                "cost_cad_per_port", "native_cost_per_port", "native_currency", "native_dollar_year"}
+    if required - set(components):
+        raise ValueError("Production charger component audit is missing required fields")
+    selected = components.loc[components.vehicle_class.eq(category.upper()) & components.year.eq(source_year)].copy()
+    if selected.empty or selected.duplicated(["archetype", "component"]).any():
+        raise ValueError("Production charger component audit is missing or duplicated for the source year")
+    for column in ("ports", "power_kw", "cost_cad_per_port"):
+        values = pd.to_numeric(selected[column], errors="raise")
+        if not values.map(isfinite).all() or (values.lt(0) if column == "ports" else values.le(0)).any():
+            raise ValueError(f"Invalid production charger component {column}")
+    if not selected.native_currency.isin(["CAD", "USD"]).all():
+        raise ValueError("Production charger native money must be currency per port")
+    total_ports = float(selected.ports.sum())
+    if total_ports <= 0:
+        raise ValueError("Production charger audit requires positive total ports")
+    result = selected.rename(columns={"component": "charger_type", "power_kw": "rated_power_kw"})
+    result["charger_class"], result["source_year"] = category, source_year
+    result["count_share"] = result.ports / total_ports
+    result["source_cost_per_port"] = result.native_cost_per_port
+    result["source_unit"] = result.native_currency
+    result["cad_2020_cost_per_port"] = result.cost_cad_per_port
+    result["weighted_cad_2020_cost_per_port"] = result.count_share * result.cost_cad_per_port
+    result["weighted_rated_power_kw"] = result.count_share * result.rated_power_kw
+    mean_power = float(result.weighted_rated_power_kw.sum())
+    result["fleet_mean_rated_power_kw"] = mean_power
+    result["power_share"] = result.weighted_rated_power_kw / mean_power
+    result["weighted_cost_per_gw"] = result.weighted_cad_2020_cost_per_port / mean_power
+    result["cad_2020_cost_per_gw"] = result.cost_cad_per_port / result.rated_power_kw
+    result["aggregation_basis"] = "total_expenditure_per_rated_power"
     return result
+
 
 
 def _source_cost_components(
     bundle: ConfigBundle, backend: dict[str, pd.DataFrame], converter: CerCurrencyConverter,
     rules: ChargingComparisonRules,
-) -> tuple[pd.DataFrame, dict[str, float], dict[str, Any], float]:
+) -> tuple[pd.DataFrame, UtilizationTargets, dict[str, Any], float]:
     charger_rules = load_harmonization_rules(bundle, "ev_chargers")
     manual_rules = load_harmonization_rules(bundle, "manual_parameters")
     _, frames = validate_manual_registry(
         bundle, source_column=manual_rules["source_column"], notes_column=manual_rules["notes_column"],
         selected_files={charger_rules["manual_file"]},
     )
-    manual = frames[charger_rules["manual_file"]]
+    from parameterization.ev_chargers import load_charger_inputs
+
+    manual, source_path = load_charger_inputs(bundle, frames[charger_rules["manual_file"]])
     path = resolve_input_path(bundle, "manual", charger_rules["manual_file"])
-    utilization = {}
+    _, representation, _, _ = production_representation(bundle, manual)
+    targets, _ = prepare_charger_utilization_targets(bundle, manual=manual)
+    utilization = {(row.region, row.tech_or_group, row.vintage): float(row.target_utilization)
+                   for row in targets.itertuples(index=False)}
     records = []
     fixed_ratio = _manual_value(manual, "all", "fixed_to_capex_ratio", "all")
     for category, group in rules.groups.items():
@@ -460,17 +468,15 @@ def _source_cost_components(
         mapping = charger_rules["technology"][category]
         if group.existing != mapping["existing"] or group.new != mapping["new"]:
             raise ValueError("Diagnostic charger bridge differs from production technology mappings")
-        policy = charger_rules["utilization"][category]
-        for kind, tech in (("existing", group.existing), ("new", group.new)):
-            utilization[tech] = _manual_value(manual, category, "max_annual_utilization", policy["source_period"][kind])
         vintages = [bundle.scenario.periods.latest_observed_vintage, *bundle.scenario.periods.model]
         for vintage in vintages:
             existing = vintage == bundle.scenario.periods.latest_observed_vintage
-            source_year = min(bundle.scenario.periods.model) if existing else bundle.scenario.periods.projection_year(vintage, legacy_at_end=False)
+            source_year = min(bundle.scenario.periods.model) if existing else bundle.scenario.periods.evaluation_year(vintage)
             components = _source_components_for_year(
-                manual, category=category, source_year=source_year, converter=converter,
+                representation, category=category, source_year=source_year,
             )
             weighted = float(components.weighted_cost_per_gw.sum())
+            tech = group.existing if existing else group.new
             records.extend(components.assign(backend_vintage=vintage).to_dict("records"))
             tech = group.existing if existing else group.new
             for table, expected in (("cost_invest", weighted), ("cost_fixed", weighted * fixed_ratio)):
@@ -483,12 +489,19 @@ def _source_cost_components(
                     raise ValueError(f"Missing backend {table} charger cost: {tech}/{vintage}")
                 if not all(isclose(value, expected, rel_tol=1e-10, abs_tol=1e-9) for value in selected.cost):
                     raise ValueError(f"Backend {table} differs from current reviewed source calculation: {tech}/{vintage}")
-    return pd.DataFrame(records), utilization, {"path": str(path), "sha256": file_sha256(path)}, fixed_ratio
+    return pd.DataFrame(records), utilization, {
+        "path": str(path), "sha256": file_sha256(path),
+        "fetched_dunsky": {"path": str(source_path), "sha256": file_sha256(source_path)},
+    }, fixed_ratio
 
 
 def prepare_charging_cost_comparison(
     bundle: ConfigBundle, *, database: Path | None = None, build_report: Path | None = None,
 ) -> ChargingCostComparison:
+    if bundle.scenario.ev_chargers.charger_type_classes != "aggregated":
+        raise ValueError("Charging cost comparison currently bridges aggregated LDV/MHDV technologies; "
+                         "use an aggregated scenario report, or the infrastructure notebook for explicit per-archetype costs. "
+                         "Explicit scenario builds remain supported.")
     rules = ChargingComparisonRules.model_validate(load_harmonization_rules(bundle, "charging_cost_comparison"))
     database = database or resolve_configured_path(bundle, "outputs", "sqlite", bundle.scenario.outputs.sqlite_name)
     build_report = build_report or resolve_repo_path(bundle.repo_root, bundle.scenario.outputs.validation_report)
@@ -518,8 +531,15 @@ def prepare_charging_cost_comparison(
     inherited_identity = None
     if rules.legacy_baseline is not None:
         baseline = resolve_repo_path(bundle.repo_root, rules.legacy_baseline)
+        source = {}
+        if rules.reference_manifest:
+            baseline_manifest = read_reference_manifest(baseline.parent, rules.reference_manifest)
+            record = baseline_manifest["files"].get(baseline.name)
+            if record is None:
+                raise ValueError(f"Inherited charger context missing from curated manifest: {baseline}")
+            source = {"source": record["source"]}
         frames["reference_inherited_context"] = inherited_reference_context(baseline, rules)
-        inherited_identity = {"path": str(baseline), "sha256": file_sha256(baseline)}
+        inherited_identity = {"path": str(baseline), "sha256": file_sha256(baseline), **source}
     metadata = {
         "scenario": bundle.scenario.scenario.name, "scenario_path": str(bundle.scenario_path),
         "repository_commit": revision, "period_mapping": bundle.scenario.periods.audit(),
@@ -533,7 +553,7 @@ def prepare_charging_cost_comparison(
         "electricity_accounting": report["ev_chargers"]["electricity_accounting"],
         "component_reconciliation": {
             "relative_tolerance": 1e-10, "absolute_tolerance": 1e-9, "status": "passed",
-            "method": "Independent reconstruction of per-port expenditure divided by matching rated power, checked against built investment and fixed costs",
+            "method": "Shared production-core component expenditure divided by matching rated power, reconciled with built investment and fixed costs; not independent source validation",
             "normalization": "sum(count_share * target_year_CAD_per_port) / sum(count_share * rated_kW)",
         },
         "reference_basis_status": ("confirmed" if rules.reference_basis.denominator is not None else
@@ -541,6 +561,8 @@ def prepare_charging_cost_comparison(
         "implementation_files": {str(path.relative_to(bundle.repo_root)): file_sha256(path) for path in (
             Path(__file__).resolve(), bundle.repo_root / "src/parameterization/ev_chargers.py",
             bundle.repo_root / "src/parameterization/currency.py",
+            bundle.repo_root / "src/parameterization/charger_representation.py",
+            bundle.repo_root / "src/fetching/dunsky_charger_inputs.py",
         )},
         "limitations": [
             "Supplied cost CSV rows govern compared costs. Non-cost context is inherited explicitly from the original legacy baseline when configured.",

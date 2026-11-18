@@ -13,7 +13,7 @@ from validation.config_models import ScenarioConfig
 
 
 @pytest.mark.skipif(os.environ.get("CANOE_REGISTERED_INPUT_TESTS") != "1", reason="requires registered offline source caches")
-def test_each_province_closes_its_own_sales_activity(tmp_path, monkeypatch):
+def test_each_province_closes_road_class_activity(tmp_path, monkeypatch):
     bundle = load_config_bundle("config/scenarios/default.yaml")
     payload = bundle.scenario.model_dump(mode="python")
     payload["geography"]["regions"] = ["ON", "AB", "BCT", "MB", "NB", "NL", "NS", "PE", "QC", "SK"]
@@ -57,10 +57,10 @@ def test_each_province_closes_its_own_sales_activity(tmp_path, monkeypatch):
         existing_capacity_contexts=prepared.provenance_contexts, physical_stock=prepared.physical_stock,
     )
     rules = load_harmonization_rules(bundle, "road_utilization")
-    audit = pd.read_csv(resolve_artifact_path(bundle, "road_utilization_processed") / rules["sales_calibration_file"])
-    assert len(audit) == 50
+    audit = pd.read_csv(resolve_artifact_path(bundle, "road_utilization_processed") / rules["base_year_calibration_file"])
+    assert len(audit) == 90
     assert audit.region.nunique() == 10
-    assert audit.groupby("region").road_class.nunique().eq(5).all()
+    assert audit.groupby("region").road_class.nunique().eq(9).all()
     assert audit.activity_residual_bn.abs().max() < 1e-10
     assert audit.utilization.between(0, 1).all()
     print("Provinces",audit.region.nunique(),"class calibrations",len(audit),"max residual",audit.activity_residual_bn.abs().max())

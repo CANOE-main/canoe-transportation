@@ -874,7 +874,7 @@ def prepare_ldv_stock_benchmark(bundle: ConfigBundle) -> Path:
 
 
 def fetch_and_normalize(
-    scenario_path: str | Path,
+    scenario_path: str | Path | ConfigBundle,
     *,
     regions: list[str] | None = None,
     download: bool = True,

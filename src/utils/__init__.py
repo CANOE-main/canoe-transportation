@@ -12,7 +12,7 @@ from typing import Any
 
 import yaml
 
-from validation.config_models import PathsConfig, ScenarioConfig, SourcesConfig
+from validation.config_models import PathsConfig, RulePartition, RulesManifest, ScenarioConfig, SourcesConfig
 
 from .files import file_sha256 as file_sha256
 from .files import write_dataframe_atomic as write_dataframe_atomic
@@ -133,25 +133,112 @@ def load_parameter_yaml(bundle: ConfigBundle, filename: str | Path) -> dict[str,
     return load_yaml(resolve_parameter_path(bundle, filename))
 
 
-def load_harmonization_rules(bundle: ConfigBundle, module_name: str) -> dict[str, Any]:
-    """Load extraction/harmonization rules for one executable owner."""
-    rules = load_parameter_yaml(bundle, "rules.yaml")
+def _rules_index(parameter_dir: Path) -> RulesManifest | dict[str, Any]:
+    path = _partition_path(parameter_dir, "rules.yaml")
+    rules = load_yaml(path)
+    if type(rules.get("version")) is int and rules["version"] == 3:
+        return RulesManifest.model_validate(rules)
+    # An explicit historical format, never a fallback for missing current members.
     if rules.get("version") != 2 or set(rules) != {"version", "fetching", "parameterization"}:
-        raise ValueError("rules.yaml requires version 2 with fetching and parameterization sections")
-    owners = [
-        section for section in ("fetching", "parameterization")
-        if module_name in rules[section]
-    ]
-    if not owners:
-        raise KeyError(
-            f"Missing extraction/harmonization rules for module: {module_name}"
-        )
-    if len(owners) != 1:
-        raise ValueError(f"Rules module {module_name!r} must have exactly one owner")
-    module_rules = rules[owners[0]][module_name]
-    if not isinstance(module_rules, dict):
-        raise ValueError(f"Expected mapping for harmonization rules: {module_name}")
-    return module_rules
+        raise ValueError(f"{path} requires a version 3 routing manifest or version 2 monolithic rules")
+    if any(not isinstance(rules[section], dict) for section in ("fetching", "parameterization")):
+        raise ValueError(f"Expected fetching and parameterization mappings in {path}")
+    return rules
+
+
+def _partition_path(parameter_dir: Path, filename: str) -> Path:
+    root = parameter_dir.resolve()
+    path = root / filename
+    if not path.resolve().is_relative_to(root):
+        raise ValueError(f"Rules partition escapes its configured parameter directory: {filename}")
+    if not path.is_file():
+        raise FileNotFoundError(f"Missing declared rules partition: {path}; restore the complete parameter configuration")
+    return path
+
+
+def rule_config_paths(parameter_dir: Path) -> tuple[Path, ...]:
+    """Enumerate the complete ordered rules dependency set without directory discovery."""
+    index = _rules_index(parameter_dir)
+    paths = [_partition_path(parameter_dir, "rules.yaml")]
+    if isinstance(index, RulesManifest):
+        paths.extend(_partition_path(parameter_dir, part.file) for part in index.partitions)
+    if len(paths) != len({path.resolve() for path in paths}):
+        raise ValueError("Rules members must resolve to distinct physical files")
+    return tuple(paths)
+
+
+def harmonization_rule_paths(bundle: ConfigBundle) -> tuple[Path, ...]:
+    """Resolve all rule controls, including the routing index, for audit/freshness."""
+    return rule_config_paths(resolve_parameter_path(bundle, "."))
+
+
+def harmonization_rule_fingerprints(bundle: ConfigBundle) -> dict[str, str]:
+    """Use stable member names for portable internal or external configuration roots."""
+    return {path.name: file_sha256(path) for path in harmonization_rule_paths(bundle)}
+
+
+def _partition_rules(parameter_dir: Path, partition: RulePartition) -> dict[str, Any]:
+    path = _partition_path(parameter_dir, partition.file)
+    payload = load_yaml(path)
+    sections = {section for section in ("fetching", "parameterization") if getattr(partition, section)}
+    if type(payload.get("version")) is not int or payload["version"] != 1 or set(payload) != {"version", *sections}:
+        raise ValueError(f"Rules partition {path} requires version 1 and exactly its declared sections")
+    for section in sections:
+        values = payload[section]
+        if not isinstance(values, dict) or set(values) != set(getattr(partition, section)):
+            raise ValueError(f"Rules partition {path} has missing or undeclared {section} owners")
+        if any(not isinstance(value, dict) for value in values.values()):
+            raise ValueError(f"Rules partition {path} requires mappings for every {section} owner")
+    return payload
+
+
+def load_rules_config(parameter_dir: Path) -> dict[str, Any]:
+    """Validate the complete configuration and expose unchanged logical owner sections.
+
+    Only physical partitioning changes. There is no recursive merge, discovery,
+    mutable cache or substitution of files from another configuration root.
+    """
+    index = _rules_index(parameter_dir)
+    if not isinstance(index, RulesManifest):
+        for name, value in (index["fetching"] | index["parameterization"]).items():
+            if not isinstance(value, dict):
+                raise ValueError(f"Expected mapping for harmonization rules: {name}")
+        if set(index["fetching"]) & set(index["parameterization"]):
+            raise ValueError("Every rules module must have exactly one owner")
+        return index
+    rule_config_paths(parameter_dir)
+    result = {"version": 2, "fetching": {}, "parameterization": {}}
+    for partition in index.partitions:
+        payload = _partition_rules(parameter_dir, partition)
+        for section in ("fetching", "parameterization"):
+            result[section].update(payload.get(section, {}))
+    return result
+
+
+def load_rules_for_owner(directory: Path, module_name: str) -> dict[str, Any]:
+    """Read one declared owner without requiring a scenario or unrelated payload files."""
+    index = _rules_index(directory)
+    if isinstance(index, RulesManifest):
+        matches = [(part, section) for part in index.partitions for section in ("fetching", "parameterization")
+                   if module_name in getattr(part, section)]
+        if matches:
+            partition, section = matches[0]
+            return _partition_rules(directory, partition)[section][module_name]
+    else:
+        owners = [section for section in ("fetching", "parameterization") if module_name in index[section]]
+        if len(owners) > 1:
+            raise ValueError(f"Rules module {module_name!r} must have exactly one owner")
+        if owners:
+            value = index[owners[0]][module_name]
+            if not isinstance(value, dict):
+                raise ValueError(f"Expected mapping for harmonization rules: {module_name}")
+            return value
+    raise KeyError(f"Missing extraction/harmonization rules for module: {module_name}")
+
+
+def load_harmonization_rules(bundle: ConfigBundle, module_name: str) -> dict[str, Any]:
+    """Load only the declared partition of one executable owner, freshly on each call."""
+    return load_rules_for_owner(resolve_parameter_path(bundle, "."), module_name)
 
 
 def load_conversion_factors(bundle: ConfigBundle) -> dict[str, Any]:
@@ -160,18 +247,28 @@ def load_conversion_factors(bundle: ConfigBundle) -> dict[str, Any]:
 
 
 def load_config_bundle(
-    scenario_path: str | Path,
+    scenario_path: str | Path | ConfigBundle,
     *,
     repo_root: Path | None = None,
     paths_path: str | Path = "config/paths.yaml",
     sources_path: str | Path = "config/sources.yaml",
+    parameter_dir: str | Path | None = None,
 ) -> ConfigBundle:
-    """Load and strictly validate the three YAML control-layer files."""
+    """Load controls, or preserve a caller's already loaded artifact/configuration root."""
+    if isinstance(scenario_path, ConfigBundle):
+        if (repo_root is not None or paths_path != "config/paths.yaml"
+                or sources_path != "config/sources.yaml" or parameter_dir is not None):
+            raise ValueError("ConfigBundle controls cannot be combined with configuration path overrides")
+        return scenario_path
     root = (repo_root or find_repo_root()).resolve()
     resolved_paths = resolve_repo_path(root, paths_path)
     resolved_sources = resolve_repo_path(root, sources_path)
     resolved_scenario = resolve_repo_path(root, scenario_path)
     paths = PathsConfig.model_validate(load_yaml(resolved_paths))
+    if parameter_dir is not None:
+        paths = paths.model_copy(update={
+            "config": paths.config.model_copy(update={"parameters": str(resolve_repo_path(root, parameter_dir))}),
+        })
     scenario_payload = load_yaml(resolved_scenario)
     bundle = ConfigBundle(
         repo_root=root,
@@ -201,6 +298,7 @@ def load_config_bundle(
 
 def validate_config_bundle(bundle: ConfigBundle) -> list[str]:
     """Return cross-file errors after structural Pydantic validation."""
+    load_rules_config(resolve_parameter_path(bundle, "."))
     errors: list[str] = []
     registered = bundle.sources.sources
     for source_name in bundle.scenario.sources.selections:
@@ -220,7 +318,6 @@ def validate_config_bundle(bundle: ConfigBundle) -> list[str]:
     selectors = {
         "nrcan_ceud_transport_provincial": "year",
         "nrcan_ceud_transport_national": "year",
-        "transport_canada_ev_dashboard": "year",
         "cer_canadas_energy_future": "edition",
     }
     selections = bundle.scenario.sources.selections
@@ -236,10 +333,20 @@ def validate_config_bundle(bundle: ConfigBundle) -> list[str]:
                 errors.append(f"sources.selections.{source_name} supports only {selectors[source_name]}")
     atb = registered.get("nlr_atb_transportation")
     if atb is not None:
-        for section in ("efficiencies", "costs"):
-            trajectory = getattr(bundle.scenario, section).atb_trajectory
-            if trajectory not in atb.adapter["expected_trajectories"]:
-                errors.append(f"{section}.atb_trajectory is not registered: {trajectory}")
+        supported = atb.adapter.get("supported_scenario_trajectories")
+        if not isinstance(supported, list) or not supported:
+            errors.append(
+                "sources.nlr_atb_transportation.adapter.supported_scenario_trajectories is missing or invalid; "
+                "this source registry predates the supported scenario contract. Rebuild the capture "
+                "with the current registered sources.yaml; do not infer scenario choices from native trajectory labels."
+            )
+        else:
+            for section in ("efficiencies", "costs"):
+                trajectory = getattr(bundle.scenario, section).atb_trajectory
+                if trajectory not in supported:
+                    reason = atb.adapter.get("unsupported_scenario_notes", {}).get(trajectory, "")
+                    errors.append(f"{section}.atb_trajectory is not supported: {trajectory}; "
+                                  f"choose {supported}. {reason}")
     cer = registered.get("cer_canadas_energy_future")
     if cer is not None and "cer_canadas_energy_future" in selections:
         edition = selections["cer_canadas_energy_future"].edition
