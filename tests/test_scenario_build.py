@@ -29,15 +29,23 @@ def small_database(path, value):
         connection.execute("INSERT INTO example VALUES (?)", (value,))
 
 
-def test_prerequisites_preserve_caller_bundle_from_foreign_cwd(tmp_path, monkeypatch):
-    bundle = load_config_bundle("config/scenarios/default.yaml", repo_root=ROOT)
+@pytest.mark.parametrize("scenario_name, download", [
+    ("default", False), ("notebook_diagnostics", False), ("notebook_diagnostics", True),
+])
+def test_prerequisites_preserve_caller_bundle_from_foreign_cwd(tmp_path, monkeypatch, scenario_name, download):
+    bundle = load_config_bundle(f"config/scenarios/{scenario_name}.yaml", repo_root=ROOT)
     monkeypatch.chdir(tmp_path)
     calls = []
+    ontario_requests = []
+    ontario_entry = "fetching.vehicle_population.fetch_and_normalize"
 
     def consumer(name):
         def prepare(selected, **kwargs):
             assert selected is bundle, name
-            assert not kwargs.get("download", False), name
+            if "download" in kwargs:
+                assert kwargs["download"] is download, name
+            if name == ontario_entry:
+                ontario_requests.append(kwargs)
             calls.append(name)
         return prepare
 
@@ -52,9 +60,17 @@ def test_prerequisites_preserve_caller_bundle_from_foreign_cwd(tmp_path, monkeyp
         "fetching.dunsky_charger_inputs.fetch_and_normalize",
         "parameterization.ceud_inputs.prepare_ceud_inputs",
         "fetching.transport_canada_izev.fetch_izev",
-        "fetching.vehicle_population.fetch_and_normalize",
+        ontario_entry,
         "parameterization.road_aggregation.build_road_aggregation_artifacts",
     ]
+    if scenario_name == "notebook_diagnostics":
+        entries.extend([
+            "fetching.statcan_tables.prepare_ldv_stock_benchmark",
+            "fetching.fueleconomy_vehicles.fetch_and_normalize",
+            "parameterization.road_aggregation.build_mapping_diagnostic_artifacts",
+            "fetching.assorted_sources.fetch_and_normalize_moves5_survival",
+            "parameterization.road_lifetimes_survival.build_mto_survival_diagnostic_artifacts",
+        ])
     for entry in entries:
         monkeypatch.setattr(entry, consumer(entry))
     request = object()
@@ -67,10 +83,28 @@ def test_prerequisites_preserve_caller_bundle_from_foreign_cwd(tmp_path, monkeyp
         assert selected is request
         calls.append("class_cache")
 
+    def fetch_to_cache(selected):
+        assert selected is request
+        calls.append("class_download")
+
     monkeypatch.setattr("fetching.fueleconomy_vehicles.build_request", build_request)
     monkeypatch.setattr("fetching.fueleconomy_vehicles.validate_cache", validate_cache)
-    build_transport.prepare_scenario_inputs(bundle, download=False)
-    assert set(calls) == {*entries, "class_cache"}
+    monkeypatch.setattr("fetching.fueleconomy_vehicles.fetch_to_cache", fetch_to_cache)
+    build_transport.prepare_scenario_inputs(bundle, download=download)
+
+    expected_calls = {*entries, "class_cache"}
+    if download:
+        expected_calls.add("class_download")
+    assert set(calls) == expected_calls
+
+    expected_ontario = [{
+        "year": bundle.scenario.existing_capacity.vehicle_population_year,
+        "download": download,
+        "registered_only": True,
+    }]
+    if scenario_name == "notebook_diagnostics":
+        expected_ontario.insert(0, {"download": download, "registered_only": True})
+    assert ontario_requests == expected_ontario
 
 
 @pytest.mark.parametrize("interruption", [KeyboardInterrupt, SystemExit])

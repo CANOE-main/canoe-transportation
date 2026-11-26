@@ -211,6 +211,10 @@ fetching:
       "Vans, Passenger Type": "Van: Passenger"
     unresolved_vclasses:
       Vans: "Historical EPA class does not distinguish cargo from passenger vans and ends before the modeled 2000 vintage floor."
+      Midsizel Station Wagons: >-
+        The FuelEconomy.gov CSV label conflicts with the 2026 Cadillac CELESTIQ detail record
+        (https://www.fueleconomy.gov/feg/noframes/50197.shtml), which reports Small Station Wagons.
+        Retain the publisher's CSV label and leave its class unresolved.
 
   ontario_vehicle_population:
     interim_subdir: fetched_ontario_vehicle_population
@@ -760,7 +764,7 @@ fetching:
       page_title: "Transportation | US-REGEN Documentation"
       payload_asset:
         rel: modulepreload
-        href: "/assets/transportation.html-YK_JCUYx.js"
+        href: "/assets/transportation.html-D61TmitO.js"
       output_file: epri_us_regen_v2025_intercity_bus.csv
       measure_title: "Intercity Bus"
       dimension_field: tech

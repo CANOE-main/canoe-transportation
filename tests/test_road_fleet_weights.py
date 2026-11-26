@@ -47,7 +47,12 @@ def bundle(tmp_path_factory):
     paths = original.paths.model_copy(update={"inputs": inputs, "outputs": outputs, "artifacts": artifacts})
     # These cases compare regional weighting over ATB's common native age window.
     # Full horizon endpoint extension has a separate database-bootstrap contract.
+    # Select Wards outside Ontario to exercise both supported truck sources.
+    sources = original.scenario.aggregation_sources.model_copy(update={
+        "medium_trucks": {"ON": MTO, "other": WARDS},
+    })
     scenario = original.scenario.model_copy(update={
+        "aggregation_sources": sources,
         "lifetimes": original.scenario.lifetimes.model_copy(update={"survival_curve_max_age": 25}),
     })
     scenario_path, paths_path = directory / "scenario.yaml", directory / "paths.yaml"

@@ -12,6 +12,7 @@ from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
+import requests
 import yaml
 
 from fetching import nrcan_ceud
@@ -159,10 +160,71 @@ def test_download_redirects_require_source_owned_host_and_remain_checksum_verifi
     result = updater.run_update(bundle, sources={NRCAN}, session=session)
     assert not result.errors
     assert not result.applied
+    report = json.loads(result.report_path.read_text(encoding="utf-8"))
+    assert any(entry["url"] == "https://opencanada.blob.core.windows.net/registered-resource.csv"
+               for entry in report["acquisitions"])
+    assert "temporary-token" not in json.dumps(report)
     response = FakeResponse("https://unregistered.example/resource", content=b"bytes")
     session.get = lambda *_args, **_kwargs: response
     with pytest.raises(updater.UpdateError, match="unregistered host"):
         updater._response(session, "https://open.canada.ca/resource", bundle.sources.updater)
+
+
+def test_http_failure_audit_uses_registered_endpoint_without_signed_query(isolated_bundle):
+    bundle = isolated_bundle
+    session = rating_session(bundle)
+    original_get = session.get
+    target = nrcan_ceud.iter_rating_requests(bundle)[0].url
+
+    def unavailable(url, **kwargs):
+        if url != target:
+            return original_get(url, **kwargs)
+        response = requests.Response()
+        response.status_code = 503
+        response.url = "https://opencanada.blob.core.windows.net/registered.csv?temporary-token=fixture"
+        response._content_consumed = True
+        return response
+
+    session.get = unavailable
+    result = updater.run_update(bundle, sources={NRCAN}, session=session, apply=True)
+    assert not result.applied
+    assert result.errors == (f"{NRCAN}: GET {target} failed: HTTP 503",)
+    report = json.loads(result.report_path.read_text(encoding="utf-8"))
+    failure = next(item for item in report["sources"] if item["source"] == NRCAN)
+    assert failure["evidence"] == {
+        "url": target, "method": "GET", "params": None,
+        "exception": "HTTPError", "http_status": 503,
+    }
+    assert "temporary-token" not in result.log_path.read_text(encoding="utf-8")
+
+
+def test_default_update_session_retries_only_transient_statuses_with_a_bounded_delay():
+    with updater._update_session() as session:
+        retries = session.get_adapter("https://open.canada.ca").max_retries
+        assert retries.total == 3
+        assert retries.retry_after_max == 10
+        assert retries.is_retry("GET", 503)
+        assert retries.is_retry("POST", 429)
+        assert not retries.is_retry("GET", 404)
+
+
+def test_html_catalogue_response_includes_the_endpoint_and_resource_id(isolated_bundle):
+    bundle = isolated_bundle
+    request = nrcan_ceud.iter_rating_requests(bundle)[0]
+    endpoint = bundle.sources.sources[NRCAN].update.metadata_url
+    response = requests.Response()
+    response.status_code = 200
+    response.url = endpoint
+    response.headers["Content-Type"] = "text/html"
+    response._content = b"<html>Service unavailable</html>"
+    response._content_consumed = True
+    session = FakeSession()
+    session.get = lambda *_args, **_kwargs: response
+    with pytest.raises(updater.UpdateError, match="Expected JSON metadata") as error:
+        updater._resource(session, endpoint, request.resource_id, bundle.sources.updater)
+    assert error.value.evidence == {
+        "url": endpoint, "params": {"id": request.resource_id}, "content_type": "text/html",
+    }
 
 
 def test_download_size_limit_is_enforced_while_streaming(isolated_bundle):
@@ -211,6 +273,36 @@ def test_cache_write_failure_cleans_unregistered_temporary_file_and_lock(isolate
         updater._publish(bundle, original, original.decode("utf-8"), {target: b"candidate"})
     assert_preserved(bundle, original, caches)
     assert list(target.parent.iterdir()) == []
+
+
+@pytest.mark.parametrize("matches", [True, False])
+def test_publication_rechecks_a_cache_created_by_another_process(isolated_bundle, monkeypatch, matches):
+    bundle = isolated_bundle
+    original = bundle.sources_path.read_bytes()
+    first = resolve_input_path(bundle, "cache", "publication_fixture", "first.csv")
+    second = first.with_name("second.csv")
+    expected = b"candidate"
+    concurrent = expected if matches else b"conflicting"
+    publish_name = "rename" if updater.os.name == "nt" else "link"
+    publish = getattr(updater.os, publish_name)
+
+    def competing_publish(temporary, destination):
+        if destination == second:
+            destination.write_bytes(concurrent)
+        publish(temporary, destination)
+
+    monkeypatch.setattr(updater.os, publish_name, competing_publish)
+    files = {first: expected, second: expected}
+    if matches:
+        updater._publish(bundle, original, original.decode("utf-8"), files)
+        assert first.read_bytes() == expected
+    else:
+        with pytest.raises(updater.UpdateError, match="conflicting cache"):
+            updater._publish(bundle, original, original.decode("utf-8"), files)
+        assert not first.exists()
+    assert second.read_bytes() == concurrent
+    assert bundle.sources_path.read_bytes() == original
+    assert not bundle.sources_path.with_name(f".{bundle.sources_path.name}.update.lock").exists()
 
 
 def test_postcommit_lock_cleanup_failure_is_reported_as_applied(isolated_bundle, monkeypatch):

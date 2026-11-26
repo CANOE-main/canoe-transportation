@@ -9,6 +9,8 @@ import logging
 import math
 import os
 import re
+import tempfile
+from contextlib import nullcontext
 from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import urlparse
@@ -20,6 +22,7 @@ from openpyxl import load_workbook
 from openpyxl.utils.cell import column_index_from_string, range_boundaries
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from fetching import retry_download
 from utils import (
     ConfigBundle,
     file_sha256,
@@ -27,6 +30,8 @@ from utils import (
     load_conversion_factors,
     load_harmonization_rules,
     resolve_input_path,
+    write_dataframe_atomic,
+    write_text_atomic,
 )
 from validation.config_models import SourceSpec
 
@@ -90,6 +95,8 @@ class AtbArchiveRequest(BaseModel):
     cache_path: Path
     expected_trajectories: tuple[str, ...]
     components: tuple[ArchiveComponentRequest, ...]
+    expected_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    expected_bytes: int | None = Field(default=None, gt=0, strict=True)
 
     @model_validator(mode="after")
     def validate_request(self) -> "AtbArchiveRequest":
@@ -100,6 +107,8 @@ class AtbArchiveRequest(BaseModel):
             raise ValueError(f"ATB cache must be an absolute .zip path: {self.cache_path}")
         if not self.expected_trajectories or not self.components:
             raise ValueError("ATB trajectories and archive components are required")
+        if (self.expected_sha256 is None) != (self.expected_bytes is None):
+            raise ValueError("ATB archive identity requires both expected_sha256 and expected_bytes")
         return self
 
 
@@ -201,15 +210,19 @@ def build_atb_request(bundle: ConfigBundle) -> AtbArchiveRequest:
                 adapter=adapter,
             )
         )
+    cache_root = resolve_input_path(bundle, "cache").resolve()
+    cache_path = (cache_root / str(source.adapter.get("cache_path", ""))).resolve()
+    if not cache_path.is_relative_to(cache_root):
+        raise ValueError("ATB cache path must stay inside the configured cache")
     return AtbArchiveRequest(
         url=str(access.get("url", "")),
-        cache_path=resolve_input_path(
-            bundle, "cache", str(source.adapter.get("cache_path", ""))
-        ),
+        cache_path=cache_path,
         expected_trajectories=tuple(
             str(value) for value in source.adapter.get("expected_trajectories", [])
         ),
         components=tuple(component_requests),
+        expected_sha256=source.adapter.get("expected_sha256"),
+        expected_bytes=source.adapter.get("expected_bytes"),
     )
 
 
@@ -246,32 +259,63 @@ def fetch_archive_to_cache(
 ) -> str:
     """Download the official ATB ZIP atomically, or reuse an existing cache."""
     if request.cache_path.is_file():
+        if request.expected_sha256 is not None:
+            _validate_archive_identity(request, request.cache_path)
         return "cached"
     request.cache_path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = request.cache_path.with_suffix(request.cache_path.suffix + ".part")
-    client = session or requests.Session()
+    with tempfile.NamedTemporaryFile(
+        dir=request.cache_path.parent, prefix=f".{request.cache_path.name}.", suffix=".part", delete=False
+    ) as handle:
+        temporary = Path(handle.name)
     try:
-        response = client.get(request.url, stream=True, timeout=timeout)
-        response.raise_for_status()
-        with temporary.open("wb") as handle:
-            for chunk in response.iter_content(chunk_size=1024 * 1024):
-                if chunk:
-                    handle.write(chunk)
-        if not temporary.is_file() or temporary.stat().st_size == 0:
+        connection = requests.Session() if session is None else nullcontext(session)
+        with connection as client:
+            retry_download(lambda: _download_archive(client, request.url, timeout, temporary), url=request.url)
+        if temporary.stat().st_size == 0:
             raise NlrAtbAutonomieError(f"ATB download was empty: {request.url}")
+        if request.expected_sha256 is not None:
+            _validate_archive_identity(request, temporary)
         try:
             with ZipFile(temporary) as archive:
-                if archive.testzip() is not None:
-                    raise NlrAtbAutonomieError("ATB download contains a corrupt ZIP member")
+                if member := archive.testzip():
+                    raise NlrAtbAutonomieError(f"ATB download contains a corrupt ZIP member: {member}")
         except BadZipFile as exc:
             raise NlrAtbAutonomieError(
                 f"ATB download is not a valid ZIP: {request.url}"
             ) from exc
+        discover_zip_members(temporary, request.components)
         os.replace(temporary, request.cache_path)
-    except Exception:
-        temporary.unlink(missing_ok=True)
+    except Exception as exc:
+        LOGGER.error("Failed to download ATB archive (%s -> %s): %s", request.url, request.cache_path, exc)
         raise
+    finally:
+        temporary.unlink(missing_ok=True)
     return "downloaded"
+
+
+def _download_archive(client, url: str, timeout: int, path: Path) -> None:
+    with client.get(url, stream=True, timeout=timeout) as response:
+        response.raise_for_status()
+        with path.open("wb") as handle:
+            for chunk in response.iter_content(chunk_size=1024 * 1024):
+                if chunk:
+                    handle.write(chunk)
+
+
+def _validate_archive_identity(request: AtbArchiveRequest, path: Path) -> tuple[int, str]:
+    size = path.stat().st_size
+    if request.expected_bytes is not None and size != request.expected_bytes:
+        raise NlrAtbAutonomieError(
+            f"ATB archive byte count mismatch at {request.cache_path} from {request.url}: "
+            f"expected {request.expected_bytes}, got {size}. Restore or review the registered ZIP."
+        )
+    digest = file_sha256(path)
+    if request.expected_sha256 is not None and digest != request.expected_sha256:
+        raise NlrAtbAutonomieError(
+            f"ATB archive SHA-256 mismatch at {request.cache_path} from {request.url}: "
+            f"expected {request.expected_sha256}, got {digest}. Restore or review the registered ZIP."
+        )
+    return size, digest
 
 
 def discover_zip_members(
@@ -289,14 +333,14 @@ def discover_zip_members(
 
     discovered: dict[str, str] = {}
     for component in components:
-        matches = {
+        matches = [
             name
             for name in names
             if any(
                 _matches_archive_member(name, pattern)
                 for pattern in component.member_patterns
             )
-        }
+        ]
         if not matches:
             raise NlrAtbAutonomieError(
                 f"ATB archive missing required component {component.component_id}; "
@@ -307,7 +351,7 @@ def discover_zip_members(
                 f"ATB archive component {component.component_id} is ambiguous: "
                 f"{sorted(matches)}"
             )
-        discovered[component.component_id] = matches.pop()
+        discovered[component.component_id] = matches[0]
     return discovered
 
 
@@ -1338,12 +1382,12 @@ def write_outputs(
     """Write normalized source tables, manifest, and warnings."""
     output_dir.mkdir(parents=True, exist_ok=True)
     for filename, frame in outputs.items():
-        frame.to_csv(output_dir / filename, index=False)
-    pd.DataFrame(manifest_rows).to_csv(output_dir / rules["manifest_file"], index=False)
-    (output_dir / rules["warnings_file"]).write_text(
-        "\n".join(warnings) + ("\n" if warnings else ""),
-        encoding="utf-8",
-    )
+        write_dataframe_atomic(frame, output_dir / filename)
+    write_text_atomic("\n".join(warnings) + ("\n" if warnings else ""), output_dir / rules["warnings_file"])
+    manifest = pd.DataFrame(manifest_rows)
+    for column in ("bytes", "expected_bytes"):
+        manifest[column] = pd.array([row.get(column) for row in manifest_rows], dtype="Int64")
+    write_dataframe_atomic(manifest, output_dir / rules["manifest_file"])
 
 
 def fetch_and_normalize(
@@ -1360,18 +1404,23 @@ def fetch_and_normalize(
     default_trajectory = configured_trajectory(bundle)
     output_dir = resolve_input_path(bundle, "interim", str(rules["interim_subdir"]))
 
-    if download:
+    if download and not request.cache_path.is_file():
         cache_status = fetch_archive_to_cache(request, session=session)
     elif request.cache_path.is_file():
         cache_status = "cached"
     else:
         raise FileNotFoundError(
-            f"ATB offline cache missing: {request.cache_path}. Run without --no-download "
-            "or place the official ZIP at the configured cache path."
+            f"ATB offline cache missing: {request.cache_path}. Restore the official ZIP from "
+            f"{request.url} or enable source downloads on the build command."
         )
 
-    members = discover_zip_members(request.cache_path, request.components)
-    archive_checksum = file_sha256(request.cache_path)
+    try:
+        archive_bytes, archive_checksum = _validate_archive_identity(request, request.cache_path)
+        members = discover_zip_members(request.cache_path, request.components)
+    except (OSError, NlrAtbAutonomieError) as exc:
+        raise NlrAtbAutonomieError(
+            f"Cannot use ATB archive {request.cache_path} from {request.url}: {exc}"
+        ) from exc
     outputs: dict[str, pd.DataFrame] = {}
     vmt_frames: list[pd.DataFrame] = []
     phev_frames: dict[str, pd.DataFrame] = {}
@@ -1477,6 +1526,9 @@ def fetch_and_normalize(
                     "source_url": request.url,
                     "cached_file": str(request.cache_path),
                     "sha256": archive_checksum,
+                    "bytes": archive_bytes,
+                    "expected_bytes": request.expected_bytes,
+                    "expected_sha256": request.expected_sha256,
                     "cache_status": cache_status,
                     "source_member": member,
                     "input_rows": input_rows,
@@ -1536,6 +1588,9 @@ def fetch_and_normalize(
             "source_url": request.url,
             "cached_file": str(request.cache_path),
             "sha256": archive_checksum,
+            "bytes": archive_bytes,
+            "expected_bytes": request.expected_bytes,
+            "expected_sha256": request.expected_sha256,
             "cache_status": cache_status,
             "source_member": "|".join(
                 phev_source_members[key]
@@ -1576,6 +1631,7 @@ def fetch_and_normalize(
                 "source_url": manual.folder_url,
                 "cached_file": str(manual.workbook_path),
                 "sha256": file_sha256(manual.workbook_path),
+                "bytes": manual.workbook_path.stat().st_size,
                 "cache_status": "manual",
                 "source_member": f"{manual.sheet_name}!{manual.cell_range}",
                 "input_rows": manual_max_row - manual_min_row + 1,
@@ -1600,6 +1656,7 @@ def fetch_and_normalize(
                 "source_url": manual.folder_url,
                 "cached_file": str(manual.workbook_path),
                 "sha256": "",
+                "bytes": None,
                 "cache_status": "manual_missing",
                 "source_member": f"{manual.sheet_name}!{manual.cell_range}",
                 "input_rows": 0,
@@ -1617,6 +1674,9 @@ def fetch_and_normalize(
         output_dir=output_dir,
         rules=rules,
     )
+    LOGGER.info("ATB archive %s (%s, %d bytes, SHA-256 %s), manifest: %s",
+                request.cache_path, cache_status, archive_bytes, archive_checksum,
+                output_dir / rules["manifest_file"])
     return output_dir
 
 

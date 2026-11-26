@@ -34,10 +34,15 @@ SOURCE = "dunsky_ev_charging_infrastructure"
 class ReportRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     url: str = Field(pattern=r"^https://")
+    download_url: str | None = Field(default=None, pattern=r"^https://[^\s]+$")
     cache_path: str
     expected_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     expected_bytes: int = Field(gt=0)
     publication_date: str = Field(pattern=r"^2024-02$")
+
+    @property
+    def acquisition_url(self) -> str:
+        return self.download_url or self.url
 
     @model_validator(mode="after")
     def bounded_cache(self):
@@ -360,21 +365,37 @@ def production_inputs(bundle: ConfigBundle, *, evidence: dict | None = None) -> 
                                      bundle.sources.sources[SOURCE].citation), path
 
 
+def validate_report_content(content: bytes, bundle: ConfigBundle, request: ReportRequest) -> dict:
+    """Validate the evidence used by production and diagnostic consumers before publication."""
+    settings = settings_for(bundle)
+    evidence = normalize_report(content, settings)
+    extract_production_inputs(evidence, settings["production"], bundle.sources.sources[SOURCE].citation)
+    infrastructure_frames({**evidence, "url": request.url})
+    return evidence
+
+
 def load_evidence(bundle: ConfigBundle, *, download: bool = False, session=None) -> tuple[dict, Path]:
     request = ReportRequest.model_validate(bundle.sources.sources[SOURCE].adapter["diagnostic_report"])
     path = resolve_input_path(bundle, "cache", request.cache_path)
+    recovery = f"Restore the registered HTML at {path} (SHA-256 {request.expected_sha256})."
     if not path.exists():
         if not download:
-            raise FileNotFoundError(f"Pinned Dunsky report missing: {path}; run uv run python -m fetching.dunsky_charger_inputs --download")
-        response = (session or requests).get(request.url, timeout=90)
+            raise FileNotFoundError(
+                f"Pinned Dunsky report missing. {recovery} "
+                "To try the publisher, rerun the scenario with --download-sources."
+            )
+        response = (session or requests).get(request.acquisition_url, timeout=90)
         response.raise_for_status()
         content = response.content
-        if len(content) != request.expected_bytes or hashlib.sha256(content).hexdigest() != request.expected_sha256:
-            raise ValueError("Downloaded Dunsky report differs from registered bytes; review a new edition explicitly")
-        normalized = normalize_report(content, settings_for(bundle))
-        extract_production_inputs(normalized, settings_for(bundle)["production"],
-                                  bundle.sources.sources[SOURCE].citation)
-        infrastructure_frames({**normalized, "url": request.url})
+        received_sha256 = hashlib.sha256(content).hexdigest()
+        if len(content) != request.expected_bytes or received_sha256 != request.expected_sha256:
+            raise ValueError(
+                f"Downloaded Dunsky report differs from registered bytes: {request.acquisition_url} "
+                f"returned HTTP {response.status_code}, {len(content)} bytes "
+                f"(expected {request.expected_bytes}), SHA-256 {received_sha256}. {recovery} "
+                "Review a new publisher snapshot explicitly before registering it."
+            )
+        validate_report_content(content, bundle, request)
         path.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.NamedTemporaryFile(dir=path.parent, suffix=".tmp", delete=False) as stream:
             temporary = Path(stream.name)
@@ -383,12 +404,14 @@ def load_evidence(bundle: ConfigBundle, *, download: bool = False, session=None)
             os.replace(temporary, path)
         finally:
             temporary.unlink(missing_ok=True)
-        LOGGER.info("Acquired registered Dunsky report: %s (%d bytes)", path, len(content))
+        LOGGER.info("Acquired registered Dunsky report from %s: %s (%d bytes)",
+                    request.acquisition_url, path, len(content))
     content = path.read_bytes()
     if len(content) != request.expected_bytes or hashlib.sha256(content).hexdigest() != request.expected_sha256:
-        raise ValueError("Cached Dunsky report differs from registered identity")
+        raise ValueError(f"Cached Dunsky report differs from registered identity. {recovery}")
     evidence = normalize_report(content, settings_for(bundle))
     evidence.update(source_key=SOURCE, component_key="published_report", url=request.url,
+                    acquisition_url=request.acquisition_url,
                     source_id=bundle.sources.sources[SOURCE].source_id,
                     data_quality=bundle.sources.resolved_data_quality(SOURCE, "published_report").row_fields())
     return evidence, path

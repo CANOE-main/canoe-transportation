@@ -17,6 +17,7 @@ import pandas as pd
 import requests
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from fetching import retry_download
 from utils import (
     ConfigBundle,
     file_sha256,
@@ -54,6 +55,9 @@ class IzevRequest(BaseModel):
     expected_request_date_to: date
     required_columns: tuple[str, ...]
     download_hosts: tuple[str, ...] = ()
+
+    def artifact_description(self) -> str:
+        return f"iZEV {self.component_key} ({self.resource_id}, URL {self.url}, cache {self.cache_path})"
 
     @model_validator(mode="after")
     def validate_contract(self) -> "IzevRequest":
@@ -124,13 +128,16 @@ def build_requests(bundle: ConfigBundle) -> list[IzevRequest]:
 def validate_cache(request: IzevRequest) -> None:
     """Reject a republished or incomplete source before parsing it."""
     if not request.cache_path.is_file():
-        raise FileNotFoundError(f"Missing registered iZEV cache: {request.cache_path}")
-    if request.cache_path.stat().st_size != request.expected_bytes:
-        raise ValueError(f"iZEV {request.component_key} byte count differs from the registry")
+        raise FileNotFoundError(f"Missing registered iZEV cache for {request.artifact_description()}")
+    actual_bytes = request.cache_path.stat().st_size
+    if actual_bytes != request.expected_bytes:
+        raise ValueError(f"{request.artifact_description()} byte count differs from the registry: "
+                         f"expected {request.expected_bytes}, got {actual_bytes}. Restore the registered file.")
     with request.cache_path.open("rb") as handle:
-        actual = hashlib.file_digest(handle, "md5").hexdigest()
+        actual = hashlib.file_digest(handle, lambda: hashlib.md5(usedforsecurity=False)).hexdigest()
     if actual != request.expected_md5:
-        raise ValueError(f"iZEV {request.component_key} MD5 differs from the registry")
+        raise ValueError(f"{request.artifact_description()} MD5 differs from the registry: "
+                         f"expected {request.expected_md5}, got {actual}. Restore the registered file.")
 
 
 def fetch_to_cache(request: IzevRequest, *, timeout: int = 120) -> str:
@@ -138,14 +145,23 @@ def fetch_to_cache(request: IzevRequest, *, timeout: int = 120) -> str:
     if request.cache_path.exists():
         validate_cache(request)
         return "cached"
-    response = requests.get(request.url, timeout=timeout)
-    response.raise_for_status()
+    try:
+        response = retry_download(lambda: _download_response(request.url, timeout), url=request.url)
+    except requests.RequestException as exc:
+        status = exc.response.status_code if exc.response is not None else None
+        detail = f"HTTP {status}" if status is not None else type(exc).__name__
+        raise requests.RequestException(f"Download failed for {request.artifact_description()}: {detail}") from None
     final = urlparse(response.url)
     if final.scheme != "https" or final.hostname not in {"open.canada.ca", *request.download_hosts}:
-        raise ValueError("iZEV download redirected to an unregistered host")
+        raise ValueError(f"{request.artifact_description()} redirected to an unregistered host: {final.hostname}")
     content = response.content
-    if len(content) != request.expected_bytes or hashlib.md5(content).hexdigest() != request.expected_md5:
-        raise ValueError("iZEV download differs from the pinned bytes; use the explicit source updater")
+    actual_md5 = hashlib.md5(content, usedforsecurity=False).hexdigest()
+    if len(content) != request.expected_bytes or actual_md5 != request.expected_md5:
+        raise ValueError(
+            f"{request.artifact_description()} download differs from the pinned bytes: "
+            f"expected {request.expected_bytes} bytes and MD5 {request.expected_md5}, "
+            f"got {len(content)} bytes and MD5 {actual_md5}. Use the explicit source updater to review the revision."
+        )
     request.cache_path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(dir=request.cache_path.parent, suffix=".tmp", delete=False) as handle:
         temporary = Path(handle.name)
@@ -156,6 +172,12 @@ def fetch_to_cache(request: IzevRequest, *, timeout: int = 120) -> str:
         temporary.unlink(missing_ok=True)
     LOGGER.info("Downloaded pinned iZEV resource %s (%s bytes)", request.component_key, len(content))
     return "downloaded"
+
+
+def _download_response(url: str, timeout: int) -> requests.Response:
+    response = requests.get(url, timeout=timeout)
+    response.raise_for_status()
+    return response
 
 
 def parse_csv(
@@ -247,14 +269,22 @@ def fetch_izev(bundle: ConfigBundle, *, download: bool = False) -> dict[str, Any
         raise ValueError("iZEV artifact route and configured interim_subdir disagree")
     frames, manifest = [], []
     for request in build_requests(bundle):
-        status = fetch_to_cache(request) if download else "cached"
-        validate_cache(request)
-        frame = parse_csv(request, rules=rules)
+        try:
+            if download:
+                status = fetch_to_cache(request)
+            else:
+                status = "cached"
+                validate_cache(request)
+            frame = parse_csv(request, rules=rules)
+        except Exception as exc:
+            LOGGER.error("Failed to process %s: %s", request.artifact_description(), exc)
+            raise
         audit = frame.attrs["audit"]
         LOGGER.info("iZEV %s: %s records, %s blank rows removed, %s identical native rows retained", request.component_key, audit["rows"], audit["blank_rows"], audit["identical_native_rows_retained"])
         frames.append(frame)
         manifest.append({
             **audit, "source_id": SOURCE, "resource_id": str(request.resource_id),
+            "component": request.component_key, "version": request.component_meta.version,
             "url": request.url, "cached_file": str(request.cache_path),
             "md5": request.expected_md5, "bytes": request.expected_bytes,
             "sha256": file_sha256(request.cache_path), "cache_status": status,
@@ -262,7 +292,8 @@ def fetch_izev(bundle: ConfigBundle, *, download: bool = False) -> dict[str, Any
     result = pd.concat(frames, ignore_index=True)
     write_dataframe_atomic(result, folder / rules["output_file"])
     write_text_atomic(json.dumps({"source_id": SOURCE, "rows": len(result), "components": manifest}, indent=2) + "\n", folder / rules["manifest_file"])
-    LOGGER.info("Wrote %s observed iZEV incentive records to %s", len(result), folder)
+    LOGGER.info("Wrote %s observed iZEV incentive records to %s, manifest: %s", len(result), folder,
+                folder / rules["manifest_file"])
     return {"rows": len(result), "output_dir": str(folder), "manifest": manifest}
 
 

@@ -405,6 +405,12 @@ class _Response:
     def raise_for_status(self) -> None:
         return None
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        pass
+
     def iter_content(self, chunk_size: int):
         assert chunk_size > 0
         yield self.payload
@@ -426,15 +432,72 @@ class _Session:
 def test_cache_download_is_atomic_and_reused(bundle, tmp_path: Path) -> None:
     fixture = tmp_path / "fixture.zip"
     _write_fixture_zip(fixture)
-    request = build_atb_request(bundle).model_copy(
-        update={"cache_path": tmp_path / "cache" / "atb.zip"}
-    )
+    request = _fixture_archive_request(bundle, tmp_path / "cache" / "atb.zip", fixture)
     session = _Session(fixture.read_bytes())
 
     assert fetch_archive_to_cache(request, session=session) == "downloaded"
     assert fetch_archive_to_cache(request, session=session) == "cached"
     assert session.calls == 1
-    assert not request.cache_path.with_suffix(".zip.part").exists()
+    assert list(request.cache_path.parent.iterdir()) == [request.cache_path]
+
+
+def _fixture_archive_request(bundle, cache, fixture):
+    return build_atb_request(bundle).model_copy(update={
+        "cache_path": cache, "expected_bytes": fixture.stat().st_size,
+        "expected_sha256": adapter.file_sha256(fixture),
+    })
+
+
+def test_atb_retries_interrupted_transfer_and_keeps_registered_bytes(bundle, tmp_path, monkeypatch):
+    import fetching
+
+    fixture = tmp_path / "fixture.zip"
+    _write_fixture_zip(fixture)
+    request = _fixture_archive_request(bundle, tmp_path / "cache" / "atb.zip", fixture)
+    payload = fixture.read_bytes()
+    monkeypatch.setattr(fetching, "_TRANSFER_RETRY_DELAYS", (0, 0))
+
+    class InterruptedResponse(_Response):
+        def iter_content(self, chunk_size):
+            yield self.payload[:100]
+            raise adapter.requests.exceptions.ChunkedEncodingError("connection interrupted")
+
+    class InterruptedSession(_Session):
+        def get(self, *args, **kwargs):
+            response = super().get(*args, **kwargs)
+            return InterruptedResponse(self.payload) if self.calls == 1 else response
+
+    session = InterruptedSession(payload)
+    assert fetch_archive_to_cache(request, session=session) == "downloaded"
+    assert session.calls == 2
+    assert request.cache_path.read_bytes() == payload
+    assert list(request.cache_path.parent.iterdir()) == [request.cache_path]
+
+
+def test_atb_rejects_wrong_zip_and_differing_pins_without_overwrite(bundle, tmp_path):
+    fixture = tmp_path / "fixture.zip"
+    _write_fixture_zip(fixture)
+    request = _fixture_archive_request(bundle, tmp_path / "cache" / "atb.zip", fixture)
+    original = fixture.read_bytes()
+    changed = original[:-1] + bytes([original[-1] ^ 1])
+    session = _Session(changed)
+    with pytest.raises(NlrAtbAutonomieError, match="SHA-256 mismatch"):
+        fetch_archive_to_cache(request, session=session)
+    assert session.calls == 1
+    assert list(request.cache_path.parent.iterdir()) == []
+
+    wrong = tmp_path / "wrong.zip"
+    with ZipFile(wrong, "w") as archive:
+        archive.writestr("unrelated.txt", b"wrong publisher payload")
+    wrong_request = _fixture_archive_request(bundle, request.cache_path, wrong)
+    with pytest.raises(NlrAtbAutonomieError, match="missing required component"):
+        fetch_archive_to_cache(wrong_request, session=_Session(wrong.read_bytes()))
+    assert list(request.cache_path.parent.iterdir()) == []
+    request.cache_path.write_bytes(changed)
+    with pytest.raises(NlrAtbAutonomieError, match="SHA-256 mismatch"):
+        fetch_archive_to_cache(request, session=session)
+    assert request.cache_path.read_bytes() == changed
+    assert session.calls == 1
 
 
 def test_required_columns_and_all_trajectories_are_retained(bundle) -> None:
@@ -708,6 +771,8 @@ def test_full_fixture_run_writes_manifest_outputs_and_manual_warning(
     rules = module_rules(bundle)
     request = build_atb_request(local_bundle)
     _write_fixture_zip(request.cache_path)
+    request = _fixture_archive_request(local_bundle, request.cache_path, request.cache_path)
+    monkeypatch.setattr(adapter, "build_atb_request", lambda _: request)
     monkeypatch.setattr(adapter, "load_config_bundle", lambda _: local_bundle)
     monkeypatch.setattr(adapter, "module_rules", lambda _: rules)
     monkeypatch.setattr(
@@ -736,6 +801,9 @@ def test_full_fixture_run_writes_manifest_outputs_and_manual_warning(
     assert manifest.loc[
         manifest["component_id"].eq("mhdv_maintenance_coefficients"), "status"
     ].item() == "warning"
+    archive_rows = manifest[manifest["source_id"].eq(adapter.ATB_SOURCE_ID)]
+    assert set(archive_rows["sha256"]) == set(archive_rows["expected_sha256"]) == {request.expected_sha256}
+    assert set(archive_rows["bytes"]) == set(archive_rows["expected_bytes"]) == {request.expected_bytes}
     assert set(vehicles["source_trajectory"]) == {
         "Advanced",
         "Conservative",

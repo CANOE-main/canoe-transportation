@@ -11,21 +11,23 @@ import re
 import tempfile
 import unicodedata
 from pathlib import Path
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 from urllib.parse import urlparse
 
 import pandas as pd
 import requests
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, model_validator
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from utils import (
     ConfigBundle,
+    file_sha256,
     load_config_bundle,
     load_harmonization_rules,
     resolve_input_path,
     write_dataframe_atomic,
+    write_text_atomic,
 )
 from validation.config_models import SourceComponent, SourceSpec
 
@@ -33,6 +35,27 @@ from validation.config_models import SourceComponent, SourceSpec
 SOURCE_PROVINCIAL = "nrcan_ceud_transport_provincial"
 SOURCE_NATIONAL = "nrcan_ceud_transport_national"
 SOURCE_RATINGS = "nrcan_fuel_consumption_ratings"
+LOGGER = logging.getLogger(__name__)
+
+
+class CeudWorkbookSnapshot(BaseModel):
+    """Reviewed workbook bytes within a CEUD edition, independently of cache location."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    expected_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    expected_bytes: int = Field(gt=0, strict=True)
+    url: str | None = None
+    cache_path: str | None = Field(default=None, min_length=1)
+
+
+_SNAPSHOTS = TypeAdapter(dict[
+    Annotated[int, Field(ge=1900, strict=True)],
+    dict[
+        Annotated[str, Field(pattern=r"^[a-z]{2,3}$")],
+        dict[Annotated[int, Field(gt=0, strict=True)], CeudWorkbookSnapshot],
+    ],
+])
 
 
 class CeudTableRequest(BaseModel):
@@ -53,6 +76,15 @@ class CeudTableRequest(BaseModel):
     output_region: str
     retry_attempts: int = Field(ge=0)
     retry_backoff_seconds: float = Field(ge=0, allow_inf_nan=False)
+    expected_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    expected_bytes: int | None = Field(default=None, gt=0, strict=True)
+
+    def artifact_description(self) -> str:
+        return (
+            f"CEUD source {self.source_id}/{self.table_id} "
+            f"(edition {self.year}, region {self.output_region}, URL {self.url}, "
+            f"cache {self.cache_path})"
+        )
 
     @model_validator(mode="after")
     def validate_request(self) -> "CeudTableRequest":
@@ -65,6 +97,8 @@ class CeudTableRequest(BaseModel):
             raise ValueError(f"CEUD cache path must be an absolute .xls path: {self.cache_path}")
         if not self.region or not self.output_region:
             raise ValueError("CEUD region fields cannot be blank")
+        if (self.expected_sha256 is None) != (self.expected_bytes is None):
+            raise ValueError("CEUD workbook identity requires both expected_sha256 and expected_bytes")
         return self
 
 
@@ -320,67 +354,68 @@ def iter_table_requests(
 ) -> list[CeudTableRequest]:
     """Build concrete CEUD table requests from sources.yaml."""
     sources = bundle.sources["sources"]
-    requests_to_fetch: list[CeudTableRequest] = []
-
     provincial = sources[SOURCE_PROVINCIAL]
     provincial_year = year if year is not None else scenario_source_year(bundle, SOURCE_PROVINCIAL)
     selected_regions = bundle.scenario.geography.regions if regions is None else regions
-    for region in provincial_regions(provincial, selected_regions):
-        for table_id, table_meta in sorted(provincial.components.items()):
-            table_id_int = int(table_id)
-            requests_to_fetch.append(
-                CeudTableRequest(
-                    source_id=SOURCE_PROVINCIAL,
-                    region=region.lower(),
-                    output_region=region,
-                    year=provincial_year,
-                    table_id=table_id_int,
-                    table_meta=table_meta,
-                    retry_attempts=provincial.adapter["retry_attempts"],
-                    retry_backoff_seconds=provincial.adapter["retry_backoff_seconds"],
-                    url=render_ceud_url(provincial, year=provincial_year, region=region, table_id=table_id_int),
-                    cache_path=render_cache_path(
-                        bundle,
-                        provincial,
-                        year=provincial_year,
-                        region=region,
-                        table_id=table_id_int,
-                    ),
-                )
-            )
-
+    requests_to_fetch = _edition_requests(
+        bundle, SOURCE_PROVINCIAL, provincial_year,
+        {region.lower(): region for region in provincial_regions(provincial, selected_regions)},
+    )
     if include_national:
-        national = sources[SOURCE_NATIONAL]
         national_year = year if year is not None else scenario_source_year(bundle, SOURCE_NATIONAL)
-        for table_id, table_meta in sorted(national.components.items()):
-            table_id_int = int(table_id)
-            requests_to_fetch.append(
-                CeudTableRequest(
-                    source_id=SOURCE_NATIONAL,
-                    region="ca",
-                    output_region="national",
-                    year=national_year,
-                    table_id=table_id_int,
-                    table_meta=table_meta,
-                    retry_attempts=national.adapter["retry_attempts"],
-                    retry_backoff_seconds=national.adapter["retry_backoff_seconds"],
-                    url=render_ceud_url(national, year=national_year, region="ca", table_id=table_id_int),
-                    cache_path=render_cache_path(
-                        bundle,
-                        national,
-                        year=national_year,
-                        region="ca",
-                        table_id=table_id_int,
-                    ),
-                )
-            )
+        requests_to_fetch.extend(_edition_requests(bundle, SOURCE_NATIONAL, national_year, {"ca": "national"}))
 
+    if len({request.cache_path for request in requests_to_fetch}) != len(requests_to_fetch):
+        raise ValueError("CEUD requests resolve to duplicate cache paths")
     return requests_to_fetch
 
 
-def fetch_to_cache(request: CeudTableRequest, *, timeout: int = 60) -> str:
+def _edition_requests(
+    bundle: ConfigBundle, source_id: str, year: int, regions: dict[str, str]
+) -> list[CeudTableRequest]:
+    source = bundle.sources.sources[source_id]
+    snapshots = _SNAPSHOTS.validate_python(source.adapter.get("registered_snapshots", {}))
+    edition = snapshots.get(year)
+    cache_root = resolve_input_path(bundle, "cache").resolve()
+    requests = []
+    for region, output_region in regions.items():
+        region_snapshots = edition.get(region, {}) if edition is not None else {}
+        for table_id, table_meta in sorted(source.components.items()):
+            table_id_int = int(table_id)
+            snapshot = region_snapshots.get(table_id_int)
+            key = f"{source_id} edition {year}, region {region}, table {table_id_int}"
+            if edition is not None and snapshot is None and table_meta.required:
+                raise ValueError(f"Missing registered CEUD workbook identity for {key}")
+            if snapshot is not None and snapshot.cache_path is not None:
+                relative = Path(snapshot.cache_path)
+                if relative.anchor or ".." in relative.parts:
+                    raise ValueError(f"Registered CEUD cache path must be cache-relative for {key}")
+                cache_path = (cache_root / relative).resolve()
+            else:
+                cache_path = render_cache_path(bundle, source, year=year, region=region, table_id=table_id_int).resolve()
+            if not cache_path.is_relative_to(cache_root):
+                raise ValueError(f"CEUD cache path must stay inside the configured cache for {key}")
+            requests.append(CeudTableRequest(
+                source_id=source_id, region=region, output_region=output_region, year=year,
+                table_id=table_id_int, table_meta=table_meta,
+                retry_attempts=source.adapter["retry_attempts"],
+                retry_backoff_seconds=source.adapter["retry_backoff_seconds"],
+                url=snapshot.url if snapshot and snapshot.url is not None else
+                    render_ceud_url(source, year=year, region=region, table_id=table_id_int),
+                cache_path=cache_path,
+                expected_sha256=snapshot.expected_sha256 if snapshot else None,
+                expected_bytes=snapshot.expected_bytes if snapshot else None,
+            ))
+    return requests
+
+
+def fetch_to_cache(
+    request: CeudTableRequest, *, timeout: int = 60, skiprows: int | None = None
+) -> str:
     """Publish a complete, readable CEUD workbook without caching failed responses."""
     if request.cache_path.exists():
+        if request.expected_sha256 is not None:
+            _validate_workbook_identity(request, request.cache_path)
         return "cached"
     request.cache_path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(
@@ -412,8 +447,17 @@ def fetch_to_cache(request: CeudTableRequest, *, timeout: int = 60) -> str:
                     )
         # A publisher/proxy can return an HTML error page with status 200. Do not
         # leave those bytes at the immutable cache path and poison every rerun.
-        with pd.ExcelFile(temporary):
-            pass
+        if request.expected_sha256 is not None:
+            _validate_workbook_identity(request, temporary)
+        try:
+            if skiprows is None:
+                with pd.ExcelFile(temporary):
+                    pass
+            else:
+                raw = read_ceud_excel(temporary, skiprows=skiprows)
+                _validate_source_shape(request, raw)
+        except Exception as exc:
+            raise ValueError(f"Unreadable or invalid download for {request.artifact_description()}: {exc}") from exc
         os.replace(temporary, request.cache_path)
     finally:
         temporary.unlink(missing_ok=True)
@@ -592,19 +636,35 @@ def normalize_rating_dataframe(
 
 def validate_source(request: CeudTableRequest, raw: pd.DataFrame | None = None) -> None:
     """Validate the cached CEUD artifact before harmonization."""
-    context = f"{request.source_id}/{request.table_id} ({request.output_region})"
-    if not request.cache_path.is_file():
-        raise FileNotFoundError(f"CEUD source {context} is missing: {request.cache_path}")
-    if request.cache_path.stat().st_size <= 0:
-        raise ValueError(f"CEUD source {context} is empty: {request.cache_path}")
-    if raw is None:
-        return
+    _validate_workbook_identity(request, request.cache_path)
+    if raw is not None:
+        _validate_source_shape(request, raw)
+
+
+def _validate_workbook_identity(request: CeudTableRequest, path: Path) -> tuple[int, str]:
+    if not path.is_file():
+        raise FileNotFoundError(f"Missing {request.artifact_description()}")
+    size = path.stat().st_size
+    if size <= 0:
+        raise ValueError(f"Empty {request.artifact_description()}")
+    if request.expected_bytes is not None and size != request.expected_bytes:
+        raise ValueError(f"Byte count mismatch for {request.artifact_description()}: "
+                         f"expected {request.expected_bytes}, got {size}. Restore or review the registered workbook.")
+    digest = file_sha256(path)
+    if request.expected_sha256 is not None and digest != request.expected_sha256:
+        raise ValueError(f"SHA-256 mismatch for {request.artifact_description()}: "
+                         f"expected {request.expected_sha256}, got {digest}. Restore or review the registered workbook.")
+    return size, digest
+
+
+def _validate_source_shape(request: CeudTableRequest, raw: pd.DataFrame) -> None:
+    context = request.artifact_description()
     if raw.empty:
-        raise ValueError(f"CEUD source {context} contains no data rows")
+        raise ValueError(f"{context} contains no data rows")
     if raw.shape[1] < 3:
-        raise ValueError(f"CEUD source {context} has fewer than three columns")
+        raise ValueError(f"{context} has fewer than three columns")
     if not any(str(column).strip().isdigit() for column in raw.columns):
-        raise ValueError(f"CEUD source {context} has no integer year columns")
+        raise ValueError(f"{context} has no integer year columns")
 
 
 def read_ceud_excel(path: Path, *, skiprows: int) -> pd.DataFrame:
@@ -753,18 +813,19 @@ def write_outputs(
 ) -> None:
     """Write normalized CEUD outputs, a manifest, and warning log."""
     output_dir.mkdir(parents=True, exist_ok=True)
-    manifest = pd.DataFrame(manifest_rows)
-    manifest.to_csv(output_dir / rules["manifest_file"], index=False)
-
     if rows:
         all_rows = pd.concat(rows, ignore_index=True)
         for region, region_rows in all_rows.groupby("region"):
             suffix = str(region).lower()
-            region_rows.to_csv(output_dir / rules["region_output_template"].format(region=suffix), index=False)
+            write_dataframe_atomic(region_rows, output_dir / rules["region_output_template"].format(region=suffix))
     else:
-        (output_dir / rules["empty_output_file"]).write_text("", encoding="utf-8")
+        write_text_atomic("", output_dir / rules["empty_output_file"])
 
-    (output_dir / rules["warnings_file"]).write_text("\n".join(warnings) + ("\n" if warnings else ""), encoding="utf-8")
+    write_text_atomic("\n".join(warnings) + ("\n" if warnings else ""), output_dir / rules["warnings_file"])
+    manifest = pd.DataFrame(manifest_rows)
+    for column in ("bytes", "expected_bytes"):
+        manifest[column] = pd.array([row.get(column) for row in manifest_rows], dtype="Int64")
+    write_dataframe_atomic(manifest, output_dir / rules["manifest_file"])
 
 
 def fetch_and_normalize(
@@ -783,34 +844,29 @@ def fetch_and_normalize(
     rows: list[pd.DataFrame] = []
     manifest_rows: list[dict[str, Any]] = []
     warnings: list[str] = []
+    skiprows = int(rules["raw_excel_skiprows"])
 
     for request in requests_to_fetch:
-        status = "missing"
+        status = "cached"
         reason = ""
+        size = digest = None
         try:
-            if download:
-                status = fetch_to_cache(request)
-            elif request.cache_path.exists():
-                status = "cached"
-            else:
-                raise FileNotFoundError(request.cache_path)
-            validate_source(request)
-            raw = read_ceud_excel(request.cache_path, skiprows=int(rules["raw_excel_skiprows"]))
-            validate_source(request, raw)
-            rows.append(normalize_ceud_dataframe(raw, request, rules))
+            if download and not request.cache_path.exists():
+                status = fetch_to_cache(request, skiprows=skiprows)
+            size, digest = _validate_workbook_identity(request, request.cache_path)
+            raw = read_ceud_excel(request.cache_path, skiprows=skiprows)
+            _validate_source_shape(request, raw)
+            normalized = normalize_ceud_dataframe(raw, request, rules)
+            rows.append(normalized)
         except Exception as exc:
+            description = request.artifact_description()
             if request.table_meta.required:
+                LOGGER.error("Failed to process required %s: %s", description, exc)
                 raise
             status = "failed"
             reason = str(exc)
-            warnings.append(f"{request.source_id} {request.output_region} table {request.table_id}: {reason}")
-            logging.warning(
-                "Failed to process %s %s table %s: %s",
-                request.source_id,
-                request.output_region,
-                request.table_id,
-                exc,
-            )
+            warnings.append(f"{description}: {reason}")
+            LOGGER.warning("Failed to process optional %s: %s", description, exc)
 
         manifest_rows.append(
             {
@@ -823,10 +879,16 @@ def fetch_and_normalize(
                 "cached_file": str(request.cache_path),
                 "status": status,
                 "reason": reason,
+                "bytes": size,
+                "sha256": digest,
+                "expected_bytes": request.expected_bytes,
+                "expected_sha256": request.expected_sha256,
             }
         )
 
     write_outputs(rows, manifest_rows, warnings, output_dir, rules)
+    LOGGER.info("CEUD workbook manifest: %s (%d validated, %d optional failures)",
+                output_dir / rules["manifest_file"], len(rows), len(warnings))
     return output_dir
 
 

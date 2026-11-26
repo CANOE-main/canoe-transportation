@@ -653,7 +653,7 @@ def test_regen_page_discovers_exact_configured_payload(
     )
     assert identity == href
     assert request.url.endswith(href)
-    assert request.cache_path.name.endswith("_payload.js")
+    assert request.cache_path == resolve_input_path(bundle, "cache", source.adapter["payload_cache_path"])
 
     page.write_text("<title>Changed</title>", encoding="utf-8")
     changed = _request(page, "html")

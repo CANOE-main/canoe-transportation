@@ -167,3 +167,20 @@ def test_vclass_normalization_rejects_unreviewed_class() -> None:
     )
     with pytest.raises(ValueError, match="unexpected VClass"):
         normalize_vehicle_classes(source, rules=rules)
+
+
+def test_vclass_normalization_retains_the_disputed_celestiq_label_for_review() -> None:
+    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    source = pd.DataFrame({
+        "year": [2025, 2026],
+        "make": ["Cadillac", "Cadillac"],
+        "model": ["CELESTIQ", "CELESTIQ"],
+        "VClass": ["Small Station Wagons", "Midsizel Station Wagons"],
+    })
+    normalized, warnings = normalize_vehicle_classes(source, rules=module_rules(bundle))
+    assert normalized["Source vehicle class"].tolist() == source["VClass"].tolist()
+    assert normalized["class_normalization_status"].tolist() == ["mapped", "unresolved"]
+    assert normalized.loc[0, "nrcan_vehicle_class"] == "Station wagon: Small"
+    assert pd.isna(normalized.loc[1, "nrcan_vehicle_class"])
+    assert "50197.shtml" in normalized.loc[1, "class_normalization_note"]
+    assert warnings[0].startswith("Midsizel Station Wagons: 1 rows;")

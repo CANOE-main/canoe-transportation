@@ -44,7 +44,7 @@ aggregation_sources:
     other: ontario_ministry_transport_vehicle_population
   medium_trucks:
     "ON": ontario_ministry_transport_vehicle_population
-    other: wards_intelligence_sales_shares
+    other: ontario_ministry_transport_vehicle_population
   heavy_truck_haul:
     "ON": statcan_transport_tables
     other: statcan_transport_tables

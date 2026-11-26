@@ -14,7 +14,7 @@
 | [*ANL HDSAM*](https://hdsam.es.anl.gov/index.php) | [*Hydrogen Delivery Scenario Analysis Model v4.5*](https://hdsam.es.anl.gov/index.php) | Hydrogen-refueling station lifetime | Manual CSV excerpt |
 | *Canada EPS* | [*Canada Energy Policy Simulator v3.4.7*](https://docs.energypolicy.solutions/models/canada) | Motorcycle lifetime | Manual CSV excerpt |
 | [*CER CEF*](https://www.cer-rec.gc.ca/en/data-analysis/canada-energy-future/) | [*Canada's Energy Future*](https://www.cer-rec.gc.ca/en/data-analysis/canada-energy-future/) | GDP-based demand growth and monetary conversions; end-use benchmarks and provisional fuel-price evidence | CSV |
-| [*Dunsky*](https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada) | [*Electric Vehicle Charging Infrastructure for Canada*](https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada) | Extracted charger costs, ratings, evolving mix and operating assumptions for both representations. Reviewed manual values supply supplemental inputs and aggregate utilization overrides. | Pinned report PDF and registered table selectors, with reviewed CSV supplements |
+| [*Dunsky*](https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada) | [*Electric Vehicle Charging Infrastructure for Canada*](https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada) | Extracted charger costs, ratings, evolving mix and operating assumptions for both representations. Reviewed manual values supply supplemental inputs and aggregate utilization overrides. | Pinned report HTML and registered table selectors, with reviewed CSV supplements |
 | [*EIA NEMS*](https://github.com/EIAgov/NEMS/blob/main/input/tdm/trnhdvx.xlsx) | [*National Energy Modeling System transportation inputs*](https://github.com/EIAgov/NEMS/blob/main/input/tdm/trnhdvx.xlsx) | Selectable heavy-truck survival and lifetime proxy | XLSX |
 | [*EPA MOVES*](https://www.epa.gov/system/files/documents/2026-09/420r26010.pdf) | [*Population and Activity of Onroad Vehicles in EPA MOVES*](https://www.epa.gov/system/files/documents/2026-09/420r26010.pdf) | Default car/light-truck/heavy survival and lifetimes; heavy schedule also proxies medium trucks. | PDF |
 | [*EPA OMEGA*](https://github.com/USEPA/EPA_OMEGA_Model) | [*EPA OMEGA v2.5 baseline*](https://github.com/USEPA/EPA_OMEGA_Model) | LDV BEV/PHEV sales-weighted range mix for existing archetypes, optional new-capacity shares and representative ranges | Native parent `aggregated_vehicles.csv` |
@@ -26,7 +26,7 @@
 | [*ICCT EV CHARGE*](https://theicct.github.io/EVCHARGE-doc/versions/v1.2/) | [*EV CHARGE v1.2*](https://theicct.github.io/EVCHARGE-doc/versions/v1.2/) | LDV charging-loss evidence for the vehicle/infrastructure accounting boundary | Manual CSV excerpt |
 | [*ICCT HDV CHARGE*](https://theicct.github.io/HDVCHARGE-doc/versions/v1.2/) | [*HDV CHARGE v1.2*](https://theicct.github.io/HDVCHARGE-doc/versions/v1.2/) | MHDV charging-loss evidence for the vehicle/infrastructure accounting boundary | Manual CSV excerpt |
 | [*IEA The Future of Hydrogen*](https://www.iea.org/reports/the-future-of-hydrogen) | [*The Future of Hydrogen*](https://www.iea.org/reports/the-future-of-hydrogen) | Hydrogen-refueling efficiency | Manual CSV excerpt |
-| [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) | [*Ontario vehicle population, Reports A/4/5*](https://data.ontario.ca/dataset/vehicle-population-data) | LDV class/age weights; Ontario medium-truck GVWR mix; truck, motorcycle and bus ages; retention diagnostics | Annual ZIPs containing text reports |
+| [*Ontario MTO*](https://data.ontario.ca/dataset/vehicle-population-data) | [*Ontario vehicle population, Reports A/4/5*](https://data.ontario.ca/dataset/vehicle-population-data) | LDV class/age weights; Ontario medium-truck GVWR mix used in all modeled regions by default; truck, motorcycle and bus ages; retention diagnostics | Annual ZIPs containing text reports |
 | [*NHTSA CAFE*](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/) | [*2024 Final Rule Central Analysis*](https://www.nhtsa.gov/file-downloads?p=nhtsa/downloads/CAFE/2024-FRM-LD-2b3-2027-2035/Central-Analysis/) | Car, light-truck and medium-truck survival schedules and fixed median lifetimes | ZIP containing workbook inputs |
 | [*NHTSA vPIC*](https://vpic.nhtsa.dot.gov/api/) | [*Vehicle Product Information Catalog*](https://vpic.nhtsa.dot.gov/api/) | Optional vehicle-type and make/model-year corroboration for reviewed class mappings | Request-scoped API JSON |
 | *NREL Alternative Fueling Infrastructure* | [*Assessment of Alternative Fueling Infrastructure in the United States*](https://doi.org/10.2172/2447838) | Residential Level 1 charger installation cost range | Reviewed midpoint in manual CSV |
@@ -42,7 +42,7 @@
 | [*AFDC Alternative Fueling Station Locator*](https://afdc.energy.gov/stations/) | Canadian public/open electric station inventory | Observed provincial L1/L2/DCFC port counts; December 31, 2025 snapshot | Pinned API JSON |
 | *US BEA* | [*NIPA Table 1.1.9, April 2024 release*](https://downloads.regulations.gov/BOEM-2024-0037-0002/content.pdf) | Rebase the ATB retail price input from 2022 USD to 2020 USD for the LDV repair equation. | Reviewed annual index levels in the registry |
 | [*US FuelEconomy.gov*](https://www.fueleconomy.gov/feg/ws/index.shtml) | [*Vehicle data*](https://www.fueleconomy.gov/feg/ws/index.shtml) | LDV class/HEV corroboration; separately registered PEV range evidence for review, without production sales weights | Shared ZIP containing `vehicles.csv` |
-| [*Wards Intelligence*](https://wardsintelligence.informa.com/automotive-data) | [*Canadian vehicle sales by GVWR*](https://wardsintelligence.informa.com/automotive-data) | Medium-truck GVWR mix outside Ontario; optional LDV class-share legacy comparison | Reviewed aggregate CSV |
+| [*Wards Intelligence*](https://wardsintelligence.informa.com/automotive-data) | [*Canadian vehicle sales by GVWR*](https://wardsintelligence.informa.com/automotive-data) | Optional medium-truck GVWR mix and LDV class-share legacy comparison | Reviewed aggregate CSV |
 
 ## Additional diagnostic inputs {#growth-research-inputs}
 
@@ -66,3 +66,57 @@ Registered [*RAMP-mobility*](https://github.com/RAMP-project/RAMP-mobility) outp
 [`inputs/0_external_models/`](../inputs/0_external_models/). The historical notebook
 references live under `inputs/validation/transportation_reference/`. Backend-owned templates
 are structural inputs with internal provenance rather than external-source citations.
+
+## Download validation and recovery
+
+The build checks registered identity before using pinned downloads, including files
+placed manually in the cache. Source manifests record the bytes that the adapter
+processed. An observed hash identifies the inputs to a run. Expected hashes come from
+the [source registry](../config/sources.yaml) and protect subsequent runs even when no
+manifest exists.
+
+| Input | Registered identity | Where to find the observed checksum |
+| --- | --- | --- |
+| NRCan CEUD transport tables | The 2023 national and provincial workbooks each have a SHA-256 and byte count. Other explicitly selected editions without registry snapshots receive workbook and table-structure checks. | `inputs/1_interim/fetched_nrcan_ceud_inputs/manifest.csv`, one row per requested workbook |
+| 2024 Transportation ATB | The official `2024_atb_transportation_data_v1.zip` has a registered SHA-256 and byte count. | `inputs/1_interim/fetched_nlr_atb_autonomie/manifest.csv`, with the ZIP identity on source member rows |
+| Transport Canada iZEV | Each of the three registered CSVs is checked against its MD5 and byte count. | `inputs/1_interim/fetched_transport_canada_izev/izev_normalization_manifest.json`, with MD5, SHA-256 and bytes for each CSV |
+| NRCan Dunsky report | The September 13, 2026 Government of Canada Web Archive capture contains the February 2024 report. The build checks the raw HTML against its registered SHA-256 and byte count. | `inputs/1_interim/dunsky/published_tables.json` |
+| FuelEconomy.gov vehicles | The November 20, 2026 `vehicles.csv.zip` has a registered SHA-256 and byte count. | Source-updater report in `outputs/validation/source_updates/` or the adapter's manifest when its standalone normalization runs |
+
+The manifests describe the latest completed preparation for that source. For a
+failure before a manifest is written, use the timestamped build log in `outputs/logs/`.
+
+When a cache file is missing, rerun the same scenario with `--download-sources`.
+When a local artifact fails a checksum, keep it outside the configured cache path
+while recovering the registered bytes. The download flag acquires missing files and
+validates files already present. If the publisher has withdrawn or revised a pinned
+file, recover the exact registered bytes from an audited copy or review a replacement
+before changing the registry. Preserve the rejected bytes if they are needed to
+diagnose the revision.
+
+The [source updater](backend_architecture.md#explicit-source-updates) can inspect and
+propose changes for the registered iZEV resources. CEUD and ATB are fixed-edition
+registrations. To update one of them, review the publisher's replacement and its
+table or archive compatibility, register the new checksum and a distinct cache path
+where the bytes changed, and test fresh acquisition followed by offline replay. An
+ATB change that affects vehicle archetype inputs also needs review against the
+registered GREET results before building with embodied emissions enabled.
+
+The clean rebuild also verified two publisher changes outside those three sources.
+EPRI rebuilt the v2025 documentation and removed the previous JavaScript asset. The
+registered replacement reproduces all 76 Intercity Bus chart rows. AFDC added an API
+field to the December 31, 2025 historical response. The new pin preserves every previous
+field and the normalized station and port totals. The new revisions have distinct cache
+paths so existing files can still support earlier checkouts.
+
+The Dunsky report's live page returned a JavaScript challenge to automated requests.
+`--download-sources` retrieves the dated capture from Library and Archives Canada.
+The cited NRCan publication URL remains the source link. All eight parsed tables,
+29 production inputs and the diagnostic context match the previously registered HTML.
+[Government of Canada Web Archive capture](https://webarchiveweb.wayback.bac-lac.canada.ca/web/20260913144437id_/https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada)
+
+FuelEconomy.gov publishes a rolling archive. Use `--source fueleconomy_gov_vehicle_data`
+to review changes to the classification, propulsion and range inputs exposed by the
+current ZIP. If the publisher replaces the file, exact replay needs the ZIP that
+matches the registry. Apply a captured review before switching to a newer snapshot,
+then rebuild the affected scenarios. [Source updater](backend_architecture.md#explicit-source-updates)

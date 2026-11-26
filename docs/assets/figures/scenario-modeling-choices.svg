@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1560 960" role="img" aria-labelledby="title desc">
+  <title id="title">How scenario choices shape CANOE transportation</title>
+  <desc id="desc">Scenario-wide period, demand, cost, efficiency and emissions settings sit above three panels. The fleet panel shows how sales and survival become calibrated vintage and powertrain cohorts, with two definitions of existing capacity. The vehicle panel shows where source-class weights combine into CANOE classes and where plug-in ranges are combined or kept separate. The charging panel traces surviving battery-electric vehicles to port counts, rated capacity, charger archetypes and their annual or hourly operation.</desc>
+  <style>
+    text { font-family: Arial, Helvetica, sans-serif; fill: #192e42; }
+    .title { font-size: 37px; font-weight: 700; letter-spacing: -.45px; }
+    .subtitle { font-size: 20px; fill: #466173; }
+    .lane-title { font-size: 25px; font-weight: 700; fill: #fff; }
+    .heading { font-size: 22px; font-weight: 700; }
+    .item { font-size: 20px; font-weight: 700; }
+    .detail { font-size: 17.5px; }
+    .muted { fill: #466173; }
+    .emphasis { font-weight: 700; }
+    .base { fill: #fff; stroke: #c7d3dd; stroke-width: 1.4; }
+    .rule { stroke: #c7d3dd; stroke-width: 1.4; }
+    .flow { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .fleet-flow { stroke: #759ab8; }
+    .vehicle-flow { stroke: #6a9a84; }
+    .charger-flow { stroke: #6697a2; }
+    .fleet-tint { fill: #eaf2f8; }
+    .vehicle-tint { fill: #e9f4ee; }
+    .charger-tint { fill: #e9f4f6; }
+    .fleet-ink { fill: #194e76; }
+    .vehicle-ink { fill: #205b48; }
+    .charger-ink { fill: #125966; }
+  </style>
+
+  <rect width="1560" height="960" fill="#f5f8fa"/>
+  <text class="title" x="33" y="55">How scenario choices shape CANOE transportation</text>
+  <text class="subtitle" x="33" y="86">From source evidence to fleet vintages, vehicle technologies and charging infrastructure</text>
+
+  <g transform="translate(33 109)">
+    <rect class="base" width="1494" height="120" rx="12"/>
+    <path class="rule" d="M 494,18 V 102 M 1000,18 V 102"/>
+    <text class="heading" x="24" y="33">Period timing and demand</text>
+    <text class="detail" x="24" y="60">Prospective → closing · Legacy → opening</text>
+    <text class="detail" x="24" y="82">Cars follow GDP or historical growth. With historical</text>
+    <text class="detail" x="24" y="104">growth, light trucks balance combined demand.</text>
+
+    <text class="heading" x="530" y="33">Exchange rates and trajectories</text>
+    <text class="detail" x="530" y="60">Select CER demand and currency cases separately.</text>
+    <text class="detail" x="530" y="82">Choose ATB efficiency and cost paths separately.</text>
+    <text class="detail muted" x="530" y="104">Advanced · Mid · Conservative</text>
+
+    <text class="heading" x="1036" y="33">Calibration and embodied emissions</text>
+    <text class="detail" x="1036" y="60">Optional CEUD fuel fit · fixed lifetimes and flat use</text>
+    <text class="detail" x="1036" y="82">GREET vehicle-cycle emissions on or off.</text>
+    <text class="detail" x="1036" y="104">LDV materials can be conventional or lightweight.</text>
+  </g>
+
+  <g transform="translate(33 248)">
+    <rect class="base" width="482" height="687" rx="12"/>
+    <path fill="#194e76" d="M 0,12 A 12,12 0 0 1 12,0 H 470 A 12,12 0 0 1 482,12 V 58 H 0 Z"/>
+    <text class="lane-title" x="24" y="37">Fleet vintages and powertrains</text>
+
+    <text class="heading fleet-ink" x="24" y="97">Build the historical fleet</text>
+    <rect class="fleet-tint" x="24" y="114" width="434" height="70" rx="8"/>
+    <text class="item" x="38" y="141">CEUD sales + survival → annual cohorts</text>
+    <text class="detail" x="38" y="166">Fit surviving stock to CEUD class totals.</text>
+
+    <path class="flow fleet-flow" d="M 38,184 V 289 M 38,207 H 50 M 35,285 L 38,289 41,285 M 38,289 H 50"/>
+    <text class="item" x="60" y="214">Split cohorts by powertrain</text>
+    <text class="detail" x="60" y="239">StatCan new registrations give LDV shares.</text>
+    <text class="detail" x="60" y="261">StatCan fleet counts give truck shares.</text>
+    <text class="item" x="60" y="296">Roll cohorts into model vintages</text>
+    <text class="detail muted" x="24" y="324">MTO stock supplies bus and motorcycle ages.</text>
+
+    <path class="rule" d="M 24,346 H 458"/>
+    <text class="heading fleet-ink" x="24" y="380">Set lifetimes and existing capacity</text>
+    <text class="detail" x="24" y="410">EPA MOVES or NHTSA CAFE + EIA NEMS.</text>
+    <text class="detail muted" x="24" y="432">One source informs both medians and survival.</text>
+
+    <rect class="fleet-tint" x="24" y="449" width="434" height="85" rx="8"/>
+    <text class="item" x="38" y="476">Fixed lifetimes</text>
+    <text class="detail" x="38" y="501">Temoa starts from physical survivors.</text>
+    <text class="detail" x="38" y="523">A vintage retires at its fixed age.</text>
+
+    <rect class="fleet-tint" x="24" y="549" width="434" height="85" rx="8"/>
+    <text class="item" x="38" y="576">Survival curves</text>
+    <text class="detail" x="38" y="601">Temoa starts from acquisition-equivalent stock.</text>
+    <text class="detail" x="38" y="623">The surviving fraction changes with age.</text>
+    <text class="detail emphasis fleet-ink" x="24" y="672">Surviving BEVs → charger sizing</text>
+  </g>
+
+  <g transform="translate(539 248)">
+    <rect class="base" width="482" height="687" rx="12"/>
+    <path fill="#205b48" d="M 0,12 A 12,12 0 0 1 12,0 H 470 A 12,12 0 0 1 482,12 V 58 H 0 Z"/>
+    <text class="lane-title" x="24" y="37">Vehicle classes and plug-in ranges</text>
+
+    <text class="heading vehicle-ink" x="24" y="97">Combine source classes</text>
+    <text class="item" x="24" y="133">NRCan ratings and ATB sizes → CEUD LDVs</text>
+    <text class="detail" x="24" y="158">Compact/midsize cars · SUV/pickup light trucks</text>
+    <text class="detail" x="24" y="180">ATB uses MTO size weights. Ratings use matched</text>
+    <text class="detail" x="24" y="202">MTO stock and iZEV incentive records.</text>
+
+    <text class="item" x="24" y="236">ATB weight classes → CEUD medium trucks</text>
+    <text class="detail" x="24" y="261">MTO or Wards set weight-class shares. Eligible</text>
+    <text class="detail" x="24" y="283">freight vocations count equally within each class.</text>
+
+    <text class="item" x="24" y="317">ATB Class 8 → CEUD heavy trucks</text>
+    <text class="detail" x="24" y="342">StatCan tonne-km weight regional day cabs and</text>
+    <text class="detail" x="24" y="364">long-haul sleepers by province.</text>
+
+    <rect class="vehicle-tint" x="24" y="380" width="434" height="85" rx="8"/>
+    <text class="item" x="38" y="407">Reuse fleet weights across parameters</text>
+    <text class="detail" x="38" y="432">ATB efficiency, costs and diagnostic VKT.</text>
+    <text class="detail" x="38" y="454">LDV weights also combine NHTSA curves.</text>
+
+    <path class="rule" d="M 24,479 H 458"/>
+    <text class="heading vehicle-ink" x="24" y="513">Resolve electric range by fleet stage</text>
+    <path class="flow vehicle-flow" d="M 32,527 V 595 M 32,539 H 44 M 32,595 H 44"/>
+    <text class="detail" x="52" y="546"><tspan class="item">Existing</tspan> · One BEV and one PHEV per class.</text>
+    <text class="detail" x="52" y="568">EPA OMEGA range mix weights parameters.</text>
+    <text class="detail" x="52" y="602"><tspan class="item">New</tspan> · Unconstrained, OMEGA minimum</text>
+    <text class="detail" x="52" y="624">shares by class and powertrain, or combine</text>
+    <text class="detail" x="52" y="646">ranges into weighted representatives.</text>
+    <text class="detail muted" x="24" y="672">Potential fleet-weight sources · SAAQ and ICBC</text>
+  </g>
+
+  <g transform="translate(1045 248)">
+    <rect class="base" width="482" height="687" rx="12"/>
+    <path fill="#125966" d="M 0,12 A 12,12 0 0 1 12,0 H 470 A 12,12 0 0 1 482,12 V 58 H 0 Z"/>
+    <text class="lane-title" x="24" y="37">Charger types and operating hours</text>
+
+    <text class="heading charger-ink" x="24" y="97">Size the existing port stock</text>
+    <text class="detail" x="24" y="131"><tspan class="emphasis fleet-ink">Surviving BEVs</tspan> ÷ EVs per port → total ports.</text>
+    <text class="detail" x="24" y="153">LDV total ports − observed public → private ports.</text>
+    <text class="detail" x="24" y="175">Port counts × rated power → installed GW.</text>
+
+    <path class="rule" d="M 24,197 H 458"/>
+    <text class="heading charger-ink" x="24" y="231">Group ports into charger technologies</text>
+    <path class="flow charger-flow" d="M 32,247 V 362 M 32,258 H 44 M 32,362 H 44"/>
+    <text class="item" x="52" y="265">Aggregated</text>
+    <text class="detail" x="52" y="290">L1, L2 and DC fast → pooled LDV.</text>
+    <text class="detail" x="52" y="312">Overnight, fast and ultrafast → pooled truck.</text>
+    <text class="detail" x="52" y="334">Pooled cost/GW and annual use (20% / 30%).</text>
+
+    <text class="item" x="52" y="369">Explicit</text>
+    <text class="detail" x="52" y="394">Public L2, public DC fast and private L1/L2.</text>
+    <text class="detail" x="52" y="416">Truck overnight and fast (includes ultrafast).</text>
+    <text class="detail" x="52" y="438">GW-based mix · type costs and annual factors.</text>
+
+    <path class="rule" d="M 24,459 H 458"/>
+    <rect class="charger-tint" x="24" y="477" width="434" height="198" rx="8"/>
+    <text class="heading charger-ink" x="38" y="509">Hourly profiles · pooled LDV only</text>
+    <text class="detail" x="38" y="538">NHTS (US) or TTS (Ontario) travel → RAMP.</text>
+    <text class="detail" x="38" y="560">Uncontrolled, night or day. Profiles can be off.</text>
+    <text class="detail" x="38" y="589">RAMP uses legacy sales-weighted batteries by</text>
+    <text class="detail" x="38" y="611">BEV size, independent of the range setting.</text>
+    <text class="detail" x="38" y="640">Hourly factors average 20%. Explicit types use</text>
+    <text class="detail" x="38" y="662">annual factors pending type-specific profiles.</text>
+  </g>
+</svg>

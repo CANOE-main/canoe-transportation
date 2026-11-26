@@ -136,7 +136,7 @@ def test_later_base_year_keeps_held_ceud_out_of_the_truck_projection_anchor(truc
 
 @pytest.mark.parametrize("mode,region,aggregation", [
     ("medium_trucks", "ON", ("ontario_ministry_transport_vehicle_population", 4)),
-    ("medium_trucks", "QC", ("wards_intelligence_sales_shares", "vehicle_class_market_shares")),
+    ("medium_trucks", "QC", ("ontario_ministry_transport_vehicle_population", 4)),
     ("heavy_trucks", "ON", ("statcan_transport_tables", "23-10-0142-01")),
 ])
 def test_truck_lineage_matches_actual_fleet_and_relative_inputs(mode, region, aggregation):
