@@ -103,7 +103,7 @@ def test_download_identity_validated_before_cache_publication(tmp_path, monkeypa
     bundle = SimpleNamespace(sources=SimpleNamespace(sources={dunsky.SOURCE: SimpleNamespace(adapter={"diagnostic_report": payload})}))
     path = tmp_path / "report.html"
     monkeypatch.setattr(dunsky, "resolve_input_path", lambda *args: path)
-    response = SimpleNamespace(content=b"new", raise_for_status=lambda: None)
+    response = SimpleNamespace(content=b"new", status_code=200, raise_for_status=lambda: None)
     with pytest.raises(ValueError, match="Downloaded Dunsky"):
         dunsky.load_evidence(bundle, download=True, session=SimpleNamespace(get=lambda *args, **kwargs: response))
     assert not path.exists()

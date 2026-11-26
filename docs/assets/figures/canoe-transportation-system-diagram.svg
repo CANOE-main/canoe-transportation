@@ -1,0 +1,4363 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="153.44684mm"
+   height="117.99206mm"
+   viewBox="0 0 1110.8506 854.18208"
+   version="1.1"
+   role="img"
+   aria-labelledby="figure-title figure-description"
+   sodipodi:docname="canoe-transportation-system-diagram.svg"
+   id="svg169"
+   inkscape:version="1.4.4 (dcaf3e7, 2026-05-05)"
+   inkscape:export-xdpi="600"
+   inkscape:export-ydpi="600"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview169"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050"
+     inkscape:document-units="mm"
+     inkscape:zoom="3.3619521"
+     inkscape:cx="370.17184"
+     inkscape:cy="238.10571"
+     inkscape:window-width="2560"
+     inkscape:window-height="1369"
+     inkscape:window-x="1072"
+     inkscape:window-y="478"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="key" />
+  <title
+     id="figure-title">CANOE transportation system</title>
+  <desc
+     id="figure-description">Transport inputs and infrastructure connect road, air, rail and marine technologies to distinct passenger and freight demands. Other off-road diesel use is counted directly. Purchased fuels enter at exogenous prices, while the CANOE electricity sector generates grid power endogenously in a coupled solve. Explicit charging shows light-duty public Level 2, public fast and private chargers, and medium- and heavy-duty overnight and fast chargers. A separate aggregated light-duty charging option can apply an hourly load profile to shared chargers, including pathways to motorcycle battery-electric, light-duty battery-electric and plug-in hybrid vehicles. Compressed gaseous hydrogen at 700 bar feeds light-duty and medium- and heavy-duty refueling stations. A parameter panel summarizes fleet, infrastructure and demand inputs. The powertrain key describes eligible technologies and optional light-duty plug-in ranges. S-JTF denotes conventional jet fuel blended with 50% HEFA synthetic paraffinic kerosene.</desc>
+  <defs
+     id="defs12">
+    <marker
+       id="arrow-diesel"
+       viewBox="0 0 9 8"
+       refX="8.5"
+       refY="4"
+       markerWidth="9"
+       markerHeight="8"
+       markerUnits="userSpaceOnUse"
+       orient="auto">
+      <path
+         d="M 0,0 9,4 0,8 Z"
+         fill="#a86115"
+         id="path1" />
+    </marker>
+    <marker
+       id="arrow-gasoline"
+       viewBox="0 0 9 8"
+       refX="8.5"
+       refY="4"
+       markerWidth="9"
+       markerHeight="8"
+       markerUnits="userSpaceOnUse"
+       orient="auto">
+      <path
+         d="M 0,0 9,4 0,8 Z"
+         fill="#926820"
+         id="path2" />
+    </marker>
+    <marker
+       id="arrow-jet"
+       viewBox="0 0 9 8"
+       refX="8.5"
+       refY="4"
+       markerWidth="9"
+       markerHeight="8"
+       markerUnits="userSpaceOnUse"
+       orient="auto">
+      <path
+         d="M 0,0 9,4 0,8 Z"
+         fill="#8d6f3a"
+         id="path3" />
+    </marker>
+    <marker
+       id="arrow-gas"
+       viewBox="0 0 9 8"
+       refX="8.5"
+       refY="4"
+       markerWidth="9"
+       markerHeight="8"
+       markerUnits="userSpaceOnUse"
+       orient="auto">
+      <path
+         d="M 0,0 9,4 0,8 Z"
+         fill="#76638f"
+         id="path4" />
+    </marker>
+    <marker
+       id="arrow-marine"
+       viewBox="0 0 9 8"
+       refX="8.5"
+       refY="4"
+       markerWidth="9"
+       markerHeight="8"
+       markerUnits="userSpaceOnUse"
+       orient="auto">
+      <path
+         d="M 0,0 9,4 0,8 Z"
+         fill="#897550"
+         id="path5" />
+    </marker>
+    <marker
+       id="arrow-electricity"
+       viewBox="0 0 9 8"
+       refX="8.5"
+       refY="4"
+       markerWidth="9"
+       markerHeight="8"
+       markerUnits="userSpaceOnUse"
+       orient="auto">
+      <path
+         d="M 0,0 9,4 0,8 Z"
+         fill="#26834b"
+         id="path6" />
+    </marker>
+    <marker
+       id="arrow-hydrogen"
+       viewBox="0 0 9 8"
+       refX="8.5"
+       refY="4"
+       markerWidth="9"
+       markerHeight="8"
+       markerUnits="userSpaceOnUse"
+       orient="auto">
+      <path
+         d="M 0,0 9,4 0,8 Z"
+         fill="#277985"
+         id="path7" />
+    </marker>
+    <marker
+       id="arrow-passenger"
+       viewBox="0 0 9 8"
+       refX="8.5"
+       refY="4"
+       markerWidth="9"
+       markerHeight="8"
+       markerUnits="userSpaceOnUse"
+       orient="auto">
+      <path
+         d="M 0,0 9,4 0,8 Z"
+         fill="#a84842"
+         id="path8" />
+    </marker>
+    <marker
+       id="arrow-freight"
+       viewBox="0 0 9 8"
+       refX="8.5"
+       refY="4"
+       markerWidth="9"
+       markerHeight="8"
+       markerUnits="userSpaceOnUse"
+       orient="auto">
+      <path
+         d="M 0,0 9,4 0,8 Z"
+         fill="#4e659a"
+         id="path9" />
+    </marker>
+    <marker
+       id="arrow-energy"
+       viewBox="0 0 9 8"
+       refX="8.5"
+       refY="4"
+       markerWidth="9"
+       markerHeight="8"
+       markerUnits="userSpaceOnUse"
+       orient="auto">
+      <path
+         d="M 0,0 9,4 0,8 Z"
+         fill="#607589"
+         id="path10" />
+    </marker>
+    <marker
+       id="arrow-technology"
+       viewBox="0 0 9 8"
+       refX="8.5"
+       refY="4"
+       markerWidth="9"
+       markerHeight="8"
+       markerUnits="userSpaceOnUse"
+       orient="auto">
+      <path
+         d="M 0,0 9,4 0,8 Z"
+         fill="#7690a8"
+         id="path11" />
+    </marker>
+    <marker
+       id="arrow-aggregate"
+       viewBox="0 0 9 8"
+       refX="8.5"
+       refY="4"
+       markerWidth="9"
+       markerHeight="8"
+       markerUnits="userSpaceOnUse"
+       orient="auto">
+      <path
+         d="M 0,0 9,4 0,8 Z"
+         fill="#7890a8"
+         id="path12" />
+    </marker>
+    <marker
+       id="arrow-electricity-5"
+       viewBox="0 0 9 8"
+       refX="8.5"
+       refY="4"
+       markerWidth="9"
+       markerHeight="8"
+       markerUnits="userSpaceOnUse"
+       orient="auto">
+      <path
+         d="M 0,0 9,4 0,8 Z"
+         fill="#26834b"
+         id="path6-4" />
+    </marker>
+    <marker
+       id="arrow-diesel-2"
+       viewBox="0 0 9 8"
+       refX="8.5"
+       refY="4"
+       markerWidth="9"
+       markerHeight="8"
+       markerUnits="userSpaceOnUse"
+       orient="auto">
+      <path
+         d="M 0,0 9,4 0,8 Z"
+         fill="#a86115"
+         id="path1-3" />
+    </marker>
+  </defs>
+  <g
+     id="key"
+     inkscape:groupmode="layer"
+     inkscape:label="CANOE transportation system"
+     transform="translate(-19.5,-51.140587)">
+    <text
+       id="label-001"
+       x="20"
+       y="72"
+       font-size="25px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start"
+       style="fill:#000000;fill-opacity:1">Energy and infrastructure</text>
+    <text
+       id="label-002"
+       x="436"
+       y="72"
+       font-size="25px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start"
+       style="fill:#000000;fill-opacity:1">Transportation technologies</text>
+    <path
+       id="line13"
+       style="stroke:#b4c1ce;stroke-width:1.3;stroke-linecap:round"
+       d="M 24.085604,81.646439 H 1127.0714"
+       sodipodi:nodetypes="cc" />
+    <text
+       id="label-003"
+       x="1128"
+       y="72"
+       font-size="21.5"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="end"
+       style="font-size:24.2618px;fill:#000000;fill-opacity:1">Service demands</text>
+    <text
+       id="label-004"
+       x="448"
+       y="106.64642"
+       font-size="17.5px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#44576a"
+       text-anchor="start"
+       style="font-size:18.6433px;fill:#000000;fill-opacity:1">Mode / class</text>
+    <text
+       id="label-005"
+       x="601.33838"
+       y="106.64642"
+       font-size="17.5px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#44576a"
+       text-anchor="start"
+       style="font-size:18.6433px;fill:#000000;fill-opacity:1">Eligible carriers</text>
+    <text
+       id="label-006"
+       x="787"
+       y="106.64642"
+       font-size="17.5px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#44576a"
+       text-anchor="start"
+       style="font-size:18.6433px;fill:#000000;fill-opacity:1">Road powertrains</text>
+    <path
+       d="m 408.73906,132 h 26.70918"
+       fill="none"
+       stroke="#a86115"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       marker-end="url(#arrow-diesel)"
+       id="direct-diesel-offroad"
+       data-technologies="T_OFF"
+       data-input="T_dsl"
+       data-demands="T_D_pj_off"
+       sodipodi:nodetypes="cc" />
+    <path
+       d="m 418,169 h 17.13351"
+       fill="none"
+       stroke="#7890a8"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       marker-end="url(#arrow-aggregate)"
+       id="energy-to-two-wheel-family"
+       sodipodi:nodetypes="cc" />
+    <path
+       d="m 418,236 h 17.13351"
+       fill="none"
+       stroke="#7890a8"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       marker-end="url(#arrow-aggregate)"
+       id="energy-to-light-duty-family"
+       sodipodi:nodetypes="cc" />
+    <path
+       d="m 418,366 h 17.13351"
+       fill="none"
+       stroke="#7890a8"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       marker-end="url(#arrow-aggregate)"
+       id="energy-to-medium-duty-family"
+       sodipodi:nodetypes="cc" />
+    <path
+       d="m 418,435 h 17.13351"
+       fill="none"
+       stroke="#7890a8"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       marker-end="url(#arrow-aggregate)"
+       id="energy-to-heavy-duty-family"
+       sodipodi:nodetypes="cc" />
+    <path
+       d="m 962,197 h 8 c 2.66667,0 4,1.33333 4,4 v 41 c 0,2.66667 1.33333,4 4,4 h 11"
+       fill="none"
+       stroke="#a84842"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       marker-end="url(#arrow-passenger)"
+       id="service-demand-motorcycles"
+       data-demands="T_D_pkm_ldv_m"
+       data-demand-target="demand-motorcycles-terminal"
+       sodipodi:nodetypes="cssssc" />
+    <path
+       d="m 962,265 h 27"
+       fill="none"
+       stroke="#a84842"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       marker-end="url(#arrow-passenger)"
+       id="service-demand-cars"
+       data-demands="T_D_pkm_ldv_c"
+       data-demand-target="demand-cars-terminal"
+       sodipodi:nodetypes="cc" />
+    <path
+       d="m 962,297 h 11 c 2.66667,0 4,-1.33333 4,-4 v -5 c 0,-2.66667 1.33333,-4 4,-4 h 8"
+       fill="none"
+       stroke="#a84842"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       marker-end="url(#arrow-passenger)"
+       id="service-demand-passenger-trucks"
+       data-demands="T_D_pkm_ldv_t"
+       data-demand-target="demand-passenger-trucks-terminal"
+       sodipodi:nodetypes="cssssc" />
+    <path
+       d="m 962,329 h 8 c 2.66667,0 4,1.33333 4,4 v 40 c 0,2.66667 1.33333,4 4,4 h 11"
+       fill="none"
+       stroke="#4e659a"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       marker-end="url(#arrow-freight)"
+       id="service-demand-freight-trucks"
+       data-demands="T_D_tkm_ldv_t"
+       data-demand-target="demand-freight-trucks-terminal"
+       sodipodi:nodetypes="cssssc" />
+    <path
+       d="m 962,396 h 27"
+       fill="none"
+       stroke="#4e659a"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       marker-end="url(#arrow-freight)"
+       id="service-demand-medium-trucks"
+       data-demands="T_D_tkm_mdv_t"
+       data-demand-target="demand-medium-trucks-terminal"
+       sodipodi:nodetypes="cc" />
+    <path
+       d="m 962,465 h 11 c 2.66667,0 4,-1.33333 4,-4 v -42 c 0,-2.66667 1.33333,-4 4,-4 h 8"
+       fill="none"
+       stroke="#4e659a"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       marker-end="url(#arrow-freight)"
+       id="service-demand-heavy-trucks"
+       data-demands="T_D_tkm_hdv_t"
+       data-demand-target="demand-heavy-trucks-terminal"
+       sodipodi:nodetypes="cssssc" />
+    <path
+       d="m 962,497 h 8 c 2.66667,0 4,1.33333 4,4 v 20 c 0,2.66667 1.33333,4 4,4 h 11"
+       fill="none"
+       stroke="#a84842"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       marker-end="url(#arrow-passenger)"
+       id="service-demand-transit-buses"
+       data-demands="T_D_pkm_hdv_bt"
+       data-demand-target="demand-transit-buses-terminal"
+       sodipodi:nodetypes="cssssc" />
+    <path
+       d="m 962,529 h 8 c 2.66667,0 4,1.33333 4,4 v 6 c 0,2.66667 1.33333,4 4,4 h 11"
+       fill="none"
+       stroke="#a84842"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       marker-end="url(#arrow-passenger)"
+       id="service-demand-school-buses"
+       data-demands="T_D_pkm_hdv_bs"
+       data-demand-target="demand-school-buses-terminal"
+       sodipodi:nodetypes="cssssc" />
+    <path
+       d="m 962,561 h 27"
+       fill="none"
+       stroke="#a84842"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       marker-end="url(#arrow-passenger)"
+       id="service-demand-coach-buses"
+       data-demands="T_D_pkm_hdv_bic"
+       data-demand-target="demand-coach-buses-terminal"
+       sodipodi:nodetypes="cc" />
+    <path
+       d="m 962,593 h 11 c 2.66667,0 4,-1.33333 4,-4 v -6 c 0,-2.66667 1.33333,-4 4,-4 h 8"
+       fill="none"
+       stroke="#a84842"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       marker-end="url(#arrow-passenger)"
+       id="service-demand-air-passenger"
+       data-demands="T_D_pkm_hdv_aj"
+       data-demand-target="demand-air-passenger-terminal"
+       sodipodi:nodetypes="cssssc" />
+    <path
+       d="m 962,625 h 11 c 2.66667,0 4,-1.33333 4,-4 v -20 c 0,-2.66667 1.33333,-4 4,-4 h 8"
+       fill="none"
+       stroke="#a84842"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       marker-end="url(#arrow-passenger)"
+       id="service-demand-rail-passenger"
+       data-demands="T_D_pkm_hdv_r"
+       data-demand-target="demand-rail-passenger-terminal"
+       sodipodi:nodetypes="cssssc" />
+    <path
+       d="m 962,657 h 8 c 2.66667,0 4,1.33333 4,4 v 5 c 0,2.66667 1.33333,4 4,4 h 11"
+       fill="none"
+       stroke="#4e659a"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       marker-end="url(#arrow-freight)"
+       id="service-demand-air-freight"
+       data-demands="T_D_tkm_hdv_aj"
+       data-demand-target="demand-air-freight-terminal"
+       sodipodi:nodetypes="cssssc" />
+    <path
+       d="m 962,689 h 27"
+       fill="none"
+       stroke="#4e659a"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       marker-end="url(#arrow-freight)"
+       id="service-demand-rail-freight"
+       data-demands="T_D_tkm_hdv_r"
+       data-demand-target="demand-rail-freight-terminal"
+       sodipodi:nodetypes="cc" />
+    <path
+       d="m 962,721 h 11 c 2.66667,0 4,-1.33333 4,-4 v -5 c 0,-2.66667 1.33333,-4 4,-4 h 8"
+       fill="none"
+       stroke="#4e659a"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       marker-end="url(#arrow-freight)"
+       id="service-demand-marine"
+       data-demands="T_D_tkm_hdv_wt"
+       data-demand-target="demand-marine-terminal"
+       sodipodi:nodetypes="cssssc" />
+    <path
+       d="m 962,132 h 27"
+       fill="none"
+       stroke="#607589"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       marker-end="url(#arrow-energy)"
+       id="service-demand-offroad"
+       data-demands="T_D_pj_off"
+       data-demand-target="offroad-terminal"
+       sodipodi:nodetypes="cc" />
+    <rect
+       x="436"
+       y="118"
+       width="526"
+       height="28"
+       rx="5"
+       fill="#fff8e8"
+       stroke="#dec49b"
+       stroke-width="1"
+       id="rect46" />
+    <text
+       id="label-040"
+       x="448"
+       y="138"
+       font-size="18px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start">Other off-road</text>
+    <g
+       data-carrier-code="DSL"
+       id="g47"
+       transform="translate(-23.661612)">
+      <title
+         id="title46">Diesel</title>
+      <rect
+         x="625"
+         y="121"
+         width="33"
+         height="22"
+         rx="4"
+         fill="#ffde92"
+         stroke="#a86115"
+         stroke-width="0.85"
+         id="rect47" />
+      <text
+         id="label-041"
+         x="641.5"
+         y="137"
+         font-size="14.8px"
+         font-weight="700"
+         font-family="'Segoe UI', Arial, sans-serif"
+         fill="#57340b"
+         text-anchor="middle">DSL</text>
+    </g>
+    <text
+       id="label-042"
+       x="874.5"
+       y="137.7"
+       font-size="16.5px"
+       font-weight="400"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#44576a"
+       text-anchor="middle">Direct accounting</text>
+    <rect
+       x="436"
+       y="157"
+       width="526"
+       height="58"
+       rx="6"
+       fill="#fcfdff"
+       stroke="#aebfd1"
+       stroke-width="1"
+       id="rect48" />
+    <rect
+       x="437"
+       y="158"
+       width="524"
+       height="25"
+       rx="5"
+       fill="#e9f0f7"
+       stroke="none"
+       stroke-width="1"
+       id="rect49" />
+    <text
+       id="label-043"
+       x="448"
+       y="175.8"
+       font-size="18.3px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start">Two-wheel vehicles</text>
+    <line
+       x1="787"
+       y1="185"
+       x2="787"
+       y2="210"
+       stroke="#d6e0ea"
+       stroke-width="1"
+       stroke-linecap="round"
+       id="line49" />
+    <text
+       id="label-044"
+       x="448"
+       y="203.2"
+       font-size="18.1px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start"
+       style="font-size:17.3663px">Motorcycles</text>
+    <rect
+       x="601.33838"
+       y="186"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#ffebbb"
+       stroke="#926820"
+       stroke-width="0.85"
+       id="rect50" />
+    <text
+       id="label-045"
+       x="617.83838"
+       y="202"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#614717"
+       text-anchor="middle">GSL</text>
+    <rect
+       x="637.33838"
+       y="186"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#89ef9c"
+       stroke="#26834b"
+       stroke-width="0.85"
+       id="rect51" />
+    <text
+       id="label-046"
+       x="653.83838"
+       y="202"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#154c2c"
+       text-anchor="middle">ELC</text>
+    <rect
+       x="436"
+       y="224"
+       width="526"
+       height="122"
+       rx="6"
+       fill="#fcfdff"
+       stroke="#aebfd1"
+       stroke-width="1"
+       id="rect53" />
+    <rect
+       x="437"
+       y="225"
+       width="524"
+       height="25"
+       rx="5"
+       fill="#e9f0f7"
+       stroke="none"
+       stroke-width="1"
+       id="rect54" />
+    <text
+       id="label-047"
+       x="448"
+       y="242.8"
+       font-size="18.3px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start">Light duty</text>
+    <text
+       id="label-048"
+       x="601.33838"
+       y="242.8"
+       font-size="16.3px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#44576a"
+       text-anchor="start">(Classes 1-2a)</text>
+    <line
+       x1="787"
+       y1="252"
+       x2="787"
+       y2="341"
+       stroke="#d6e0ea"
+       stroke-width="1"
+       stroke-linecap="round"
+       id="line54" />
+    <text
+       id="label-049"
+       x="448"
+       y="271.20001"
+       font-size="18.1px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start"
+       style="font-size:17.3663px">Cars</text>
+    <rect
+       x="601.33838"
+       y="254"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#ffebbb"
+       stroke="#926820"
+       stroke-width="0.85"
+       id="rect55" />
+    <text
+       id="label-050"
+       x="617.83838"
+       y="270"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#614717"
+       text-anchor="middle">GSL</text>
+    <rect
+       x="637.33838"
+       y="254"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#ffde92"
+       stroke="#a86115"
+       stroke-width="0.85"
+       id="rect56" />
+    <text
+       id="label-051"
+       x="653.83838"
+       y="270"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#57340b"
+       text-anchor="middle">DSL</text>
+    <rect
+       x="673.33838"
+       y="254"
+       width="36"
+       height="22"
+       rx="4"
+       fill="#eae2f6"
+       stroke="#76638f"
+       stroke-width="0.85"
+       id="rect57" />
+    <text
+       id="label-052"
+       x="691.33838"
+       y="270"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#514063"
+       text-anchor="middle">CNG</text>
+    <rect
+       x="712.33838"
+       y="254"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#89ef9c"
+       stroke="#26834b"
+       stroke-width="0.85"
+       id="rect58" />
+    <text
+       id="label-053"
+       x="728.83838"
+       y="270"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#154c2c"
+       text-anchor="middle">ELC</text>
+    <rect
+       x="748.33838"
+       y="254"
+       width="29"
+       height="22"
+       rx="4"
+       fill="#bce8ec"
+       stroke="#277985"
+       stroke-width="0.85"
+       id="rect59" />
+    <text
+       id="label-054"
+       x="762.83838"
+       y="270"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#174b53"
+       text-anchor="middle">H₂</text>
+    <rect
+       x="438"
+       y="282"
+       width="522"
+       height="30"
+       rx="3"
+       fill="#f3f6fa"
+       stroke="none"
+       stroke-width="1"
+       id="rect63" />
+    <line
+       x1="787"
+       y1="282"
+       x2="787"
+       y2="312"
+       stroke="#d6e0ea"
+       stroke-width="1"
+       stroke-linecap="round"
+       id="line63" />
+    <text
+       id="label-056"
+       x="448"
+       y="303.20001"
+       font-size="18.1px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start"
+       style="font-size:17.3663px">Passenger trucks</text>
+    <rect
+       x="601.33838"
+       y="286"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#ffebbb"
+       stroke="#926820"
+       stroke-width="0.85"
+       id="rect64" />
+    <text
+       id="label-057"
+       x="617.83838"
+       y="302"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#614717"
+       text-anchor="middle">GSL</text>
+    <rect
+       x="637.33838"
+       y="286"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#ffde92"
+       stroke="#a86115"
+       stroke-width="0.85"
+       id="rect65" />
+    <text
+       id="label-058"
+       x="653.83838"
+       y="302"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#57340b"
+       text-anchor="middle">DSL</text>
+    <rect
+       x="673.33838"
+       y="286"
+       width="36"
+       height="22"
+       rx="4"
+       fill="#eae2f6"
+       stroke="#76638f"
+       stroke-width="0.85"
+       id="rect66" />
+    <text
+       id="label-059"
+       x="691.33838"
+       y="302"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#514063"
+       text-anchor="middle">CNG</text>
+    <rect
+       x="712.33838"
+       y="286"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#89ef9c"
+       stroke="#26834b"
+       stroke-width="0.85"
+       id="rect67" />
+    <text
+       id="label-060"
+       x="728.83838"
+       y="302"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#154c2c"
+       text-anchor="middle">ELC</text>
+    <rect
+       x="748.33838"
+       y="286"
+       width="29"
+       height="22"
+       rx="4"
+       fill="#bce8ec"
+       stroke="#277985"
+       stroke-width="0.85"
+       id="rect68" />
+    <text
+       id="label-061"
+       x="762.83838"
+       y="302"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#174b53"
+       text-anchor="middle">H₂</text>
+    <text
+       id="label-063"
+       x="448"
+       y="335.20001"
+       font-size="18.1px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start"
+       style="font-size:17.3663px">Freight trucks</text>
+    <rect
+       x="601.33838"
+       y="318"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#ffebbb"
+       stroke="#926820"
+       stroke-width="0.85"
+       id="rect73" />
+    <text
+       id="label-064"
+       x="617.83838"
+       y="334"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#614717"
+       text-anchor="middle">GSL</text>
+    <rect
+       x="637.33838"
+       y="318"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#ffde92"
+       stroke="#a86115"
+       stroke-width="0.85"
+       id="rect74" />
+    <text
+       id="label-065"
+       x="653.83838"
+       y="334"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#57340b"
+       text-anchor="middle">DSL</text>
+    <rect
+       x="673.33838"
+       y="318"
+       width="36"
+       height="22"
+       rx="4"
+       fill="#eae2f6"
+       stroke="#76638f"
+       stroke-width="0.85"
+       id="rect75" />
+    <text
+       id="label-066"
+       x="691.33838"
+       y="334"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#514063"
+       text-anchor="middle">CNG</text>
+    <rect
+       x="712.33838"
+       y="318"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#89ef9c"
+       stroke="#26834b"
+       stroke-width="0.85"
+       id="rect76" />
+    <text
+       id="label-067"
+       x="728.83838"
+       y="334"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#154c2c"
+       text-anchor="middle">ELC</text>
+    <rect
+       x="748.33838"
+       y="318"
+       width="29"
+       height="22"
+       rx="4"
+       fill="#bce8ec"
+       stroke="#277985"
+       stroke-width="0.85"
+       id="rect77" />
+    <text
+       id="label-068"
+       x="762.83838"
+       y="334"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#174b53"
+       text-anchor="middle">H₂</text>
+    <rect
+       x="436"
+       y="354"
+       width="526"
+       height="60"
+       rx="6"
+       fill="#fcfdff"
+       stroke="#aebfd1"
+       stroke-width="1"
+       id="rect81" />
+    <rect
+       x="437"
+       y="355"
+       width="524"
+       height="25"
+       rx="5"
+       fill="#e9f0f7"
+       stroke="none"
+       stroke-width="1"
+       id="rect82" />
+    <text
+       id="label-070"
+       x="448"
+       y="372.79999"
+       font-size="18.3px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start">Medium duty</text>
+    <text
+       id="label-071"
+       x="601.33838"
+       y="372.79999"
+       font-size="16.3px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#44576a"
+       text-anchor="start">(Classes 2b-7)</text>
+    <line
+       x1="787"
+       y1="382"
+       x2="787"
+       y2="409"
+       stroke="#d6e0ea"
+       stroke-width="1"
+       stroke-linecap="round"
+       id="line82" />
+    <text
+       id="label-072"
+       x="448"
+       y="402.20001"
+       font-size="18.1px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start"
+       style="font-size:17.3663px">Trucks</text>
+    <rect
+       x="601.33838"
+       y="385"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#ffebbb"
+       stroke="#926820"
+       stroke-width="0.85"
+       id="rect83" />
+    <text
+       id="label-073"
+       x="617.83838"
+       y="401"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#614717"
+       text-anchor="middle">GSL</text>
+    <rect
+       x="637.33838"
+       y="385"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#ffde92"
+       stroke="#a86115"
+       stroke-width="0.85"
+       id="rect84" />
+    <text
+       id="label-074"
+       x="653.83838"
+       y="401"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#57340b"
+       text-anchor="middle">DSL</text>
+    <rect
+       x="673.33838"
+       y="385"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#89ef9c"
+       stroke="#26834b"
+       stroke-width="0.85"
+       id="rect85" />
+    <text
+       id="label-075"
+       x="689.83838"
+       y="401"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#154c2c"
+       text-anchor="middle">ELC</text>
+    <rect
+       x="709.33838"
+       y="385"
+       width="29"
+       height="22"
+       rx="4"
+       fill="#bce8ec"
+       stroke="#277985"
+       stroke-width="0.85"
+       id="rect86" />
+    <text
+       id="label-076"
+       x="723.83838"
+       y="401"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#174b53"
+       text-anchor="middle">H₂</text>
+    <rect
+       x="436"
+       y="423"
+       width="526"
+       height="316"
+       rx="6"
+       fill="#fcfdff"
+       stroke="#aebfd1"
+       stroke-width="1"
+       id="rect90" />
+    <rect
+       x="437"
+       y="424"
+       width="524"
+       height="25"
+       rx="5"
+       fill="#e9f0f7"
+       stroke="none"
+       stroke-width="1"
+       id="rect91" />
+    <text
+       id="label-077"
+       x="448"
+       y="441.79999"
+       font-size="18.3px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start">Heavy duty and non-road</text>
+    <line
+       x1="787"
+       y1="451"
+       x2="787"
+       y2="734"
+       stroke="#d6e0ea"
+       stroke-width="1"
+       stroke-linecap="round"
+       id="line91" />
+    <text
+       id="label-078"
+       x="448"
+       y="471.20001"
+       font-size="18.1px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start"
+       style="font-size:17.3663px">Class 8 trucks</text>
+    <rect
+       x="601.33838"
+       y="454"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#ffde92"
+       stroke="#a86115"
+       stroke-width="0.85"
+       id="rect92" />
+    <text
+       id="label-079"
+       x="617.83838"
+       y="470"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#57340b"
+       text-anchor="middle">DSL</text>
+    <rect
+       x="637.33838"
+       y="454"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#89ef9c"
+       stroke="#26834b"
+       stroke-width="0.85"
+       id="rect93" />
+    <text
+       id="label-080"
+       x="653.83838"
+       y="470"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#154c2c"
+       text-anchor="middle">ELC</text>
+    <rect
+       x="673.33838"
+       y="454"
+       width="29"
+       height="22"
+       rx="4"
+       fill="#bce8ec"
+       stroke="#277985"
+       stroke-width="0.85"
+       id="rect94" />
+    <text
+       id="label-081"
+       x="687.83838"
+       y="470"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#174b53"
+       text-anchor="middle">H₂</text>
+    <rect
+       x="438"
+       y="482"
+       width="522"
+       height="30"
+       rx="3"
+       fill="#f3f6fa"
+       stroke="none"
+       stroke-width="1"
+       id="rect98" />
+    <line
+       x1="787"
+       y1="482"
+       x2="787"
+       y2="512"
+       stroke="#d6e0ea"
+       stroke-width="1"
+       stroke-linecap="round"
+       id="line98" />
+    <text
+       id="label-082"
+       x="448"
+       y="503.20001"
+       font-size="18.1px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start"
+       style="font-size:17.3663px">Transit buses</text>
+    <rect
+       x="601.33838"
+       y="486"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#ffebbb"
+       stroke="#926820"
+       stroke-width="0.85"
+       id="rect99" />
+    <text
+       id="label-083"
+       x="617.83838"
+       y="502"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#614717"
+       text-anchor="middle">GSL</text>
+    <rect
+       x="637.33838"
+       y="486"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#ffde92"
+       stroke="#a86115"
+       stroke-width="0.85"
+       id="rect100" />
+    <text
+       id="label-084"
+       x="653.83838"
+       y="502"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#57340b"
+       text-anchor="middle">DSL</text>
+    <rect
+       x="673.33838"
+       y="486"
+       width="36"
+       height="22"
+       rx="4"
+       fill="#eae2f6"
+       stroke="#76638f"
+       stroke-width="0.85"
+       id="rect101" />
+    <text
+       id="label-085"
+       x="691.33838"
+       y="502"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#514063"
+       text-anchor="middle">CNG</text>
+    <rect
+       x="712.33838"
+       y="486"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#89ef9c"
+       stroke="#26834b"
+       stroke-width="0.85"
+       id="rect102" />
+    <text
+       id="label-086"
+       x="728.83838"
+       y="502"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#154c2c"
+       text-anchor="middle">ELC</text>
+    <rect
+       x="748.33838"
+       y="486"
+       width="29"
+       height="22"
+       rx="4"
+       fill="#bce8ec"
+       stroke="#277985"
+       stroke-width="0.85"
+       id="rect103" />
+    <text
+       id="label-087"
+       x="762.83838"
+       y="502"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#174b53"
+       text-anchor="middle">H₂</text>
+    <text
+       id="label-088"
+       x="448"
+       y="535.20001"
+       font-size="18.1px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start"
+       style="font-size:17.3663px">School buses</text>
+    <rect
+       x="601.33838"
+       y="518"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#ffebbb"
+       stroke="#926820"
+       stroke-width="0.85"
+       id="rect108" />
+    <text
+       id="label-089"
+       x="617.83838"
+       y="534"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#614717"
+       text-anchor="middle">GSL</text>
+    <rect
+       x="637.33838"
+       y="518"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#ffde92"
+       stroke="#a86115"
+       stroke-width="0.85"
+       id="rect109" />
+    <text
+       id="label-090"
+       x="653.83838"
+       y="534"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#57340b"
+       text-anchor="middle">DSL</text>
+    <rect
+       x="673.33838"
+       y="518"
+       width="36"
+       height="22"
+       rx="4"
+       fill="#eae2f6"
+       stroke="#76638f"
+       stroke-width="0.85"
+       id="rect110" />
+    <text
+       id="label-091"
+       x="691.33838"
+       y="534"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#514063"
+       text-anchor="middle">CNG</text>
+    <rect
+       x="712.33838"
+       y="518"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#89ef9c"
+       stroke="#26834b"
+       stroke-width="0.85"
+       id="rect111" />
+    <text
+       id="label-092"
+       x="728.83838"
+       y="534"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#154c2c"
+       text-anchor="middle">ELC</text>
+    <rect
+       x="748.33838"
+       y="518"
+       width="29"
+       height="22"
+       rx="4"
+       fill="#bce8ec"
+       stroke="#277985"
+       stroke-width="0.85"
+       id="rect112" />
+    <text
+       id="label-093"
+       x="762.83838"
+       y="534"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#174b53"
+       text-anchor="middle">H₂</text>
+    <rect
+       x="438"
+       y="546"
+       width="522"
+       height="30"
+       rx="3"
+       fill="#f3f6fa"
+       stroke="none"
+       stroke-width="1"
+       id="rect116" />
+    <line
+       x1="787"
+       y1="546"
+       x2="787"
+       y2="576"
+       stroke="#d6e0ea"
+       stroke-width="1"
+       stroke-linecap="round"
+       id="line116" />
+    <text
+       id="label-094"
+       x="448"
+       y="567.20001"
+       font-size="18.1px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start"
+       style="font-size:17.3663px">Coach buses</text>
+    <rect
+       x="601.33838"
+       y="550"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#ffebbb"
+       stroke="#926820"
+       stroke-width="0.85"
+       id="rect117" />
+    <text
+       id="label-095"
+       x="617.83838"
+       y="566"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#614717"
+       text-anchor="middle">GSL</text>
+    <rect
+       x="637.33838"
+       y="550"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#ffde92"
+       stroke="#a86115"
+       stroke-width="0.85"
+       id="rect118" />
+    <text
+       id="label-096"
+       x="653.83838"
+       y="566"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#57340b"
+       text-anchor="middle">DSL</text>
+    <rect
+       x="673.33838"
+       y="550"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#89ef9c"
+       stroke="#26834b"
+       stroke-width="0.85"
+       id="rect119" />
+    <text
+       id="label-097"
+       x="689.83838"
+       y="566"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#154c2c"
+       text-anchor="middle">ELC</text>
+    <rect
+       x="709.33838"
+       y="550"
+       width="29"
+       height="22"
+       rx="4"
+       fill="#bce8ec"
+       stroke="#277985"
+       stroke-width="0.85"
+       id="rect120" />
+    <text
+       id="label-098"
+       x="723.83838"
+       y="566"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#174b53"
+       text-anchor="middle">H₂</text>
+    <text
+       id="label-099"
+       x="448"
+       y="599.20001"
+       font-size="18.1px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start"
+       style="font-size:17.3663px">Passenger aircraft</text>
+    <rect
+       x="601.33838"
+       y="582"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#f8e7c9"
+       stroke="#8d6f3a"
+       stroke-width="0.85"
+       id="rect124" />
+    <text
+       id="label-100"
+       x="617.83838"
+       y="598"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#5c461e"
+       text-anchor="middle">JTF</text>
+    <rect
+       x="637.33838"
+       y="582"
+       width="47"
+       height="22"
+       rx="4"
+       fill="#f8e7c9"
+       stroke="#8d6f3a"
+       stroke-width="0.85"
+       id="rect125" />
+    <text
+       id="label-101"
+       x="660.838"
+       y="598"
+       font-size="13.5px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#5c461e"
+       text-anchor="middle">S-JTF</text>
+    <rect
+       x="438"
+       y="610"
+       width="522"
+       height="30"
+       rx="3"
+       fill="#f3f6fa"
+       stroke="none"
+       stroke-width="1"
+       id="rect126" />
+    <line
+       x1="787"
+       y1="610"
+       x2="787"
+       y2="640"
+       stroke="#d6e0ea"
+       stroke-width="1"
+       stroke-linecap="round"
+       id="line126" />
+    <text
+       id="label-102"
+       x="448"
+       y="631.20001"
+       font-size="18.1px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start"
+       style="font-size:17.3663px">Passenger rail</text>
+    <rect
+       x="601.33838"
+       y="614"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#ffde92"
+       stroke="#a86115"
+       stroke-width="0.85"
+       id="rect127" />
+    <text
+       id="label-103"
+       x="617.83838"
+       y="630"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#57340b"
+       text-anchor="middle">DSL</text>
+    <rect
+       x="637.33838"
+       y="614"
+       width="29"
+       height="22"
+       rx="4"
+       fill="#bce8ec"
+       stroke="#277985"
+       stroke-width="0.85"
+       id="rect128" />
+    <text
+       id="label-104"
+       x="651.83838"
+       y="630"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#174b53"
+       text-anchor="middle">H₂</text>
+    <text
+       id="label-105"
+       x="448"
+       y="663.20001"
+       font-size="18.1px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start"
+       style="font-size:17.3663px">Cargo aircraft</text>
+    <rect
+       x="601.33838"
+       y="646"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#f8e7c9"
+       stroke="#8d6f3a"
+       stroke-width="0.85"
+       id="rect130" />
+    <text
+       id="label-106"
+       x="617.83838"
+       y="662"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#5c461e"
+       text-anchor="middle">JTF</text>
+    <rect
+       x="637.33838"
+       y="646"
+       width="47"
+       height="22"
+       rx="4"
+       fill="#f8e7c9"
+       stroke="#8d6f3a"
+       stroke-width="0.85"
+       id="rect131" />
+    <text
+       id="label-107"
+       x="660.838"
+       y="662"
+       font-size="13.5px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#5c461e"
+       text-anchor="middle">S-JTF</text>
+    <rect
+       x="438"
+       y="674"
+       width="522"
+       height="30"
+       rx="3"
+       fill="#f3f6fa"
+       stroke="none"
+       stroke-width="1"
+       id="rect132" />
+    <line
+       x1="787"
+       y1="674"
+       x2="787"
+       y2="704"
+       stroke="#d6e0ea"
+       stroke-width="1"
+       stroke-linecap="round"
+       id="line132" />
+    <text
+       id="label-108"
+       x="448"
+       y="695.20001"
+       font-size="18.1px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start"
+       style="font-size:17.3663px">Freight rail</text>
+    <rect
+       x="601.33838"
+       y="678"
+       width="33"
+       height="22"
+       rx="4"
+       fill="#ffde92"
+       stroke="#a86115"
+       stroke-width="0.85"
+       id="rect133" />
+    <text
+       id="label-109"
+       x="617.83838"
+       y="694"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#57340b"
+       text-anchor="middle">DSL</text>
+    <rect
+       x="637.33838"
+       y="678"
+       width="35"
+       height="22"
+       rx="4"
+       fill="#eae2f6"
+       stroke="#76638f"
+       stroke-width="0.85"
+       id="rect134" />
+    <text
+       id="label-110"
+       x="654.83838"
+       y="694"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#514063"
+       text-anchor="middle">LNG</text>
+    <rect
+       x="675.33838"
+       y="678"
+       width="29"
+       height="22"
+       rx="4"
+       fill="#bce8ec"
+       stroke="#277985"
+       stroke-width="0.85"
+       id="rect135" />
+    <text
+       id="label-111"
+       x="689.83838"
+       y="694"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#174b53"
+       text-anchor="middle">H₂</text>
+    <text
+       id="label-112"
+       x="448"
+       y="727.20001"
+       font-size="18.1px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start"
+       style="font-size:17.3663px">Marine vessels</text>
+    <rect
+       x="601.33838"
+       y="710"
+       width="35"
+       height="22"
+       rx="4"
+       fill="#eae2f6"
+       stroke="#76638f"
+       stroke-width="0.85"
+       id="rect137" />
+    <text
+       id="label-113"
+       x="618.83838"
+       y="726"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#514063"
+       text-anchor="middle">LNG</text>
+    <rect
+       x="639.33838"
+       y="710"
+       width="36"
+       height="22"
+       rx="4"
+       fill="#f5ebd8"
+       stroke="#897550"
+       stroke-width="0.85"
+       id="rect138" />
+    <text
+       id="label-114"
+       x="657.33838"
+       y="726"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#574628"
+       text-anchor="middle">HFO</text>
+    <rect
+       x="678.33838"
+       y="710"
+       width="39"
+       height="22"
+       rx="4"
+       fill="#f5ebd8"
+       stroke="#897550"
+       stroke-width="0.85"
+       id="rect139" />
+    <text
+       id="label-115"
+       x="697.83838"
+       y="726"
+       font-size="14.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#574628"
+       text-anchor="middle">MDO</text>
+    <line
+       x1="448"
+       y1="577"
+       x2="950"
+       y2="577"
+       stroke="#b9c8d6"
+       stroke-width="1"
+       stroke-linecap="round"
+       id="line139" />
+    <path
+       id="rect140"
+       style="fill:#ffafaa;stroke:#a84842;stroke-width:1.5"
+       d="m 1001,229 h 120.6054 c 3.878,0 7,3.122 7,7 v 58 c 0,3.878 -3.122,7 -7,7 H 1001 c -3.878,0 -7,-3.122 -7,-7 v -58 c 0,-3.878 3.122,-7 7,-7 z"
+       sodipodi:nodetypes="sssssssss" />
+    <text
+       id="label-116"
+       x="1005"
+       y="262"
+       font-size="19.2px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#572824"
+       text-anchor="start"
+       style="font-size:17.8771px">Passenger-km</text>
+    <text
+       id="label-117"
+       x="1005"
+       y="283"
+       font-size="16.9px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#572824"
+       text-anchor="start"
+       style="font-size:15.834px">billion/year</text>
+    <circle
+       cx="994"
+       cy="246"
+       r="4.5"
+       fill="#ffffff"
+       stroke="#a84842"
+       stroke-width="1.6"
+       id="demand-motorcycles-terminal"
+       data-demands="T_D_pkm_ldv_m"
+       data-source-class="motorcycles">
+      <title
+         id="title140">Motorcycles · independent demand (T_D_pkm_ldv_m)</title>
+    </circle>
+    <g
+       id="g1"
+       transform="translate(6.5690308)">
+      <text
+         id="label-007"
+         x="1117.3301"
+         y="221.64685"
+         font-size="17.2px"
+         font-weight="400"
+         font-family="'Segoe UI', Arial, sans-serif"
+         fill="#44576a"
+         text-anchor="end"
+         style="font-size:12.3871px;fill:#000000;fill-opacity:1;stroke-width:0.808389">One demand per class</text>
+      <circle
+         cx="987.43097"
+         cy="217.91684"
+         r="4.5"
+         fill="#ffffff"
+         stroke="#a84842"
+         stroke-width="1.6"
+         id="demand-motorcycles-terminal-9"
+         data-demands="T_D_pkm_ldv_m"
+         data-source-class="motorcycles">
+        <title
+           id="title140-4">Motorcycles · independent demand (T_D_pkm_ldv_m)</title>
+      </circle>
+    </g>
+    <circle
+       cx="994"
+       cy="265"
+       r="4.5"
+       fill="#ffffff"
+       stroke="#a84842"
+       stroke-width="1.6"
+       id="demand-cars-terminal"
+       data-demands="T_D_pkm_ldv_c"
+       data-source-class="cars">
+      <title
+         id="title141">Cars · independent demand (T_D_pkm_ldv_c)</title>
+    </circle>
+    <circle
+       cx="994"
+       cy="284"
+       r="4.5"
+       fill="#ffffff"
+       stroke="#a84842"
+       stroke-width="1.6"
+       id="demand-passenger-trucks-terminal"
+       data-demands="T_D_pkm_ldv_t"
+       data-source-class="passenger-trucks">
+      <title
+         id="title142">Passenger trucks · independent demand (T_D_pkm_ldv_t)</title>
+    </circle>
+    <path
+       id="rect142"
+       style="fill:#cdddfa;stroke:#4e659a;stroke-width:1.5"
+       d="m 1001,361 h 120.6054 c 3.878,0 7,3.122 7,7 v 56 c 0,3.878 -3.122,7 -7,7 H 1001 c -3.878,0 -7,-3.122 -7,-7 v -56 c 0,-3.878 3.122,-7 7,-7 z"
+       sodipodi:nodetypes="sssssssss" />
+    <text
+       id="label-118"
+       x="1005"
+       y="393"
+       font-size="19.2px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#263f70"
+       text-anchor="start"
+       style="font-size:17.8771px">Tonne-km</text>
+    <text
+       id="label-119"
+       x="1005"
+       y="414"
+       font-size="16.9px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#263f70"
+       text-anchor="start"
+       style="font-size:15.834px">billion/year</text>
+    <rect
+       x="989.75"
+       y="372.75"
+       width="8.5"
+       height="8.5"
+       rx="1"
+       fill="#ffffff"
+       stroke="#4e659a"
+       stroke-width="1.6"
+       id="demand-freight-trucks-terminal"
+       data-demands="T_D_tkm_ldv_t"
+       data-source-class="freight-trucks">
+      <title
+         id="title143">Freight trucks · independent demand (T_D_tkm_ldv_t)</title>
+    </rect>
+    <g
+       id="g2"
+       transform="translate(0.97277832,1.1394589)">
+      <text
+         id="label-007-2"
+         x="1123.0104"
+         y="351.66016"
+         font-size="17.2px"
+         font-weight="400"
+         font-family="'Segoe UI', Arial, sans-serif"
+         fill="#44576a"
+         text-anchor="end"
+         style="font-size:12.3871px;fill:#000000;fill-opacity:1;stroke-width:0.808389">One demand per class</text>
+      <rect
+         x="988.77722"
+         y="344.24988"
+         width="8.5"
+         height="8.5"
+         rx="1"
+         fill="#ffffff"
+         stroke="#4e659a"
+         stroke-width="1.6"
+         id="demand-freight-trucks-terminal-1"
+         data-demands="T_D_tkm_ldv_t"
+         data-source-class="freight-trucks">
+        <title
+           id="title143-7">Freight trucks · independent demand (T_D_tkm_ldv_t)</title>
+      </rect>
+    </g>
+    <rect
+       x="989.75"
+       y="391.75"
+       width="8.5"
+       height="8.5"
+       rx="1"
+       fill="#ffffff"
+       stroke="#4e659a"
+       stroke-width="1.6"
+       id="demand-medium-trucks-terminal"
+       data-demands="T_D_tkm_mdv_t"
+       data-source-class="medium-trucks">
+      <title
+         id="title144">Trucks · independent demand (T_D_tkm_mdv_t)</title>
+    </rect>
+    <rect
+       x="989.75"
+       y="410.75"
+       width="8.5"
+       height="8.5"
+       rx="1"
+       fill="#ffffff"
+       stroke="#4e659a"
+       stroke-width="1.6"
+       id="demand-heavy-trucks-terminal"
+       data-demands="T_D_tkm_hdv_t"
+       data-source-class="heavy-trucks">
+      <title
+         id="title145">Class 8 trucks · independent demand (T_D_tkm_hdv_t)</title>
+    </rect>
+    <path
+       id="rect145"
+       style="fill:#ffafaa;stroke:#a84842;stroke-width:1.5"
+       d="m 1001,509 h 120.6054 c 3.878,0 7,3.122 7,7 v 90 c 0,3.878 -3.122,7 -7,7 H 1001 c -3.878,0 -7,-3.122 -7,-7 v -90 c 0,-3.878 3.122,-7 7,-7 z"
+       sodipodi:nodetypes="sssssssss" />
+    <text
+       id="label-120"
+       x="1005"
+       y="558"
+       font-size="19.2px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#572824"
+       text-anchor="start"
+       style="font-size:17.8771px">Passenger-km</text>
+    <text
+       id="label-121"
+       x="1005"
+       y="579"
+       font-size="16.9px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#572824"
+       text-anchor="start"
+       style="font-size:15.834px">billion/year</text>
+    <circle
+       cx="994"
+       cy="525"
+       r="4.5"
+       fill="#ffffff"
+       stroke="#a84842"
+       stroke-width="1.6"
+       id="demand-transit-buses-terminal"
+       data-demands="T_D_pkm_hdv_bt"
+       data-source-class="transit-buses">
+      <title
+         id="title146">Transit buses · independent demand (T_D_pkm_hdv_bt)</title>
+    </circle>
+    <circle
+       cx="994"
+       cy="543"
+       r="4.5"
+       fill="#ffffff"
+       stroke="#a84842"
+       stroke-width="1.6"
+       id="demand-school-buses-terminal"
+       data-demands="T_D_pkm_hdv_bs"
+       data-source-class="school-buses">
+      <title
+         id="title147">School buses · independent demand (T_D_pkm_hdv_bs)</title>
+    </circle>
+    <circle
+       cx="994"
+       cy="561"
+       r="4.5"
+       fill="#ffffff"
+       stroke="#a84842"
+       stroke-width="1.6"
+       id="demand-coach-buses-terminal"
+       data-demands="T_D_pkm_hdv_bic"
+       data-source-class="coach-buses">
+      <title
+         id="title148">Coach buses · independent demand (T_D_pkm_hdv_bic)</title>
+    </circle>
+    <circle
+       cx="994"
+       cy="579"
+       r="4.5"
+       fill="#ffffff"
+       stroke="#a84842"
+       stroke-width="1.6"
+       id="demand-air-passenger-terminal"
+       data-demands="T_D_pkm_hdv_aj"
+       data-source-class="air-passenger">
+      <title
+         id="title149">Passenger aircraft · independent demand (T_D_pkm_hdv_aj)</title>
+    </circle>
+    <circle
+       cx="994"
+       cy="597"
+       r="4.5"
+       fill="#ffffff"
+       stroke="#a84842"
+       stroke-width="1.6"
+       id="demand-rail-passenger-terminal"
+       data-demands="T_D_pkm_hdv_r"
+       data-source-class="rail-passenger">
+      <title
+         id="title150">Passenger rail · independent demand (T_D_pkm_hdv_r)</title>
+    </circle>
+    <path
+       id="rect150"
+       style="fill:#cdddfa;stroke:#4e659a;stroke-width:1.5"
+       d="m 1001,653 h 120.6054 c 3.878,0 7,3.122 7,7 v 58 c 0,3.878 -3.122,7 -7,7 H 1001 c -3.878,0 -7,-3.122 -7,-7 v -58 c 0,-3.878 3.122,-7 7,-7 z"
+       sodipodi:nodetypes="sssssssss" />
+    <text
+       id="label-122"
+       x="1005"
+       y="686"
+       font-size="19.2px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#263f70"
+       text-anchor="start"
+       style="font-size:17.8771px">Tonne-km</text>
+    <text
+       id="label-123"
+       x="1005"
+       y="707"
+       font-size="16.9px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#263f70"
+       text-anchor="start"
+       style="font-size:15.834px">billion/year</text>
+    <rect
+       x="989.75"
+       y="665.75"
+       width="8.5"
+       height="8.5"
+       rx="1"
+       fill="#ffffff"
+       stroke="#4e659a"
+       stroke-width="1.6"
+       id="demand-air-freight-terminal"
+       data-demands="T_D_tkm_hdv_aj"
+       data-source-class="air-freight">
+      <title
+         id="title151">Cargo aircraft · independent demand (T_D_tkm_hdv_aj)</title>
+    </rect>
+    <rect
+       x="989.75"
+       y="684.75"
+       width="8.5"
+       height="8.5"
+       rx="1"
+       fill="#ffffff"
+       stroke="#4e659a"
+       stroke-width="1.6"
+       id="demand-rail-freight-terminal"
+       data-demands="T_D_tkm_hdv_r"
+       data-source-class="rail-freight">
+      <title
+         id="title152">Freight rail · independent demand (T_D_tkm_hdv_r)</title>
+    </rect>
+    <rect
+       x="989.75"
+       y="703.75"
+       width="8.5"
+       height="8.5"
+       rx="1"
+       fill="#ffffff"
+       stroke="#4e659a"
+       stroke-width="1.6"
+       id="demand-marine-terminal"
+       data-demands="T_D_tkm_hdv_wt"
+       data-source-class="marine">
+      <title
+         id="title153">Marine vessels · independent demand (T_D_tkm_hdv_wt)</title>
+    </rect>
+    <path
+       id="rect153"
+       style="fill:#e8edf2;stroke:#607589;stroke-width:1.5"
+       d="m 1000,112 h 122.6054 c 3.324,0 6,2.676 6,6 v 29 c 0,3.324 -2.676,6 -6,6 H 1000 c -3.324,0 -6,-2.676 -6,-6 v -29 c 0,-3.324 2.676,-6 6,-6 z"
+       sodipodi:nodetypes="sssssssss" />
+    <text
+       id="label-124"
+       x="1005"
+       y="129"
+       font-size="17.8px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#31465b"
+       text-anchor="start"
+       style="font-size:17.8771px">Energy use</text>
+    <text
+       id="label-125"
+       x="1005"
+       y="147"
+       font-size="16.5px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#31465b"
+       text-anchor="start"
+       style="font-size:15.834px">PJ/year</text>
+    <path
+       d="m 994,127 5,5 -5,5 -5,-5 z"
+       fill="#ffffff"
+       stroke="#607589"
+       stroke-width="1.5"
+       id="offroad-terminal"
+       data-demands="T_D_pj_off"
+       data-source-class="other-offroad"
+       sodipodi:nodetypes="ccccc" />
+    <line
+       id="eligible-energy-trunk"
+       style="stroke:#7890a8;stroke-width:1.7;stroke-linecap:round"
+       x1="418"
+       y1="169"
+       x2="418"
+       y2="549" />
+    <rect
+       x="20"
+       y="111.75"
+       width="380"
+       height="214"
+       rx="7"
+       fill="#fcfaf5"
+       stroke="#d9cdb5"
+       stroke-width="1"
+       id="rect14" />
+    <path
+       d="m 392,209.33292 h 26"
+       fill="none"
+       stroke="#926820"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       id="path39"
+       sodipodi:nodetypes="cc" />
+    <path
+       d="m 392,177.33292 h 26"
+       fill="none"
+       stroke="#926820"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       id="path39-1"
+       style="stroke:#a86115;stroke-opacity:1"
+       sodipodi:nodetypes="cc" />
+    <g
+       id="import-diesel"
+       transform="translate(0,45.332868)">
+      <rect
+         x="28"
+         y="118"
+         width="364"
+         height="28"
+         rx="5"
+         fill="#ffde92"
+         stroke="#a86115"
+         stroke-width="1"
+         id="rect15" />
+      <g
+         data-carrier-code="DSL"
+         id="g16">
+        <title
+           id="title15">Diesel</title>
+        <rect
+           x="35"
+           y="121"
+           width="33"
+           height="22"
+           rx="4"
+           fill="#ffde92"
+           stroke="#a86115"
+           stroke-width="0.85"
+           id="rect16" />
+        <text
+           id="label-015"
+           x="51.5"
+           y="137"
+           font-size="14.8px"
+           font-weight="700"
+           font-family="'Segoe UI', Arial, sans-serif"
+           fill="#57340b"
+           text-anchor="middle">DSL</text>
+      </g>
+      <text
+         id="label-016"
+         x="76"
+         y="137.7"
+         font-size="17.1px"
+         font-weight="600"
+         font-family="'Segoe UI', Arial, sans-serif"
+         fill="#17283a"
+         text-anchor="start">Diesel with renewable diesel</text>
+    </g>
+    <g
+       id="import-gasoline"
+       transform="translate(0,45.332868)">
+      <rect
+         x="28"
+         y="150"
+         width="364"
+         height="28"
+         rx="5"
+         fill="#ffebbb"
+         stroke="#926820"
+         stroke-width="1"
+         id="rect17" />
+      <g
+         data-carrier-code="GSL"
+         id="g18">
+        <title
+           id="title17">Gasoline</title>
+        <rect
+           x="35"
+           y="153"
+           width="33"
+           height="22"
+           rx="4"
+           fill="#ffebbb"
+           stroke="#926820"
+           stroke-width="0.85"
+           id="rect18" />
+        <text
+           id="label-017"
+           x="51.5"
+           y="169"
+           font-size="14.8px"
+           font-weight="700"
+           font-family="'Segoe UI', Arial, sans-serif"
+           fill="#614717"
+           text-anchor="middle">GSL</text>
+      </g>
+      <text
+         id="label-018"
+         x="76"
+         y="169.7"
+         font-size="17.1px"
+         font-weight="600"
+         font-family="'Segoe UI', Arial, sans-serif"
+         fill="#17283a"
+         text-anchor="start">Gasoline with ethanol</text>
+    </g>
+    <path
+       d="m 392,241.33292 h 26"
+       fill="none"
+       stroke="#8d6f3a"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       id="path40"
+       sodipodi:nodetypes="cc" />
+    <rect
+       x="28"
+       y="227.33286"
+       width="364"
+       height="28"
+       rx="5"
+       fill="#f8e7c9"
+       stroke="#8d6f3a"
+       stroke-width="1"
+       id="rect19" />
+    <g
+       data-carrier-code="JTF"
+       id="g20"
+       transform="translate(0,45.332868)">
+      <title
+         id="title19">Jet fuel</title>
+      <rect
+         x="35"
+         y="185"
+         width="33"
+         height="22"
+         rx="4"
+         fill="#f8e7c9"
+         stroke="#8d6f3a"
+         stroke-width="0.85"
+         id="rect20" />
+      <text
+         id="label-019"
+         x="51.5"
+         y="201"
+         font-size="14.8px"
+         font-weight="700"
+         font-family="'Segoe UI', Arial, sans-serif"
+         fill="#5c461e"
+         text-anchor="middle">JTF</text>
+    </g>
+    <text
+       id="label-020"
+       x="76"
+       y="247.03284"
+       font-size="17.1px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start">Jet fuel</text>
+    <g
+       id="g7"
+       transform="translate(-2.6181641,-12.303319)"
+       data-carrier-code="S-JTF">
+      <title
+         id="title1">T_spk: conventional jet fuel blended with 50% HEFA synthetic paraffinic kerosene</title>
+      <rect
+         x="206.61816"
+         y="242.63618"
+         width="47"
+         height="22"
+         rx="4"
+         fill="#f8e7c9"
+         stroke="#8d6f3a"
+         stroke-width="0.85"
+         id="rect22" />
+      <text
+         id="label-021"
+         x="230.118"
+         y="258.6362"
+         font-size="13.5px"
+         font-weight="700"
+         font-family="'Segoe UI', Arial, sans-serif"
+         fill="#5c461e"
+         text-anchor="middle">S-JTF</text>
+    </g>
+    <text
+       id="label-022"
+       x="258"
+       y="247.03284"
+       font-size="17.1px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start">HEFA jet blend</text>
+    <path
+       d="m 392,273.47784 h 26"
+       fill="none"
+       stroke="#897550"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       id="path42"
+       sodipodi:nodetypes="cc" />
+    <rect
+       x="28"
+       y="259.47778"
+       width="364"
+       height="28"
+       rx="5"
+       fill="#f5ebd8"
+       stroke="#897550"
+       stroke-width="1"
+       id="rect23" />
+    <g
+       data-carrier-code="HFO"
+       id="g24"
+       transform="translate(0,13.477839)">
+      <title
+         id="title23">Heavy fuel oil</title>
+      <rect
+         x="35"
+         y="249"
+         width="36"
+         height="22"
+         rx="4"
+         fill="#f5ebd8"
+         stroke="#897550"
+         stroke-width="0.85"
+         id="rect24" />
+      <text
+         id="label-023"
+         x="53"
+         y="265"
+         font-size="14.8px"
+         font-weight="700"
+         font-family="'Segoe UI', Arial, sans-serif"
+         fill="#574628"
+         text-anchor="middle">HFO</text>
+    </g>
+    <text
+       id="label-024"
+       x="79"
+       y="279.1778"
+       font-size="17.1px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start">Heavy fuel oil</text>
+    <g
+       data-carrier-code="MDO"
+       id="g25"
+       transform="translate(0,13.477839)">
+      <title
+         id="title24">Marine diesel oil</title>
+      <rect
+         x="204"
+         y="249"
+         width="39"
+         height="22"
+         rx="4"
+         fill="#f5ebd8"
+         stroke="#897550"
+         stroke-width="0.85"
+         id="rect25" />
+      <text
+         id="label-025"
+         x="223.5"
+         y="265"
+         font-size="14.8px"
+         font-weight="700"
+         font-family="'Segoe UI', Arial, sans-serif"
+         fill="#574628"
+         text-anchor="middle">MDO</text>
+    </g>
+    <text
+       id="label-026"
+       x="251"
+       y="279.1778"
+       font-size="17.1px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start">Marine diesel oil</text>
+    <path
+       d="m 392,305.47784 h 26"
+       fill="none"
+       stroke="#76638f"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       id="path43"
+       sodipodi:nodetypes="cc" />
+    <path
+       d="m 408.70919,132 v 45.33292"
+       fill="none"
+       stroke="#926820"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       id="path39-1-8"
+       style="stroke:#a86115;stroke-opacity:1"
+       sodipodi:nodetypes="cc" />
+    <circle
+       cx="418"
+       cy="209.33292"
+       r="2.2"
+       fill="#926820"
+       stroke="none"
+       stroke-width="1.6"
+       id="circle39" />
+    <circle
+       cx="418"
+       cy="241.33292"
+       r="2.2"
+       fill="#8d6f3a"
+       stroke="none"
+       stroke-width="1.6"
+       id="circle40" />
+    <circle
+       cx="418"
+       cy="273.47784"
+       r="2.2"
+       fill="#897550"
+       stroke="none"
+       stroke-width="1.6"
+       id="circle42" />
+    <g
+       id="import-gas"
+       transform="translate(0,13.477839)">
+      <rect
+         x="28"
+         y="278"
+         width="364"
+         height="28"
+         rx="5"
+         fill="#eae2f6"
+         stroke="#76638f"
+         stroke-width="1"
+         id="rect26" />
+      <g
+         data-carrier-code="CNG"
+         id="g27">
+        <title
+           id="title26">Compressed natural gas</title>
+        <rect
+           x="35"
+           y="281"
+           width="36"
+           height="22"
+           rx="4"
+           fill="#eae2f6"
+           stroke="#76638f"
+           stroke-width="0.85"
+           id="rect27" />
+        <text
+           id="label-027"
+           x="53"
+           y="297"
+           font-size="14.8px"
+           font-weight="700"
+           font-family="'Segoe UI', Arial, sans-serif"
+           fill="#514063"
+           text-anchor="middle">CNG</text>
+      </g>
+      <g
+         data-carrier-code="LNG"
+         id="g28">
+        <title
+           id="title27">Liquefied natural gas</title>
+        <rect
+           x="75"
+           y="281"
+           width="35"
+           height="22"
+           rx="4"
+           fill="#eae2f6"
+           stroke="#76638f"
+           stroke-width="0.85"
+           id="rect28" />
+        <text
+           id="label-028"
+           x="92.5"
+           y="297"
+           font-size="14.8px"
+           font-weight="700"
+           font-family="'Segoe UI', Arial, sans-serif"
+           fill="#514063"
+           text-anchor="middle">LNG</text>
+      </g>
+      <text
+         id="label-029"
+         x="118"
+         y="297.70001"
+         font-size="16.1px"
+         font-weight="600"
+         font-family="'Segoe UI', Arial, sans-serif"
+         fill="#17283a"
+         text-anchor="start">Natural gas (compressed / liquefied)</text>
+    </g>
+    <circle
+       cx="418"
+       cy="305.47784"
+       r="2.2"
+       fill="#76638f"
+       stroke="none"
+       stroke-width="1.6"
+       id="circle43" />
+    <circle
+       cx="418"
+       cy="177.33292"
+       r="2.2"
+       fill="#a86115"
+       stroke="none"
+       stroke-width="1.6"
+       id="circle44" />
+    <rect
+       id="rect160"
+       style="fill:#f8fafc;stroke:#b9c8d7;stroke-width:0.936686"
+       x="436"
+       y="747.90137"
+       width="692.60547"
+       height="156.92128"
+       rx="6.5" />
+    <path
+       id="line160"
+       style="stroke:#cbd7e2;stroke-width:1.03036;stroke-linecap:round"
+       d="M 833.52271,755.38141 V 898.56973"
+       sodipodi:nodetypes="cc" />
+    <text
+       id="label-146"
+       x="448.14526"
+       y="771.12946"
+       font-size="18.7337px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start"
+       style="font-size:19.9202px;stroke-width:0.936686">Road powertrain keys</text>
+    <circle
+       cx="457.35364"
+       cy="789.08521"
+       r="4.2150893"
+       fill="#455c73"
+       stroke="none"
+       stroke-width="1.4987"
+       id="circle160" />
+    <text
+       id="label-147"
+       x="472.18216"
+       y="794.23694"
+       font-size="16.3"
+       font-weight="400"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#44576a"
+       text-anchor="start"
+       style="font-size:15.31px;stroke-width:0.936686">Powertrain option represented</text>
+    <rect
+       x="448.14526"
+       y="829.91821"
+       width="43.087578"
+       height="18.73373"
+       rx="3.2784026"
+       fill="#e8eff7"
+       stroke="#7690a8"
+       stroke-width="0.796184"
+       id="rect161" />
+    <text
+       id="label-148"
+       x="469.68906"
+       y="843.96851"
+       font-size="13.863px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="middle"
+       style="stroke-width:0.936686">ICEV</text>
+    <text
+       id="label-149"
+       x="499.66302"
+       y="844.15588"
+       font-size="15.1743px"
+       font-weight="400"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start"
+       style="stroke-width:0.936686">Internal combustion</text>
+    <rect
+       x="448.14526"
+       y="854.27209"
+       width="43.087578"
+       height="18.73373"
+       rx="3.2784026"
+       fill="#e8eff7"
+       stroke="#7690a8"
+       stroke-width="0.796184"
+       id="rect162" />
+    <text
+       id="label-150"
+       x="469.68906"
+       y="868.32239"
+       font-size="13.863px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="middle"
+       style="stroke-width:0.936686">PHEV</text>
+    <text
+       id="label-151"
+       x="499.66302"
+       y="868.5097"
+       font-size="15.1743px"
+       font-weight="400"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start"
+       style="stroke-width:0.936686">Plug-in hybrid electric</text>
+    <rect
+       x="448.14526"
+       y="878.62592"
+       width="43.087578"
+       height="18.73373"
+       rx="3.2784026"
+       fill="#bce8ec"
+       stroke="#277985"
+       stroke-width="0.796184"
+       id="rect163" />
+    <text
+       id="label-152"
+       x="469.68906"
+       y="892.67621"
+       font-size="13.863px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#174b53"
+       text-anchor="middle"
+       style="stroke-width:0.936686">FCEV</text>
+    <text
+       id="label-153"
+       x="499.66302"
+       y="892.86359"
+       font-size="15.1743px"
+       font-weight="400"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start"
+       style="stroke-width:0.936686">Fuel-cell electric</text>
+    <rect
+       x="663.58313"
+       y="829.91821"
+       width="43.087578"
+       height="18.73373"
+       rx="3.2784026"
+       fill="#e8eff7"
+       stroke="#7690a8"
+       stroke-width="0.796184"
+       id="rect164" />
+    <text
+       id="label-154"
+       x="685.12695"
+       y="843.96851"
+       font-size="13.863px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="middle"
+       style="stroke-width:0.936686">HEV</text>
+    <text
+       id="label-155"
+       x="715.10089"
+       y="844.15588"
+       font-size="15.1743px"
+       font-weight="400"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start"
+       style="stroke-width:0.936686">Hybrid electric</text>
+    <rect
+       x="663.58313"
+       y="854.27209"
+       width="43.087578"
+       height="18.73373"
+       rx="3.2784026"
+       fill="#89ef9c"
+       stroke="#26834b"
+       stroke-width="0.796184"
+       id="rect165" />
+    <text
+       id="label-156"
+       x="685.12695"
+       y="868.32239"
+       font-size="13.863px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#154c2c"
+       text-anchor="middle"
+       style="stroke-width:0.936686">BEV</text>
+    <text
+       id="label-157"
+       x="715.10089"
+       y="868.5097"
+       font-size="15.1743px"
+       font-weight="400"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start"
+       style="stroke-width:0.936686">Battery electric</text>
+    <text
+       id="label-158"
+       x="472.18216"
+       y="815.98883"
+       font-size="16.4px"
+       font-weight="600"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#154c2c"
+       text-anchor="start"
+       style="font-size:15.31px;stroke-width:0.936686">Variable hourly charger load represented</text>
+    <text
+       id="label-159"
+       x="857.01514"
+       y="767.59424"
+       font-size="20"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start"
+       style="font-size:16.2668px;stroke-width:0.936686">Plug-in hybrid inputs</text>
+    <g
+       id="g11"
+       transform="matrix(0.93920682,0,0,0.93920682,62.870235,42.861667)">
+      <g
+         data-carrier-code="GSL"
+         id="g166"
+         transform="matrix(0.93668647,0,0,0.93668647,-2.1784878,33.872486)">
+        <title
+           id="title165">Gasoline</title>
+        <rect
+           x="905"
+           y="797"
+           width="33"
+           height="22"
+           rx="4"
+           fill="#ffebbb"
+           stroke="#926820"
+           stroke-width="0.85"
+           id="rect166" />
+        <text
+           id="label-160"
+           x="921.5"
+           y="813"
+           font-size="14.8px"
+           font-weight="700"
+           font-family="'Segoe UI', Arial, sans-serif"
+           fill="#614717"
+           text-anchor="middle">GSL</text>
+      </g>
+      <text
+         id="label-161"
+         x="885.80023"
+         y="796.05432"
+         font-size="16.2047px"
+         font-weight="700"
+         font-family="'Segoe UI', Arial, sans-serif"
+         fill="#44576a"
+         text-anchor="middle"
+         style="stroke-width:0.936686">+</text>
+      <g
+         data-carrier-code="ELC"
+         id="g167"
+         transform="matrix(0.93668647,0,0,0.93668647,-2.1784878,33.872486)">
+        <title
+           id="title166">Electricity</title>
+        <rect
+           x="959"
+           y="797"
+           width="33"
+           height="22"
+           rx="4"
+           fill="#89ef9c"
+           stroke="#26834b"
+           stroke-width="0.85"
+           id="rect167" />
+        <text
+           id="label-162"
+           x="975.5"
+           y="813"
+           font-size="14.8px"
+           font-weight="700"
+           font-family="'Segoe UI', Arial, sans-serif"
+           fill="#154c2c"
+           text-anchor="middle">ELC</text>
+      </g>
+      <text
+         id="label-163"
+         x="938.2547"
+         y="796.33533"
+         font-size="15.9237px"
+         font-weight="600"
+         font-family="'Segoe UI', Arial, sans-serif"
+         fill="#17283a"
+         text-anchor="start"
+         style="stroke-width:0.936686">Light duty</text>
+      <g
+         data-carrier-code="DSL"
+         id="g168"
+         transform="matrix(0.93668647,0,0,0.93668647,-2.1784878,32.163299)">
+        <title
+           id="title167">Diesel</title>
+        <rect
+           x="905"
+           y="826"
+           width="33"
+           height="22"
+           rx="4"
+           fill="#ffde92"
+           stroke="#a86115"
+           stroke-width="0.85"
+           id="rect168" />
+        <text
+           id="label-164"
+           x="921.5"
+           y="842"
+           font-size="14.8px"
+           font-weight="700"
+           font-family="'Segoe UI', Arial, sans-serif"
+           fill="#57340b"
+           text-anchor="middle">DSL</text>
+      </g>
+      <text
+         id="label-165"
+         x="885.80023"
+         y="821.50909"
+         font-size="16.2047px"
+         font-weight="700"
+         font-family="'Segoe UI', Arial, sans-serif"
+         fill="#44576a"
+         text-anchor="middle"
+         style="stroke-width:0.936686">+</text>
+      <g
+         data-carrier-code="ELC"
+         id="g169"
+         transform="matrix(0.93668647,0,0,0.93668647,-2.1784878,32.163299)">
+        <title
+           id="title168">Electricity</title>
+        <rect
+           x="959"
+           y="826"
+           width="33"
+           height="22"
+           rx="4"
+           fill="#89ef9c"
+           stroke="#26834b"
+           stroke-width="0.85"
+           id="rect169" />
+        <text
+           id="label-166"
+           x="975.5"
+           y="842"
+           font-size="14.8px"
+           font-weight="700"
+           font-family="'Segoe UI', Arial, sans-serif"
+           fill="#154c2c"
+           text-anchor="middle">ELC</text>
+      </g>
+      <text
+         id="label-167"
+         x="938.2547"
+         y="821.7901"
+         font-size="15.9237px"
+         font-weight="600"
+         font-family="'Segoe UI', Arial, sans-serif"
+         fill="#17283a"
+         text-anchor="start"
+         style="stroke-width:0.936686">Medium / heavy duty</text>
+    </g>
+    <line
+       x1="857.01514"
+       y1="826.27271"
+       x2="1105.0151"
+       y2="826.27271"
+       stroke="#cbd7e2"
+       stroke-width="0.936686"
+       stroke-linecap="round"
+       id="line169" />
+    <text
+       id="label-169"
+       x="857.0498"
+       y="845.64191"
+       font-size="16.111px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#154c2c"
+       text-anchor="start"
+       style="font-size:15.834px;stroke-width:0.936686">Light-duty PEV range archetypes</text>
+    <g
+       id="g12"
+       transform="translate(-1.6881679)">
+      <title
+         id="title2">Range-specific light-duty plug-in technology option</title>
+      <g
+         id="g10"
+         transform="translate(302.62418,-46.566162)">
+        <rect
+           x="556.21094"
+           y="901.97766"
+           width="43.087578"
+           height="18.73373"
+           rx="3.2784026"
+           fill="#e8eff7"
+           stroke="#7690a8"
+           stroke-width="0.796184"
+           id="rect162-7" />
+        <text
+           id="label-150-6"
+           x="577.75476"
+           y="916.02795"
+           font-size="13.863px"
+           font-weight="700"
+           font-family="'Segoe UI', Arial, sans-serif"
+           fill="#17283a"
+           text-anchor="middle"
+           style="stroke-width:0.936686">PHEV</text>
+      </g>
+      <g
+         id="g9"
+         transform="translate(11.375046,0.15771484)">
+        <rect
+           x="847.32831"
+           y="879.6076"
+           width="43.087578"
+           height="18.73373"
+           rx="3.2784026"
+           fill="#89ef9c"
+           stroke="#26834b"
+           stroke-width="0.796184"
+           id="rect165-1" />
+        <text
+           id="label-156-5"
+           x="868.87213"
+           y="893.6579"
+           font-size="13.863px"
+           font-weight="700"
+           font-family="'Segoe UI', Arial, sans-serif"
+           fill="#154c2c"
+           text-anchor="middle"
+           style="stroke-width:0.936686">BEV</text>
+      </g>
+      <text
+         id="label-170"
+         x="912.65515"
+         y="894.92865"
+         font-size="15.9237px"
+         font-weight="400"
+         font-family="'Segoe UI', Arial, sans-serif"
+         fill="#17283a"
+         text-anchor="start"
+         style="stroke-width:0.936686">150 · 200 · 300 · 400 miles</text>
+      <text
+         id="label-170-4"
+         x="913.47156"
+         y="870.57483"
+         font-size="15.9237px"
+         font-weight="400"
+         font-family="'Segoe UI', Arial, sans-serif"
+         fill="#17283a"
+         text-anchor="start"
+         style="stroke-width:0.936686">35 · 50 miles</text>
+    </g>
+    <rect
+       x="20"
+       y="337"
+       width="380"
+       height="255.60001"
+       rx="7"
+       fill="#f6fafb"
+       stroke="#b9c8d7"
+       stroke-width="1"
+       id="rect2" />
+    <text
+       x="32"
+       y="360"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="20px"
+       font-weight="700"
+       fill="#17283a"
+       text-anchor="start"
+       id="text3">Charging and H₂ refueling</text>
+    <rect
+       x="28"
+       y="372"
+       width="364"
+       height="125"
+       rx="5"
+       fill="#edf8ef"
+       stroke="#398356"
+       stroke-width="1"
+       id="rect3" />
+    <g
+       data-carrier-code="ELC"
+       id="g5">
+      <title
+         id="title3">Grid electricity</title>
+      <rect
+         x="36"
+         y="378"
+         width="33"
+         height="22"
+         rx="4"
+         fill="#b8edc2"
+         stroke="#398356"
+         stroke-width="1"
+         id="rect4" />
+      <text
+         x="52.5"
+         y="394"
+         font-family="'Segoe UI', Arial, sans-serif"
+         font-size="14.8px"
+         font-weight="700"
+         fill="#154c2c"
+         text-anchor="middle"
+         id="text4">ELC</text>
+    </g>
+    <text
+       x="77"
+       y="395"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="16.7px"
+       font-weight="700"
+       fill="#154c2c"
+       text-anchor="start"
+       id="text5">Grid electricity</text>
+    <text
+       x="382"
+       y="395"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="14.6px"
+       font-weight="400"
+       fill="#154c2c"
+       text-anchor="end"
+       id="text6"><tspan
+         style="font-weight:bold"
+         id="tspan58">Endogenous generation</tspan></text>
+    <line
+       x1="36"
+       x2="384"
+       y1="406"
+       y2="406"
+       stroke="#b9d9bf"
+       stroke-width="1"
+       stroke-linecap="round"
+       id="line6" />
+    <text
+       x="36"
+       y="425"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="16.7px"
+       font-weight="700"
+       fill="#17283a"
+       text-anchor="start"
+       id="text7">EV chargers</text>
+    <text
+       x="382"
+       y="425"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="14.6px"
+       font-weight="400"
+       fill="#154c2c"
+       text-anchor="end"
+       id="text8"><tspan
+         style="font-weight:bold"
+         id="tspan57">Explicit mode</tspan></text>
+    <text
+       x="36.062943"
+       y="443.6044"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="13.9717px"
+       font-weight="600"
+       fill="#17283a"
+       text-anchor="start"
+       id="text9"
+       style="stroke-width:0.950457">Light duty</text>
+    <text
+       x="161.19061"
+       y="443.6044"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="13.9717px"
+       font-weight="400"
+       fill="#17283a"
+       text-anchor="start"
+       id="text10"
+       style="stroke-width:0.950457">Public L2 · Public Fast · Private L1/L2</text>
+    <text
+       x="36.062943"
+       y="462.61356"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="13.9717px"
+       font-weight="600"
+       fill="#17283a"
+       text-anchor="start"
+       id="text11"
+       style="stroke-width:0.950457">Medium/heavy</text>
+    <text
+       x="222.56921"
+       y="462.61356"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="13.9717px"
+       font-weight="400"
+       fill="#17283a"
+       text-anchor="start"
+       id="text12"
+       style="stroke-width:0.950457">Overnight · Fast/Ultra-fast</text>
+    <line
+       x1="392"
+       x2="418"
+       y1="447"
+       y2="447"
+       stroke="#398356"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       id="line12" />
+    <circle
+       cx="418"
+       cy="447"
+       r="2.2"
+       fill="#398356"
+       id="circle12" />
+    <line
+       x1="36"
+       y1="470"
+       x2="384"
+       y2="470"
+       stroke="#b9d9bf"
+       stroke-width="1"
+       stroke-linecap="round"
+       id="line14" />
+    <g
+       id="aggregated-ldv-hourly-charging">
+      <title
+         id="title14">Hourly capacity factors apply to shared light-duty chargers in aggregate mode.</title>
+      <text
+         x="36"
+         y="488"
+         font-family="'Segoe UI', Arial, sans-serif"
+         font-size="14.3px"
+         font-weight="600"
+         fill="#154c2c"
+         text-anchor="start"
+         id="text14">LDV chargers</text>
+      <text
+         x="382"
+         y="488"
+         font-family="'Segoe UI', Arial, sans-serif"
+         font-size="14.3px"
+         font-weight="400"
+         fill="#154c2c"
+         text-anchor="end"
+         id="text15"><tspan
+           style="font-weight:bold"
+           id="tspan56">Optional hourly charger load</tspan></text>
+    </g>
+    <rect
+       x="28"
+       y="506"
+       width="364"
+       height="76"
+       rx="5"
+       fill="#edf7f8"
+       stroke="#277985"
+       stroke-width="1"
+       id="rect21" />
+    <g
+       data-carrier-code="H₂"
+       id="g29">
+      <title
+         id="title21">Compressed gaseous hydrogen at 700 bar</title>
+      <rect
+         x="36"
+         y="512"
+         width="33"
+         height="22"
+         rx="4"
+         fill="#c8ebee"
+         stroke="#277985"
+         stroke-width="1"
+         id="rect29" />
+      <text
+         x="52.5"
+         y="528"
+         font-family="'Segoe UI', Arial, sans-serif"
+         font-size="14.8px"
+         font-weight="700"
+         fill="#174b53"
+         text-anchor="middle"
+         id="text29">H₂</text>
+    </g>
+    <text
+       x="77"
+       y="529"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="16.7px"
+       font-weight="700"
+       fill="#174b53"
+       text-anchor="start"
+       id="text30">Gaseous at 700 bar</text>
+    <text
+       x="382"
+       y="529"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="14.6px"
+       font-weight="400"
+       fill="#174b53"
+       text-anchor="end"
+       id="text31"><tspan
+         style="font-weight:bold"
+         id="tspan59">Station inlet</tspan></text>
+    <line
+       x1="36"
+       x2="384"
+       y1="538.70911"
+       y2="538.70911"
+       stroke="#bad9dc"
+       stroke-width="1"
+       stroke-linecap="round"
+       id="line31" />
+    <text
+       x="36"
+       y="555.29089"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="16.7px"
+       font-weight="700"
+       fill="#17283a"
+       text-anchor="start"
+       id="text32">H₂ refueling stations</text>
+    <text
+       x="36"
+       y="574.1394"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="14.7px"
+       font-weight="400"
+       fill="#17283a"
+       text-anchor="start"
+       id="text33">Light duty · Medium and heavy duty</text>
+    <line
+       x1="392"
+       x2="418"
+       y1="549"
+       y2="549"
+       stroke="#277985"
+       stroke-width="1.8"
+       stroke-linecap="round"
+       id="line33" />
+    <circle
+       cx="418"
+       cy="549"
+       r="2.2"
+       fill="#277985"
+       id="circle33" />
+    <rect
+       x="20"
+       y="603.87"
+       width="380"
+       height="300.95001"
+       rx="7"
+       fill="#f8fafc"
+       stroke="#b9c8d7"
+       stroke-width="1"
+       id="rect33" />
+    <text
+       x="32"
+       y="627.87"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="20px"
+       font-weight="700"
+       fill="#17283a"
+       text-anchor="start"
+       id="text34">CANOE-transportation parameters*</text>
+    <line
+       x1="32"
+       x2="388"
+       y1="637"
+       y2="637"
+       stroke="#c9d5e0"
+       stroke-width="1"
+       stroke-linecap="round"
+       id="line34" />
+    <rect
+       x="32"
+       y="643.58179"
+       width="3.3"
+       height="15"
+       fill="#7890a8"
+       id="rect34" />
+    <text
+       x="41"
+       y="656.58179"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="16px"
+       font-weight="700"
+       fill="#17283a"
+       text-anchor="start"
+       id="text35">Fleet</text>
+    <path
+       d="m 154,649.58162 2.4,2.4 -2.4,2.4 -2.4,-2.4 z"
+       fill="#44576a"
+       id="path35" />
+    <text
+       x="164"
+       y="656.58179"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="14.8px"
+       font-weight="400"
+       fill="#17283a"
+       text-anchor="start"
+       id="text36">Existing stock by class and vintage</text>
+    <path
+       d="m 154,668.58162 2.4,2.4 -2.4,2.4 -2.4,-2.4 z"
+       fill="#44576a"
+       id="path36" />
+    <text
+       x="164"
+       y="675.58179"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="14.8px"
+       font-weight="400"
+       fill="#17283a"
+       text-anchor="start"
+       id="text37">Fixed lifetime and survival rates</text>
+    <path
+       d="m 154,687.58162 2.4,2.4 -2.4,2.4 -2.4,-2.4 z"
+       fill="#44576a"
+       id="path37" />
+    <text
+       x="164"
+       y="694.58179"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="14.8px"
+       font-weight="400"
+       fill="#17283a"
+       text-anchor="start"
+       id="text38">Distance travelled and utilization</text>
+    <path
+       d="m 154,706.58162 2.4,2.4 -2.4,2.4 -2.4,-2.4 z"
+       fill="#44576a"
+       id="path38" />
+    <text
+       x="164"
+       y="713.58179"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="14.8px"
+       font-weight="400"
+       fill="#17283a"
+       text-anchor="start"
+       id="text39">Efficiency and PHEV fuel split</text>
+    <path
+       d="m 154,725.58162 2.4,2.4 -2.4,2.4 -2.4,-2.4 z"
+       fill="#44576a"
+       id="path41" />
+    <text
+       x="164"
+       y="732.58179"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="14.8px"
+       font-weight="400"
+       fill="#17283a"
+       text-anchor="start"
+       id="text41">Capital and variable costs</text>
+    <path
+       d="m 154,744.58162 2.4,2.4 -2.4,2.4 -2.4,-2.4 z"
+       fill="#44576a"
+       id="path44" />
+    <text
+       x="164"
+       y="751.58179"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="14.8px"
+       font-weight="400"
+       fill="#17283a"
+       text-anchor="start"
+       id="text44">Vehicle-cycle emissions</text>
+    <line
+       x1="32"
+       x2="388"
+       y1="763.58179"
+       y2="763.58179"
+       stroke="#d3dfe8"
+       stroke-width="1"
+       stroke-linecap="round"
+       id="line44" />
+    <rect
+       x="32"
+       y="770"
+       width="3.3"
+       height="15"
+       fill="#398356"
+       id="rect44" />
+    <text
+       x="41"
+       y="783"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="16px"
+       font-weight="700"
+       fill="#17283a"
+       text-anchor="start"
+       id="text45">Infrastructure</text>
+    <path
+       d="m 154,776 2.4,2.4 -2.4,2.4 -2.4,-2.4 z"
+       fill="#44576a"
+       id="path45" />
+    <text
+       x="164"
+       y="783"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="14.8px"
+       font-weight="400"
+       fill="#17283a"
+       text-anchor="start"
+       id="text46">Charger stock and capacity shares</text>
+    <path
+       d="m 154,795 2.4,2.4 -2.4,2.4 -2.4,-2.4 z"
+       fill="#44576a"
+       id="path46" />
+    <text
+       x="164"
+       y="802"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="14.8px"
+       font-weight="400"
+       fill="#17283a"
+       text-anchor="start"
+       id="text47">Hourly capacity factors and UF</text>
+    <path
+       d="m 154,814 2.4,2.4 -2.4,2.4 -2.4,-2.4 z"
+       fill="#44576a"
+       id="path47" />
+    <text
+       x="164"
+       y="821"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="14.8px"
+       font-weight="400"
+       fill="#17283a"
+       text-anchor="start"
+       id="text48">Capital and fixed costs</text>
+    <path
+       d="m 154,833 2.4,2.4 -2.4,2.4 -2.4,-2.4 z"
+       fill="#44576a"
+       id="path48" />
+    <text
+       x="164"
+       y="840"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="14.8px"
+       font-weight="400"
+       fill="#17283a"
+       text-anchor="start"
+       id="text49">Efficiency and fixed lifetime</text>
+    <line
+       x1="32"
+       x2="388"
+       y1="852"
+       y2="852"
+       stroke="#d3dfe8"
+       stroke-width="1"
+       stroke-linecap="round"
+       id="line50" />
+    <rect
+       x="32"
+       y="856"
+       width="3.3"
+       height="15"
+       fill="#a84842"
+       id="rect52" />
+    <text
+       x="41"
+       y="869"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="16px"
+       font-weight="700"
+       fill="#17283a"
+       text-anchor="start"
+       id="text52">Demand</text>
+    <path
+       d="m 154,862 2.4,2.4 -2.4,2.4 -2.4,-2.4 z"
+       fill="#44576a"
+       id="path52" />
+    <text
+       x="164"
+       y="869"
+       font-family="'Segoe UI', Arial, sans-serif"
+       font-size="14.8px"
+       font-weight="400"
+       fill="#17283a"
+       text-anchor="start"
+       id="text53">Annual service or energy by class</text>
+    <line
+       x1="32"
+       y1="880"
+       x2="388"
+       y2="880"
+       stroke="#d3dfe8"
+       stroke-width="1"
+       stroke-linecap="round"
+       id="line55" />
+    <text
+       id="label-014-4"
+       x="32"
+       y="896"
+       font-size="16.5px"
+       font-weight="400"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#44576a"
+       text-anchor="start"
+       style="font-size:14.5571px">*Can vary by scenario, period, vintage, powertrain, class</text>
+    <g
+       id="g13">
+      <g
+         id="g3"
+         transform="translate(-22)">
+        <circle
+           cx="826"
+           cy="197"
+           r="4.5"
+           fill="#455c73"
+           stroke="none"
+           stroke-width="1.6"
+           data-variant="ICE"
+           id="circle51" />
+        <circle
+           cx="826"
+           cy="265"
+           r="4.5"
+           fill="#455c73"
+           stroke="none"
+           stroke-width="1.6"
+           data-variant="ICE"
+           id="circle59" />
+        <circle
+           cx="826"
+           cy="297"
+           r="4.5"
+           fill="#455c73"
+           stroke="none"
+           stroke-width="1.6"
+           data-variant="ICE"
+           id="circle68" />
+        <circle
+           cx="826"
+           cy="329"
+           r="4.5"
+           fill="#455c73"
+           stroke="none"
+           stroke-width="1.6"
+           data-variant="ICE"
+           id="circle77" />
+        <circle
+           cx="826"
+           cy="396"
+           r="4.5"
+           fill="#455c73"
+           stroke="none"
+           stroke-width="1.6"
+           data-variant="ICE"
+           id="circle86" />
+        <circle
+           cx="826"
+           cy="465"
+           r="4.5"
+           fill="#455c73"
+           stroke="none"
+           stroke-width="1.6"
+           data-variant="ICE"
+           id="circle94" />
+        <circle
+           cx="826"
+           cy="497"
+           r="4.5"
+           fill="#455c73"
+           stroke="none"
+           stroke-width="1.6"
+           data-variant="ICE"
+           id="circle103" />
+        <circle
+           cx="826"
+           cy="529"
+           r="4.5"
+           fill="#455c73"
+           stroke="none"
+           stroke-width="1.6"
+           data-variant="ICE"
+           id="circle112" />
+        <circle
+           cx="826"
+           cy="561"
+           r="4.5"
+           fill="#455c73"
+           stroke="none"
+           stroke-width="1.6"
+           data-variant="ICE"
+           id="circle120" />
+      </g>
+      <g
+         id="g4"
+         transform="translate(-20)">
+        <line
+           x1="854"
+           y1="197"
+           x2="860"
+           y2="197"
+           stroke="#a6b4c2"
+           stroke-width="1.25"
+           stroke-linecap="round"
+           id="line51" />
+        <circle
+           cx="857"
+           cy="265"
+           r="4.5"
+           fill="#455c73"
+           stroke="none"
+           stroke-width="1.6"
+           data-variant="HEV"
+           id="circle60" />
+        <circle
+           cx="857"
+           cy="297"
+           r="4.5"
+           fill="#455c73"
+           stroke="none"
+           stroke-width="1.6"
+           data-variant="HEV"
+           id="circle69" />
+        <circle
+           cx="857"
+           cy="329"
+           r="4.5"
+           fill="#455c73"
+           stroke="none"
+           stroke-width="1.6"
+           data-variant="HEV"
+           id="circle78" />
+        <circle
+           cx="857"
+           cy="396"
+           r="4.5"
+           fill="#455c73"
+           stroke="none"
+           stroke-width="1.6"
+           data-variant="HEV"
+           id="circle87" />
+        <circle
+           cx="857"
+           cy="465"
+           r="4.5"
+           fill="#455c73"
+           stroke="none"
+           stroke-width="1.6"
+           data-variant="HEV"
+           id="circle95" />
+        <circle
+           cx="857"
+           cy="497"
+           r="4.5"
+           fill="#455c73"
+           stroke="none"
+           stroke-width="1.6"
+           data-variant="HEV"
+           id="circle104" />
+        <circle
+           cx="857"
+           cy="529"
+           r="4.5"
+           fill="#455c73"
+           stroke="none"
+           stroke-width="1.6"
+           data-variant="HEV"
+           id="circle113" />
+        <circle
+           cx="857"
+           cy="561"
+           r="4.5"
+           fill="#455c73"
+           stroke="none"
+           stroke-width="1.6"
+           data-variant="HEV"
+           id="circle121" />
+      </g>
+      <line
+         x1="869"
+         y1="197"
+         x2="875"
+         y2="197"
+         stroke="#a6b4c2"
+         stroke-width="1.25"
+         stroke-linecap="round"
+         id="line52" />
+      <circle
+         cx="872"
+         cy="396"
+         r="4.5"
+         fill="#455c73"
+         stroke="none"
+         stroke-width="1.6"
+         data-variant="PHEV"
+         id="circle88" />
+      <circle
+         cx="872"
+         cy="465"
+         r="4.5"
+         fill="#455c73"
+         stroke="none"
+         stroke-width="1.6"
+         data-variant="PHEV"
+         id="circle96" />
+      <circle
+         cx="872"
+         cy="497"
+         r="4.5"
+         fill="#455c73"
+         stroke="none"
+         stroke-width="1.6"
+         data-variant="PHEV"
+         id="circle105" />
+      <circle
+         cx="872"
+         cy="529"
+         r="4.5"
+         fill="#455c73"
+         stroke="none"
+         stroke-width="1.6"
+         data-variant="PHEV"
+         id="circle114" />
+      <line
+         x1="869"
+         y1="561"
+         x2="875"
+         y2="561"
+         stroke="#a6b4c2"
+         stroke-width="1.25"
+         stroke-linecap="round"
+         id="line121" />
+      <circle
+         cx="907"
+         cy="396"
+         r="4.5"
+         fill="#26834b"
+         stroke="none"
+         stroke-width="1.6"
+         data-variant="BEV"
+         id="circle89" />
+      <circle
+         cx="907"
+         cy="465"
+         r="4.5"
+         fill="#26834b"
+         stroke="none"
+         stroke-width="1.6"
+         data-variant="BEV"
+         id="circle97" />
+      <circle
+         cx="907"
+         cy="497"
+         r="4.5"
+         fill="#26834b"
+         stroke="none"
+         stroke-width="1.6"
+         data-variant="BEV"
+         id="circle106" />
+      <circle
+         cx="907"
+         cy="529"
+         r="4.5"
+         fill="#26834b"
+         stroke="none"
+         stroke-width="1.6"
+         data-variant="BEV"
+         id="circle115" />
+      <circle
+         cx="907"
+         cy="561"
+         r="4.5"
+         fill="#26834b"
+         stroke="none"
+         stroke-width="1.6"
+         data-variant="BEV"
+         id="circle122" />
+      <g
+         id="g6"
+         transform="translate(-31)">
+        <line
+           x1="969"
+           y1="197"
+           x2="975"
+           y2="197"
+           stroke="#a6b4c2"
+           stroke-width="1.25"
+           stroke-linecap="round"
+           id="line53" />
+        <circle
+           cx="972"
+           cy="265"
+           r="4.5"
+           fill="#277985"
+           stroke="none"
+           stroke-width="1.6"
+           data-variant="FC"
+           id="circle63" />
+        <circle
+           cx="972"
+           cy="297"
+           r="4.5"
+           fill="#277985"
+           stroke="none"
+           stroke-width="1.6"
+           data-variant="FC"
+           id="circle72" />
+        <circle
+           cx="972"
+           cy="329"
+           r="4.5"
+           fill="#277985"
+           stroke="none"
+           stroke-width="1.6"
+           data-variant="FC"
+           id="circle81" />
+        <circle
+           cx="972"
+           cy="396"
+           r="4.5"
+           fill="#277985"
+           stroke="none"
+           stroke-width="1.6"
+           data-variant="FC"
+           id="circle90" />
+        <circle
+           cx="972"
+           cy="465"
+           r="4.5"
+           fill="#277985"
+           stroke="none"
+           stroke-width="1.6"
+           data-variant="FC"
+           id="circle98" />
+        <circle
+           cx="972"
+           cy="497"
+           r="4.5"
+           fill="#277985"
+           stroke="none"
+           stroke-width="1.6"
+           data-variant="FC"
+           id="circle107" />
+        <circle
+           cx="972"
+           cy="529"
+           r="4.5"
+           fill="#277985"
+           stroke="none"
+           stroke-width="1.6"
+           data-variant="FC"
+           id="circle116" />
+        <circle
+           cx="972"
+           cy="561"
+           r="4.5"
+           fill="#277985"
+           stroke="none"
+           stroke-width="1.6"
+           data-variant="FC"
+           id="circle123" />
+      </g>
+      <g
+         id="g4-4-9"
+         style="fill:#26834b;fill-opacity:1;stroke:#26834b;stroke-width:1.86416;stroke-dasharray:none;stroke-opacity:1"
+         transform="matrix(0.4657752,0,0,0.4657752,501.08041,56.568777)">
+        <path
+           d="m 854.5,283.438 h -1.062 v 36.124 h 36.109 V 318.5 H 854.5 Z"
+           stroke="#385723"
+           stroke-width="0.53125"
+           id="path3-1-4"
+           style="fill:#26834b;fill-opacity:1;stroke:#26834b;stroke-width:1.86416;stroke-dasharray:none;stroke-opacity:1" />
+        <path
+           d="m 878.406,307.875 c -2.627,0 -4.446,-4.722 -6.206,-9.289 -1.844,-4.785 -3.586,-9.305 -6.544,-9.305 -3.905,0 -5.103,4.87 -6.162,9.167 l -0.197,0.797 1.03,0.258 0.199,-0.802 c 0.965,-3.917 2.058,-8.357 5.13,-8.357 2.228,0 3.918,4.384 5.552,8.624 1.889,4.901 3.842,9.97 7.198,9.97 4.052,0 5.825,-8.332 6.302,-11.089 0,-0.006 0.007,-0.006 0.01,0 l 2.259,3.917 0.921,-0.532 -3.188,-5.521 -5.507,3.178 0.531,0.92 3.941,-2.273 c 0.002,-0.002 0.005,-0.002 0.007,0 10e-4,10e-4 0.002,0.003 10e-4,0.005 -0.574,3.373 -2.36,10.332 -5.277,10.332 z"
+           stroke="#385723"
+           stroke-width="0.53125"
+           id="path4-7-8"
+           style="fill:#26834b;fill-opacity:1;stroke:#26834b;stroke-width:1.86416;stroke-dasharray:none;stroke-opacity:1" />
+      </g>
+      <g
+         id="g8">
+        <g
+           id="g4-4"
+           style="fill:#26834b;fill-opacity:1;stroke:#26834b;stroke-width:1.86416;stroke-dasharray:none;stroke-opacity:1"
+           transform="matrix(0.4657752,0,0,0.4657752,501.08041,124.56878)">
+          <path
+             d="m 854.5,283.438 h -1.062 v 36.124 h 36.109 V 318.5 H 854.5 Z"
+             stroke="#385723"
+             stroke-width="0.53125"
+             id="path3-1"
+             style="fill:#26834b;fill-opacity:1;stroke:#26834b;stroke-width:1.86416;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             d="m 878.406,307.875 c -2.627,0 -4.446,-4.722 -6.206,-9.289 -1.844,-4.785 -3.586,-9.305 -6.544,-9.305 -3.905,0 -5.103,4.87 -6.162,9.167 l -0.197,0.797 1.03,0.258 0.199,-0.802 c 0.965,-3.917 2.058,-8.357 5.13,-8.357 2.228,0 3.918,4.384 5.552,8.624 1.889,4.901 3.842,9.97 7.198,9.97 4.052,0 5.825,-8.332 6.302,-11.089 0,-0.006 0.007,-0.006 0.01,0 l 2.259,3.917 0.921,-0.532 -3.188,-5.521 -5.507,3.178 0.531,0.92 3.941,-2.273 c 0.002,-0.002 0.005,-0.002 0.007,0 10e-4,10e-4 0.002,0.003 10e-4,0.005 -0.574,3.373 -2.36,10.332 -5.277,10.332 z"
+             stroke="#385723"
+             stroke-width="0.53125"
+             id="path4-7"
+             style="fill:#26834b;fill-opacity:1;stroke:#26834b;stroke-width:1.86416;stroke-dasharray:none;stroke-opacity:1" />
+        </g>
+        <g
+           id="g4-4-3"
+           style="fill:#26834b;fill-opacity:1;stroke:#26834b;stroke-width:1.86416;stroke-dasharray:none;stroke-opacity:1"
+           transform="matrix(0.4657752,0,0,0.4657752,501.08041,156.56877)">
+          <path
+             d="m 854.5,283.438 h -1.062 v 36.124 h 36.109 V 318.5 H 854.5 Z"
+             stroke="#385723"
+             stroke-width="0.53125"
+             id="path3-1-2"
+             style="fill:#26834b;fill-opacity:1;stroke:#26834b;stroke-width:1.86416;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             d="m 878.406,307.875 c -2.627,0 -4.446,-4.722 -6.206,-9.289 -1.844,-4.785 -3.586,-9.305 -6.544,-9.305 -3.905,0 -5.103,4.87 -6.162,9.167 l -0.197,0.797 1.03,0.258 0.199,-0.802 c 0.965,-3.917 2.058,-8.357 5.13,-8.357 2.228,0 3.918,4.384 5.552,8.624 1.889,4.901 3.842,9.97 7.198,9.97 4.052,0 5.825,-8.332 6.302,-11.089 0,-0.006 0.007,-0.006 0.01,0 l 2.259,3.917 0.921,-0.532 -3.188,-5.521 -5.507,3.178 0.531,0.92 3.941,-2.273 c 0.002,-0.002 0.005,-0.002 0.007,0 10e-4,10e-4 0.002,0.003 10e-4,0.005 -0.574,3.373 -2.36,10.332 -5.277,10.332 z"
+             stroke="#385723"
+             stroke-width="0.53125"
+             id="path4-7-2"
+             style="fill:#26834b;fill-opacity:1;stroke:#26834b;stroke-width:1.86416;stroke-dasharray:none;stroke-opacity:1" />
+        </g>
+        <g
+           id="g4-4-3-6"
+           style="fill:#26834b;fill-opacity:1;stroke:#26834b;stroke-width:1.86416;stroke-dasharray:none;stroke-opacity:1"
+           transform="matrix(0.4657752,0,0,0.4657752,501.08041,188.56877)">
+          <path
+             d="m 854.5,283.438 h -1.062 v 36.124 h 36.109 V 318.5 H 854.5 Z"
+             stroke="#385723"
+             stroke-width="0.53125"
+             id="path3-1-2-8"
+             style="fill:#26834b;fill-opacity:1;stroke:#26834b;stroke-width:1.86416;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             d="m 878.406,307.875 c -2.627,0 -4.446,-4.722 -6.206,-9.289 -1.844,-4.785 -3.586,-9.305 -6.544,-9.305 -3.905,0 -5.103,4.87 -6.162,9.167 l -0.197,0.797 1.03,0.258 0.199,-0.802 c 0.965,-3.917 2.058,-8.357 5.13,-8.357 2.228,0 3.918,4.384 5.552,8.624 1.889,4.901 3.842,9.97 7.198,9.97 4.052,0 5.825,-8.332 6.302,-11.089 0,-0.006 0.007,-0.006 0.01,0 l 2.259,3.917 0.921,-0.532 -3.188,-5.521 -5.507,3.178 0.531,0.92 3.941,-2.273 c 0.002,-0.002 0.005,-0.002 0.007,0 10e-4,10e-4 0.002,0.003 10e-4,0.005 -0.574,3.373 -2.36,10.332 -5.277,10.332 z"
+             stroke="#385723"
+             stroke-width="0.53125"
+             id="path4-7-2-5"
+             style="fill:#26834b;fill-opacity:1;stroke:#26834b;stroke-width:1.86416;stroke-dasharray:none;stroke-opacity:1" />
+        </g>
+      </g>
+      <g
+         id="g4-4-8"
+         style="fill:#455c73;fill-opacity:1;stroke:#455c73;stroke-width:1.86416;stroke-dasharray:none;stroke-opacity:1"
+         transform="matrix(0.4657752,0,0,0.4657752,466.08041,124.56878)">
+        <path
+           d="m 854.5,283.438 h -1.062 v 36.124 h 36.109 V 318.5 H 854.5 Z"
+           stroke="#385723"
+           stroke-width="0.53125"
+           id="path3-1-9"
+           style="fill:#455c73;fill-opacity:1;stroke:#455c73;stroke-width:1.86416;stroke-dasharray:none;stroke-opacity:1" />
+        <path
+           d="m 878.406,307.875 c -2.627,0 -4.446,-4.722 -6.206,-9.289 -1.844,-4.785 -3.586,-9.305 -6.544,-9.305 -3.905,0 -5.103,4.87 -6.162,9.167 l -0.197,0.797 1.03,0.258 0.199,-0.802 c 0.965,-3.917 2.058,-8.357 5.13,-8.357 2.228,0 3.918,4.384 5.552,8.624 1.889,4.901 3.842,9.97 7.198,9.97 4.052,0 5.825,-8.332 6.302,-11.089 0,-0.006 0.007,-0.006 0.01,0 l 2.259,3.917 0.921,-0.532 -3.188,-5.521 -5.507,3.178 0.531,0.92 3.941,-2.273 c 0.002,-0.002 0.005,-0.002 0.007,0 10e-4,10e-4 0.002,0.003 10e-4,0.005 -0.574,3.373 -2.36,10.332 -5.277,10.332 z"
+           stroke="#385723"
+           stroke-width="0.53125"
+           id="path4-7-27"
+           style="fill:#455c73;fill-opacity:1;stroke:#455c73;stroke-width:1.86416;stroke-dasharray:none;stroke-opacity:1" />
+      </g>
+      <g
+         id="g4-4-3-9"
+         style="fill:#455c73;fill-opacity:1;stroke:#455c73;stroke-width:1.86416;stroke-dasharray:none;stroke-opacity:1"
+         transform="matrix(0.4657752,0,0,0.4657752,466.08041,156.56877)">
+        <path
+           d="m 854.5,283.438 h -1.062 v 36.124 h 36.109 V 318.5 H 854.5 Z"
+           stroke="#385723"
+           stroke-width="0.53125"
+           id="path3-1-2-5"
+           style="fill:#455c73;fill-opacity:1;stroke:#455c73;stroke-width:1.86416;stroke-dasharray:none;stroke-opacity:1" />
+        <path
+           d="m 878.406,307.875 c -2.627,0 -4.446,-4.722 -6.206,-9.289 -1.844,-4.785 -3.586,-9.305 -6.544,-9.305 -3.905,0 -5.103,4.87 -6.162,9.167 l -0.197,0.797 1.03,0.258 0.199,-0.802 c 0.965,-3.917 2.058,-8.357 5.13,-8.357 2.228,0 3.918,4.384 5.552,8.624 1.889,4.901 3.842,9.97 7.198,9.97 4.052,0 5.825,-8.332 6.302,-11.089 0,-0.006 0.007,-0.006 0.01,0 l 2.259,3.917 0.921,-0.532 -3.188,-5.521 -5.507,3.178 0.531,0.92 3.941,-2.273 c 0.002,-0.002 0.005,-0.002 0.007,0 10e-4,10e-4 0.002,0.003 10e-4,0.005 -0.574,3.373 -2.36,10.332 -5.277,10.332 z"
+           stroke="#385723"
+           stroke-width="0.53125"
+           id="path4-7-2-4"
+           style="fill:#455c73;fill-opacity:1;stroke:#455c73;stroke-width:1.86416;stroke-dasharray:none;stroke-opacity:1" />
+      </g>
+      <g
+         id="g4-4-3-6-3"
+         style="fill:#455c73;fill-opacity:1;stroke:#455c73;stroke-width:1.86416;stroke-dasharray:none;stroke-opacity:1"
+         transform="matrix(0.4657752,0,0,0.4657752,466.08041,188.56877)">
+        <path
+           d="m 854.5,283.438 h -1.062 v 36.124 h 36.109 V 318.5 H 854.5 Z"
+           stroke="#385723"
+           stroke-width="0.53125"
+           id="path3-1-2-8-12"
+           style="fill:#455c73;fill-opacity:1;stroke:#455c73;stroke-width:1.86416;stroke-dasharray:none;stroke-opacity:1" />
+        <path
+           d="m 878.406,307.875 c -2.627,0 -4.446,-4.722 -6.206,-9.289 -1.844,-4.785 -3.586,-9.305 -6.544,-9.305 -3.905,0 -5.103,4.87 -6.162,9.167 l -0.197,0.797 1.03,0.258 0.199,-0.802 c 0.965,-3.917 2.058,-8.357 5.13,-8.357 2.228,0 3.918,4.384 5.552,8.624 1.889,4.901 3.842,9.97 7.198,9.97 4.052,0 5.825,-8.332 6.302,-11.089 0,-0.006 0.007,-0.006 0.01,0 l 2.259,3.917 0.921,-0.532 -3.188,-5.521 -5.507,3.178 0.531,0.92 3.941,-2.273 c 0.002,-0.002 0.005,-0.002 0.007,0 10e-4,10e-4 0.002,0.003 10e-4,0.005 -0.574,3.373 -2.36,10.332 -5.277,10.332 z"
+           stroke="#385723"
+           stroke-width="0.53125"
+           id="path4-7-2-5-3"
+           style="fill:#455c73;fill-opacity:1;stroke:#455c73;stroke-width:1.86416;stroke-dasharray:none;stroke-opacity:1" />
+      </g>
+    </g>
+    <g
+       id="g4-4-3-6-6"
+       style="fill:#26834b;fill-opacity:1;stroke:#26834b;stroke-width:1.86416;stroke-dasharray:none;stroke-opacity:1"
+       transform="matrix(0.42525628,0,0,0.42525628,86.74598,683.48181)">
+      <path
+         d="m 854.5,283.438 h -1.062 v 36.124 h 36.109 V 318.5 H 854.5 Z"
+         stroke="#385723"
+         stroke-width="0.53125"
+         id="path3-1-2-8-1"
+         style="fill:#26834b;fill-opacity:1;stroke:#26834b;stroke-width:1.86416;stroke-dasharray:none;stroke-opacity:1" />
+      <path
+         d="m 878.406,307.875 c -2.627,0 -4.446,-4.722 -6.206,-9.289 -1.844,-4.785 -3.586,-9.305 -6.544,-9.305 -3.905,0 -5.103,4.87 -6.162,9.167 l -0.197,0.797 1.03,0.258 0.199,-0.802 c 0.965,-3.917 2.058,-8.357 5.13,-8.357 2.228,0 3.918,4.384 5.552,8.624 1.889,4.901 3.842,9.97 7.198,9.97 4.052,0 5.825,-8.332 6.302,-11.089 0,-0.006 0.007,-0.006 0.01,0 l 2.259,3.917 0.921,-0.532 -3.188,-5.521 -5.507,3.178 0.531,0.92 3.941,-2.273 c 0.002,-0.002 0.005,-0.002 0.007,0 10e-4,10e-4 0.002,0.003 10e-4,0.005 -0.574,3.373 -2.36,10.332 -5.277,10.332 z"
+         stroke="#385723"
+         stroke-width="0.53125"
+         id="path4-7-2-5-8"
+         style="fill:#26834b;fill-opacity:1;stroke:#26834b;stroke-width:1.86416;stroke-dasharray:none;stroke-opacity:1" />
+    </g>
+    <text
+       id="label-013"
+       x="31.208008"
+       y="131.90953"
+       font-size="19.5px"
+       font-weight="700"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#17283a"
+       text-anchor="start">Import from CANOE-fuel module</text>
+    <text
+       id="label-014"
+       x="31.208008"
+       y="151.63187"
+       font-size="16.5px"
+       font-weight="400"
+       font-family="'Segoe UI', Arial, sans-serif"
+       fill="#44576a"
+       text-anchor="start">Fuel prices, blending, and fuel-cycle emissions</text>
+    <g
+       id="g5-4"
+       transform="translate(-1.248255,-1.8472933)">
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14.0463px;line-height:1.1;font-family:'Segoe UI', Arial, sans-serif;-inkscape-font-specification:'Segoe UI, Arial, sans-serif';text-align:center;letter-spacing:0px;writing-mode:lr-tb;direction:ltr;text-anchor:middle;fill:#455c73;fill-opacity:1;stroke:none;stroke-width:1.0859"
+         x="804"
+         y="175.89999"
+         id="text2"
+         text-anchor="middle"><tspan
+           sodipodi:role="line"
+           id="tspan2"
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:14.0463px;font-family:'Segoe UI', Arial, sans-serif;-inkscape-font-specification:'Segoe UI, Arial, sans-serif Bold';fill:#455c73;fill-opacity:1;stroke-width:1.0859"
+           x="804"
+           y="175.89999">ICEV</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14.0463px;line-height:1.1;font-family:'Segoe UI', Arial, sans-serif;-inkscape-font-specification:'Segoe UI, Arial, sans-serif';text-align:center;letter-spacing:0px;writing-mode:lr-tb;direction:ltr;text-anchor:middle;fill:#455c73;fill-opacity:1;stroke:none;stroke-width:1.0859"
+         x="837"
+         y="175.89999"
+         id="text2-5"
+         text-anchor="middle"><tspan
+           sodipodi:role="line"
+           id="tspan2-5"
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:14.0463px;font-family:'Segoe UI', Arial, sans-serif;-inkscape-font-specification:'Segoe UI, Arial, sans-serif Bold';fill:#455c73;fill-opacity:1;stroke-width:1.0859"
+           x="837"
+           y="175.89999">HEV</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14.0463px;line-height:1.1;font-family:'Segoe UI', Arial, sans-serif;-inkscape-font-specification:'Segoe UI, Arial, sans-serif';text-align:center;letter-spacing:0px;writing-mode:lr-tb;direction:ltr;text-anchor:middle;fill:#455c73;fill-opacity:1;stroke:none;stroke-width:1.0859"
+         x="872"
+         y="175.89999"
+         id="text2-5-7"
+         text-anchor="middle"><tspan
+           sodipodi:role="line"
+           id="tspan2-5-1"
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:14.0463px;font-family:'Segoe UI', Arial, sans-serif;-inkscape-font-specification:'Segoe UI, Arial, sans-serif Bold';fill:#455c73;fill-opacity:1;stroke-width:1.0859"
+           x="872"
+           y="175.89999">PHEV</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14.0463px;line-height:1.1;font-family:'Segoe UI', Arial, sans-serif;-inkscape-font-specification:'Segoe UI, Arial, sans-serif';text-align:center;letter-spacing:0px;writing-mode:lr-tb;direction:ltr;text-anchor:middle;fill:#26834b;fill-opacity:1;stroke:none;stroke-width:1.0859"
+         x="907"
+         y="175.89999"
+         id="text2-5-7-5"
+         text-anchor="middle"><tspan
+           sodipodi:role="line"
+           id="tspan2-5-1-2"
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:14.0463px;font-family:'Segoe UI', Arial, sans-serif;-inkscape-font-specification:'Segoe UI, Arial, sans-serif Bold';fill:#26834b;fill-opacity:1;stroke-width:1.0859"
+           x="907"
+           y="175.89999">BEV</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14.0463px;line-height:1.1;font-family:'Segoe UI', Arial, sans-serif;-inkscape-font-specification:'Segoe UI, Arial, sans-serif';text-align:center;letter-spacing:0px;writing-mode:lr-tb;direction:ltr;text-anchor:middle;fill:#277985;fill-opacity:1;stroke:none;stroke-width:1.0859"
+         x="941"
+         y="175.89999"
+         id="text2-5-7-5-6"
+         text-anchor="middle"><tspan
+           sodipodi:role="line"
+           id="tspan2-5-1-2-1"
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:14.0463px;font-family:'Segoe UI', Arial, sans-serif;-inkscape-font-specification:'Segoe UI, Arial, sans-serif Bold';fill:#277985;fill-opacity:1;stroke-width:1.0859"
+           x="941"
+           y="175.89999">FCEV</tspan></text>
+    </g>
+  </g>
+</svg>

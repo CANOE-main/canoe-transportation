@@ -90,7 +90,7 @@ sources:
     database_note: "Provincial transport energy, activity and fleet statistics by vehicle class; aggregate series do not identify individual vehicle vintages or technologies."
     # dq_time: Annual observation years align with historical inputs and the selected base year.
     data_quality: {dq_cred: 2, dq_geog: 1, dq_struc: 2, dq_tech: 2, dq_time: 1}
-    validation_rule: "For each requested year-region-table_id, confirm file exists, can be opened, and contains expected CEUD table structure."
+    validation_rule: "Check registered workbook SHA-256 and bytes when available. Each requested year-region-table must be readable and contain the expected CEUD table structure."
     refresh_notes: >
       Legacy workflow used get_nrcan_data.py to download CEUD transport Tables 7, 20-21, and 28-37, strip formatting/noise rows, and inject cleaned arrays
       into the transport spreadsheet Background Data sheet.
@@ -101,6 +101,189 @@ sources:
       retry_backoff_seconds: 0.5
       regions:
         allowed: ["AB", "BCT", "MB", "NB", "NL", "NS", "ON", "PE", "QC", "SK"]
+      # Official 2023 workbooks reproduced from an empty cache and matched to prior build inputs.
+      registered_snapshots:
+        2023:
+          ab:
+            7: {expected_sha256: "a3eb2454a9afb09696f1331caf3ecbdd07306a92f77ca569d6c753a245d19f02", expected_bytes: 43520}
+            14: {expected_sha256: "28953289749ba5df5050fbdbc84d2f6ad6bec24600fb04c87cc3fff8564dc4a0", expected_bytes: 33792}
+            15: {expected_sha256: "4a2a6920b8c3bb8ab3da41d6a5db6027289b7e22dfc288437f932890b7b1c5a9", expected_bytes: 33792}
+            17: {expected_sha256: "938b610b6db081a72e1a7f2009ba3219e996bbdbd09f523505fae1003bcb33a7", expected_bytes: 29184}
+            18: {expected_sha256: "5f3efc5582186caeb7eb29dfccb82de8dc8540792c086a5e82b0621f8d352beb", expected_bytes: 29184}
+            19: {expected_sha256: "6b66cf6fa667790dc4e85da24a0cffa03eaa7ee79793d58e3fc7fb4f492cbabe", expected_bytes: 32256}
+            20: {expected_sha256: "4e1679f1963b4c7aa5b7c7416b032b6ede87e392143c7bad6c436058ea4d21f3", expected_bytes: 41984}
+            21: {expected_sha256: "6ca1f0da4a99250fc684dbf4fa7fd5514ea45dad91d912f519f279c379489347", expected_bytes: 30208}
+            28: {expected_sha256: "e0b308cc660230f697c8641eb6a313c63f70bdf8b3e17626e0cc250de647ae72", expected_bytes: 40960}
+            29: {expected_sha256: "8172638a06a24ee05091e0d5cacbc0c3da84d43639534b93ea316317bd6ad1f5", expected_bytes: 43008}
+            30: {expected_sha256: "f2aba12005f97ce98ebd153ad6023db7e5046ea21043eba69ca150635fb3ce21", expected_bytes: 37888}
+            31: {expected_sha256: "3bc4317382d01001d45b95f83f1ad2d79ee4c0942e289c62795c98cedc951ffc", expected_bytes: 32256}
+            32: {expected_sha256: "4266c269fab702e680becd9bcd2cf4ba32d8d732a96be8e61ca3a83097b7fccf", expected_bytes: 31744}
+            34: {expected_sha256: "116215f0d22e37c008c85d94ef96af5eccffd023773edb6f7fd978c6f2d90066", expected_bytes: 41472}
+            35: {expected_sha256: "25659add060aa4878ffa31d97fc9e3f7ea0c6015e173963b90c4334d1b5e92a1", expected_bytes: 41984}
+            36: {expected_sha256: "f3090e1848ec9d4523b802dcc4e82a24958a2c7391b6c840f2d61f213fb1c049", expected_bytes: 40960}
+            37: {expected_sha256: "0465466374aec42fb9b1e850c19d5a950613ac044f017ef759478c9f9c92a58f", expected_bytes: 42496}
+          bct:
+            7: {expected_sha256: "cf2f4578978bf155616892396ac5110976ceb5cc54de92c99b63662bcbe11b96", expected_bytes: 44032}
+            14: {expected_sha256: "d68de933083809be3e1377814191a9a46c83c27d3d7175fd7f739384d217238b", expected_bytes: 33792}
+            15: {expected_sha256: "0c82ca01ededa3ecbfcfa0352dddc7697d8b9e297b5eca7195c853d4baf64423", expected_bytes: 33792}
+            17: {expected_sha256: "2981dec50f01c287f48656781acffb00f2beab69dcac4aa2212083b984ccd23a", expected_bytes: 29696}
+            18: {expected_sha256: "ddec4ace26beeb952f1f0a68268e3155a3e7d604d0580c952c776ef8a7e51802", expected_bytes: 29696}
+            19: {expected_sha256: "0bd76b1fc7147974808257dca20f9e673398494ccfd7e62c8e2446b1d3e5634d", expected_bytes: 34304}
+            20: {expected_sha256: "7df96094ba2fdd1803e3654d439e9c7f0f0337cc8ff059e7421dd30e95ab71c0", expected_bytes: 41984}
+            21: {expected_sha256: "eb379d73bf0915576e33e5a72df431f0b56780cad77c960d6a087350b4fb95ea", expected_bytes: 30208}
+            28: {expected_sha256: "89e71b13b4cf214120ae792656824d4519a8783a37fc2e4c570efe9cc8a21a56", expected_bytes: 40960}
+            29: {expected_sha256: "b909d8c3e8c0fc2e55a7dcb0aedaaf3f846fa439629d96a951a1448710d4d06e", expected_bytes: 43008}
+            30: {expected_sha256: "2ca5cc2b01845ba0d89c6a8651c477ad6edfb4cf36be007694572be9aff681c9", expected_bytes: 37888}
+            31: {expected_sha256: "85373204e154793b2b899334cf90d4548082858b2e384e62a30929ab28e9ba49", expected_bytes: 32256}
+            32: {expected_sha256: "41f4f965946b037855d1efbb1b275237b240077e5a186c3a876f762ef8fd01db", expected_bytes: 31744}
+            34: {expected_sha256: "2cd1e8812114a6e16f4783b9a57b21567a6b1038fa27822bee91143e6d603e87", expected_bytes: 41472}
+            35: {expected_sha256: "aef105d5527c8aa591d987ea33373bd9c77abc0a53c298dd4ede36c510cf9911", expected_bytes: 41984}
+            36: {expected_sha256: "faadeaafb85c572fb8696d0a286af5a95e33ad25a6389aeafb9ecb24f5fe176e", expected_bytes: 40960}
+            37: {expected_sha256: "ccf27022ea48f9ef32d6875ef29a3463b05442e0df67b58c2ca6a4931953ca53", expected_bytes: 42496}
+          mb:
+            7: {expected_sha256: "b9026a1157d54016d44fd05d9c0a6ef43541e125a30e7f812aa10d7678ca318a", expected_bytes: 43520}
+            14: {expected_sha256: "bd35280184b3df6627f899dd252fff95a20c09f89bd585f5a4dc730719357782", expected_bytes: 33792}
+            15: {expected_sha256: "caa043ed35151e14b01c056c7e3313b53ef9db3b3fc31727b86bbdcd454764e6", expected_bytes: 33792}
+            17: {expected_sha256: "e3c197a339c3b9b9e895fbd37479c303fa33224b3abc17b27fbc6230f967a3db", expected_bytes: 29184}
+            18: {expected_sha256: "f548990c6bb9c851025abded63a2f41c47a2fd0b59bf2b4b4d636f117ac8c137", expected_bytes: 29184}
+            19: {expected_sha256: "807b731e2f3e1c78101273afb9f28bad49da74c9a782cab959d6e62b83536acd", expected_bytes: 32256}
+            20: {expected_sha256: "2f3316babac97c5faf4cc4dc3b96e7462d63c131bc376629e4179655b050f107", expected_bytes: 40960}
+            21: {expected_sha256: "72ec58a550821ab5ef1730fce4a3320f3d283dba43d50178f05778aece0da132", expected_bytes: 30208}
+            28: {expected_sha256: "579ce15c60bcc300fe8851e301c2b050451d643734918ccbc9b12dfbec49a29b", expected_bytes: 40448}
+            29: {expected_sha256: "6cfcb3b0aae07afb0f7bcdf26b62b311716598f83cc7a3760908cf469c5d2aeb", expected_bytes: 41984}
+            30: {expected_sha256: "a558010cdef95856839135fb3ff51f1ff2a95e4d8ea9946615fdbd24067b9d0e", expected_bytes: 37888}
+            31: {expected_sha256: "62f3a4be9ca1697ba176010b8b0ec23038152678c405e56d185423d8323f28d5", expected_bytes: 32256}
+            32: {expected_sha256: "c723a9616ebd5fa02a094821e7490e7b45a2436d13981dd9a91c166af4b7b06e", expected_bytes: 31744}
+            34: {expected_sha256: "4cbec4ee888a11da844cdae274c4dee19201d2436808549b52d6a9ace44bf191", expected_bytes: 40960}
+            35: {expected_sha256: "8ed14030b5a9398b3bd0a0b0cd3a971cd310fdee7e483e105f7283b3fa4e434d", expected_bytes: 41472}
+            36: {expected_sha256: "4377bc4b4036d27237739e7af7f75394f87df0ebdc88ddafe3138296416ce404", expected_bytes: 40960}
+            37: {expected_sha256: "d022379aee669b9f9e2381ced3af8d484aeef3ca939584699c72f1cd7374111c", expected_bytes: 42496}
+          nb:
+            7: {expected_sha256: "da4faf22bac45bce8ddb07f4607b0d114d701c79c4086691bab0d11b6affb516", expected_bytes: 44032}
+            14: {expected_sha256: "213733548e4203761ee5df651c1d1fc20e05dc6763f012115d15c59ee19f00fa", expected_bytes: 33280}
+            15: {expected_sha256: "72367fbcec83a3449ee362a6a269403c158206ebdae65542729a9bbba47d134a", expected_bytes: 33280}
+            17: {expected_sha256: "59943d8b2cbf075b9d84e8fdc1130562b6b1a92e8f663f108fb78c681aa8f1cc", expected_bytes: 29184}
+            18: {expected_sha256: "a036ca7d7cd72823c92ce660a1f72d6c7102f0c092641e8b997082d1749ca2d5", expected_bytes: 29184}
+            19: {expected_sha256: "f1611f52740a5f71ebe336c410da2fb14e763dd4de21ec59782d9c69f4e7324c", expected_bytes: 33792}
+            20: {expected_sha256: "1f9cce59741aed25f4d6379bb4678cfccb087ef6f66f13ef9a70edf871fc78e2", expected_bytes: 40960}
+            21: {expected_sha256: "89f68b3e28e81ab4e056249c9ef1c5edfc7c9ae425322c2b6b8dd0b405d4323c", expected_bytes: 30208}
+            28: {expected_sha256: "f7b85af01e44b580315f7558791f5062a64fca9472f43f94db67cc2214262cc5", expected_bytes: 40448}
+            29: {expected_sha256: "2999c868448d59bab3fc4581e6f0bb17452e34b0a198569433e6815ce389720f", expected_bytes: 41984}
+            30: {expected_sha256: "a7bcb5a84b0190bcb8f707be5584ea25b8a33731835775c1720996ec5049a240", expected_bytes: 37888}
+            31: {expected_sha256: "8231396171b2905acdce2e533863af28463ffa443eba60bdcea6b50c26459053", expected_bytes: 32256}
+            32: {expected_sha256: "225e1a02a534e9eb9655e45838a4c103e6a7008c39b47dac108a365aa006e1f6", expected_bytes: 31744}
+            34: {expected_sha256: "50b65c92d04ca29d284f7b1b31545f28a23e078716d7552bf31d22906afdfaa2", expected_bytes: 40960}
+            35: {expected_sha256: "a5e86205141dcd5bc133da1c9665e683e36b58ea17b1bf0cebea85dfdb76e301", expected_bytes: 40960}
+            36: {expected_sha256: "65be6c70d15154d7a15f73ee2353f2aa8ef070b95b54e41fc4c02b95bf5bf81e", expected_bytes: 40960}
+            37: {expected_sha256: "9932ad85a6762149692095a41feb0b82edb24a0fe1bfc5708e1947144b2f2191", expected_bytes: 42496}
+          nl:
+            7: {expected_sha256: "fd117436f797bb6999f70c006a785f74e9f6627ac3bacb36af469c86a4318186", expected_bytes: 43008}
+            14: {expected_sha256: "2c1aca92a70e7dd97b6effbe4c1c146f9cb8239cac9f828cb52a4534af2e3495", expected_bytes: 33280}
+            15: {expected_sha256: "006045b3d5fdae4beb52af93b24cfed95957ad92acfb8b2c47eafd573a2e31a1", expected_bytes: 33280}
+            17: {expected_sha256: "96802c2927a645b1f09e5ba695721fdff27f094d2a080bd61742a90f9754bcb8", expected_bytes: 28672}
+            18: {expected_sha256: "d03867764386619885851dce74e1c75440691ad900b143d92b4ce289d0796633", expected_bytes: 28672}
+            19: {expected_sha256: "47b2f3176980ea0db008bcf39cc0c7dcf2bbfd57a53c1b1424ce7929b0c34766", expected_bytes: 33792}
+            20: {expected_sha256: "2e29bc2b04f5905d1432191af0cd6708074de9df9200cb15f81447a555c75307", expected_bytes: 40448}
+            21: {expected_sha256: "c14895533a7d7fa1ec3b852de0acc831b79d0474d9295236ee051cfacb6bafa5", expected_bytes: 30208}
+            28: {expected_sha256: "897659f148377853c7dce99d08e732eb5f9c5d10eca8f19118b53ab20b521ef0", expected_bytes: 39936}
+            29: {expected_sha256: "206335cc3f3300125be9ff5504a886d7585e4f43c902b923f3aa7d98722b6cd7", expected_bytes: 41472}
+            30: {expected_sha256: "55a4f2d4c760fbd61c16ce403a744ba9e32cb2d6674cacdafed4f5ab55dd97b4", expected_bytes: 37888}
+            31: {expected_sha256: "ac21baa598b29157fcad7bf7d3d00128bfb1e36446eaf6eb92315dbfc2f6a915", expected_bytes: 32256}
+            32: {expected_sha256: "1bfa0fd92938b7d585ee3ff813f8618ab0d9c551e0ee2a2fed9e9b6168d33065", expected_bytes: 31744}
+            34: {expected_sha256: "8c34e214a028f9afc2bfb6bbf8c20e06b95b7a04a4609306b2ddbf279485590c", expected_bytes: 40448}
+            35: {expected_sha256: "ae2dde72647ff873c6a0c03c754d306a7a8730f528f6bcf298048008d176cdb9", expected_bytes: 40960}
+            36: {expected_sha256: "d6dff1dbc04be175a143dc4d1f8738f8a8cc3208371ce35eff551cd10d93e196", expected_bytes: 40960}
+            37: {expected_sha256: "f7f843627cde60f32f440d29a831892bd8c92ee1a9ddfd44e23486468ba9c0a7", expected_bytes: 41984}
+          ns:
+            7: {expected_sha256: "dbb218e92ec877b6c25e1f0cc3418ca5878cfe49681bdde44d45d1328925b795", expected_bytes: 44032}
+            14: {expected_sha256: "0025e1174d445ff4558c002d7233555dc3af35d68bb589825962b93b35849e7e", expected_bytes: 33280}
+            15: {expected_sha256: "897a3e4c73c72130887da9c5f6b15cc7ec4a16d9751791298358cbef68956b53", expected_bytes: 33280}
+            17: {expected_sha256: "6bfe2c438f252ced6c94835023b937e2b3c461effb7a5df1b598002565add091", expected_bytes: 29184}
+            18: {expected_sha256: "59c1c581b1fa228f2d333f3fc9b8125091b4e3cbf648117be114c51d9ee9ae99", expected_bytes: 29184}
+            19: {expected_sha256: "db60a85ea279892d00ebbcbb33d4c874feebb862dd173c6fcc57ea93f9731177", expected_bytes: 33792}
+            20: {expected_sha256: "6500bba3ba80b6145ed1020df129f053661cf1521c3e2ecf237edcc9c05feb02", expected_bytes: 40960}
+            21: {expected_sha256: "630fc396a6aabe073c75bc21ee91d996c652e954543a6719bbebd43ff2988439", expected_bytes: 30208}
+            28: {expected_sha256: "b6e3c7d800d605d239775b715557826d98a024e23d116625f89de467ce742a71", expected_bytes: 40448}
+            29: {expected_sha256: "5171389de8e08f99d880391da6812b65e7722f1a2c85f4a8d07e371c3fdf3c3c", expected_bytes: 41984}
+            30: {expected_sha256: "448b4328a60117e9f15757300400dbaadced170f798c751e1a28c8d00d35e2ea", expected_bytes: 37888}
+            31: {expected_sha256: "2b940e9e3e7f3477e04287a84a6022d9e3b65d56a34e4d79ccbb788356fd41cd", expected_bytes: 32256}
+            32: {expected_sha256: "e4b0cf4f88ff67905d3901794a934544e461e2318eee7d3040c86a385220e0ca", expected_bytes: 31744}
+            34: {expected_sha256: "01405ebb9bdeb2dbc9dad671963d0e2a3ab2856739de9a7fe6a0d76d40bdb791", expected_bytes: 40960}
+            35: {expected_sha256: "bf38658c1f9443700348ed95f2c52369de993122be470276589549c210f28588", expected_bytes: 41472}
+            36: {expected_sha256: "8a5c85da99af2a731531800273e5c550e5441a309ce1af121626dd7b810a205c", expected_bytes: 40960}
+            37: {expected_sha256: "02c9ab74d0ad7b0828bad30749954cc9432eb8144edea4e1599bd5c1bf046cdd", expected_bytes: 42496}
+          "on":
+            7: {expected_sha256: "cfe624ff11057dac5a5cb53fecc384f183e176f9fd688ddb03dcfc212177586d", expected_bytes: 44032}
+            14: {expected_sha256: "48ae869f187332eb176895ec54f48fcc56de3dfdb329e5d3f74dc386f17a2477", expected_bytes: 33792}
+            15: {expected_sha256: "ddf71535aee1b2bd6067c00a362ef83e15ed3b464e89d7c4cdcd219d7cb66366", expected_bytes: 33792}
+            17: {expected_sha256: "32ba513928c339749336efd2a2f52c222dc823dc0498f62d21cb7d496e90c7eb", expected_bytes: 29184}
+            18: {expected_sha256: "b550ae534bc5b61a0cda3559a1b5ed3f1ecdbeaa306b9b323fd39e89e2d2af7b", expected_bytes: 29184}
+            19: {expected_sha256: "94833b0eb457562a7588320bebd4f714e2bf9443da4210db3a377831341e5d15", expected_bytes: 33792}
+            20: {expected_sha256: "bbffeb3527420e3af1837e8e213e43c5d1d759110235289a53e2c4f707ce84f5", expected_bytes: 41984}
+            21: {expected_sha256: "7fef4252dfecf5f1d499718664236c738d001647d43e14314d1009ab8163b4bc", expected_bytes: 30208}
+            28: {expected_sha256: "47a0967ca5eb08452964320f5dc0643948902fa65b35927bc69dd6a996c4460b", expected_bytes: 40960}
+            29: {expected_sha256: "be6dd0004793c9464bdd57b9d6a513d9dd38d41eac036b54a34f36041e811ff7", expected_bytes: 43008}
+            30: {expected_sha256: "85e17d29cb2e5e2e072bf3077360b48035f5ec39813cc781910aeea2a1d150d7", expected_bytes: 37888}
+            31: {expected_sha256: "1c2fca64ba6ef67753e34c7b521e3c92b392d8e4db078512708705216be66900", expected_bytes: 32256}
+            32: {expected_sha256: "d289856dd23bae3192dc3cc5962f3ccf12cfa300c70bd5082ecf9f751f2759d8", expected_bytes: 31744}
+            34: {expected_sha256: "19753fe71d78957056b7ce4aac149ceb679501c3a8ab51086722f0a590cf35ec", expected_bytes: 41984}
+            35: {expected_sha256: "a56e551367a63ce566574f27991dfc7b105a13952fc69bf011ca5ad5d5c0492a", expected_bytes: 41984}
+            36: {expected_sha256: "047f6b9edec83d1c5524e0a5e9c7f8b1aa886e1e08cb392a606c0ebc2aca2ebd", expected_bytes: 40960}
+            37: {expected_sha256: "d10da0e7268ce6d93dab4234376805b453254136e64649a069244eed54a193f7", expected_bytes: 41984}
+          pe:
+            7: {expected_sha256: "2642c7a270a7e415afd2adec4a789895aa547c6d6d542f41a26b70a00029242e", expected_bytes: 43520}
+            14: {expected_sha256: "b56e0423068a98d6ffaaf1f1772e4a45a21d029708f55f527c390cb658d704e1", expected_bytes: 33280}
+            15: {expected_sha256: "570048ad417f25348425ddea1bcc67724960a7287ea031a7059dfaf28bf74b8e", expected_bytes: 32768}
+            17: {expected_sha256: "e49cbf678fbe56886696db1296ff0c6ccef30d31d54405b84c93efbfe44f755f", expected_bytes: 28672}
+            18: {expected_sha256: "1c2372f1aa5b041779edc1f627fc2a2c6382d34c273719b8ff6b4f5dce65f722", expected_bytes: 28672}
+            19: {expected_sha256: "6aa8fc2e4e17ce76aa42449f066e895106ee759d78748a893e2de053f8937f6b", expected_bytes: 32768}
+            20: {expected_sha256: "73acd2507f052a95fbe5127f28d07eefc15f4a29e29119909fdd5f2aeee6052c", expected_bytes: 39936}
+            21: {expected_sha256: "59e91fd8b2a200b44229c43e268ed163eb052fa47c51e45de82f68ffb454e7fb", expected_bytes: 30208}
+            28: {expected_sha256: "94a75bc4e5ba9ed8f888009175241d453e7528f80a95350f867d8e6161c634e7", expected_bytes: 39936}
+            29: {expected_sha256: "d66e9e53336e4f7fff785bb874661ef31c842d423d98d54d0b262c2611d0eea8", expected_bytes: 41472}
+            30: {expected_sha256: "4d304a2a1e4cc392bb806cec16f10ad6fbf39a36a60b081d59564db358f82f01", expected_bytes: 37888}
+            31: {expected_sha256: "2a028da1f6e98e78514847f377cdda4f4c22c513df688d01a25366e1b6d52d1f", expected_bytes: 32256}
+            32: {expected_sha256: "d35eadc787011ecf944e5f096ae85569c09052fa630b9f62042ef3f06c515f0d", expected_bytes: 31744}
+            34: {expected_sha256: "ef6201b42537cab09e8bfeb5108955506c0d48b2deb8007bd9e31632931def65", expected_bytes: 39424}
+            35: {expected_sha256: "37cf16914213585b992153e04ac662f507b2e9da8eed40e343f4593f0aff56d7", expected_bytes: 39936}
+            36: {expected_sha256: "efb54541ba0378e6f9b7a29a1c84dfc623d2ec8b354b97d920849cd561ee39cc", expected_bytes: 40960}
+            37: {expected_sha256: "63f54eafdeba33340123a534dbe8db9ff17dec4f9c914c730b52b17a1673fd60", expected_bytes: 42496}
+          qc:
+            7: {expected_sha256: "a001f0a2a0786b6038715cf7393e6e672cc019beac8174db484e8fea42fd1613", expected_bytes: 44032}
+            14: {expected_sha256: "41587ff3ba7ffc88158974233d0668e58dd546a3f2a8646929457dba32f959cc", expected_bytes: 33792}
+            15: {expected_sha256: "e43def370751d87bc17219742d9eaa447f21548151de6ff90ad2bb6d1625d2e2", expected_bytes: 33792}
+            17: {expected_sha256: "d08fa03e99c267399611609fb03f79b2a9c4a213fef9c5291a70aff63908a724", expected_bytes: 29184}
+            18: {expected_sha256: "e15964afc41c3c3b28308a5bf321509f9754e4e167886e8740d98c2f4be22b97", expected_bytes: 29184}
+            19: {expected_sha256: "3c83f92563593ca1608a55e7149d7530ec8c041f2fb47310c9835536c76a52cf", expected_bytes: 34304}
+            20: {expected_sha256: "d91f4fafa9d18646c2a163e279ed424f917b29ad3571c4a85332b0afdfaba545", expected_bytes: 41984}
+            21: {expected_sha256: "b1ee84deebc5c80215fa7ee36dff477de42aa4f9c158d602c61af34ee406d55d", expected_bytes: 30208}
+            28: {expected_sha256: "05f8f6180b9f340fc7f38e9c984ff29a70385cde1faad3c1974888d205acbfab", expected_bytes: 40960}
+            29: {expected_sha256: "8347fef2b78272984df05f227bd67b2d411f6b6b351f138e8e675d6670f2c8b3", expected_bytes: 43008}
+            30: {expected_sha256: "2530a2998f0f72aba852dfd8bab0232d300bb589469938dd8e4eb44d9ee7d80e", expected_bytes: 37888}
+            31: {expected_sha256: "28b1b79ada8fb767bfb939ffaf87be26dcf8335fb1d88f43b59d80d5f642acf8", expected_bytes: 32256}
+            32: {expected_sha256: "f60c7340436eea3c13f813a028cb84338191246451af2a6be725250b0dcd7cc2", expected_bytes: 31744}
+            34: {expected_sha256: "0bd5b04597bbcb66799f96accb3a32dc2ba18a5e4463a103ab0fbb7f7e3dfd2b", expected_bytes: 41472}
+            35: {expected_sha256: "4d1b5db53c6fcb715e9dd6682c9c51f9cdfde9dbf11b688c90606834ebec7a38", expected_bytes: 41984}
+            36: {expected_sha256: "dda409c82c0b588aca34b33dc01f3de8ad05486470c3a3f4d2345e42b56cb74e", expected_bytes: 40960}
+            37: {expected_sha256: "8ec9c31d8505c9e99be092f6fc0c88ca9e261413a5ea374cab6494e671249901", expected_bytes: 42496}
+          sk:
+            7: {expected_sha256: "ba296152d50d5932ff09a14cbee522475961a71769ef6127e27ba6d5db5c4cd4", expected_bytes: 43520}
+            14: {expected_sha256: "d6b57cdf4de8eb20726d1e1940aee6470d8643cd658600d33f52690c9884ce33", expected_bytes: 33792}
+            15: {expected_sha256: "eea3d964dc4d6d32757a457dc61f97995f0f108f0d34d3b2ebf20007805bc472", expected_bytes: 33792}
+            17: {expected_sha256: "4f226ad13f6a050ce66e0dff8d49e6661d234c817bfedb615ac5a2611c67ba02", expected_bytes: 29184}
+            18: {expected_sha256: "266e6fddc1fbdae91dc3065c3b36e45d6fc5ff87642c384c74124ae172718ecf", expected_bytes: 29184}
+            19: {expected_sha256: "821157c54a7f3976cf5799ebb3ebd2655f039368c8bc1b3be452caaedd3a30f8", expected_bytes: 31744}
+            20: {expected_sha256: "8dcd35442cd7a0f735dee5decd44c621f1865aeeaec7b1636c5a34ca14b28721", expected_bytes: 41984}
+            21: {expected_sha256: "e88cb7ca92edaed87b269559a3b863a6195d62f4fc40208689a36890c969d1de", expected_bytes: 30208}
+            28: {expected_sha256: "12042712dd7cb322cd2b89593967fecf9e01a873abcfb2adc5799a31775c6c2f", expected_bytes: 40960}
+            29: {expected_sha256: "d9cb7e99ff5f2a7d6d8e573a80f22c0947760ec545595b4f722b9dcd9c8d588f", expected_bytes: 43008}
+            30: {expected_sha256: "14b59cb20e059b9ab7b22356359078fd641f96fe5b6b72cefba7468752718a17", expected_bytes: 37888}
+            31: {expected_sha256: "be3481b442d29f63e48d5e23462bc8ea40c6c460b7f5de77d9acfebd50308a77", expected_bytes: 32256}
+            32: {expected_sha256: "db2a59a53017d76036cfe4489066932cec34e03e120b5c4bab0c9a9907214525", expected_bytes: 31744}
+            34: {expected_sha256: "d36e18b51c4b5c6dd0aae0b31ada5f8b86ed721c34a518983c6e4ea098354aa8", expected_bytes: 41472}
+            35: {expected_sha256: "0703f8af7b0deb0826c1de5edb08f9b499db141eb446d4b3e5127fbf9550de4e", expected_bytes: 41984}
+            36: {expected_sha256: "1877cc9fd3db7112822d611eb4375bdbfc1d0f4f1d656ddc172b6371f7299e3d", expected_bytes: 40960}
+            37: {expected_sha256: "48bc01bb0c683f15a15c5b93cdbc00ef433ee70e67c4d5f0e3462b476174a52b", expected_bytes: 42496}
     components:
       21:
         database_note: "Provincial car stock, sales and distance travelled; fleet totals require separate age and fuel evidence for technology cohorts."
@@ -263,7 +446,7 @@ sources:
         components: ['20', '21', '26', '27', '28']
     # dq_time: Annual observation years align with historical inputs and the selected base year.
     data_quality: {dq_cred: 2, dq_geog: 2, dq_struc: 3, dq_tech: 2, dq_time: 1}
-    validation_rule: "For each requested year-table_id, confirm file exists, can be opened, and contains expected CEUD table structure."
+    validation_rule: "Check registered workbook SHA-256 and bytes when available. Each requested national year-table must be readable and contain the expected CEUD table structure."
     refresh_notes: >
       Current national inputs use CEUD transport Tables 20, 21, 26, 27, and 28.
       These corrected table IDs replace stale registry references to Tables 14-19.
@@ -272,6 +455,15 @@ sources:
       cache_path_template: "nrcan_ceud_transport/{year}_tran_ca_e_{table_id}.xls"
       retry_attempts: 3
       retry_backoff_seconds: 0.5
+      # Official 2023 workbooks reproduced from an empty cache and matched to prior build inputs.
+      registered_snapshots:
+        2023:
+          ca:
+            20: {expected_sha256: "bde10084a604c714c1278fc5d9afe4dfddb2d4e880fe1413a33339524cecfbf7", expected_bytes: 34816}
+            21: {expected_sha256: "c65a6578e318f53d16ea31a32eb2ea682f4c0be1d09a2899d0742613036d5961", expected_bytes: 34816}
+            26: {expected_sha256: "ffdb4588b2e7026a3b6fb4ea6217a6b37e5facafd72159db6bc47460c51bddb1", expected_bytes: 47616}
+            27: {expected_sha256: "1d053797d350f892f0316ef67a3dfad5eed99b812d8858effdfac7c9b22403c2", expected_bytes: 47616}
+            28: {expected_sha256: "83217f152405072cba6ea444aa99201f4bd8f13e7d454c81b353e91b9a118cf6", expected_bytes: 34816}
     components:
       20:
         label: "Passenger Air"
@@ -699,6 +891,9 @@ sources:
         method: direct_zip
         url: "https://atb.nlr.gov/img/other/2024_atb_transportation_data_v1.zip"
       cache_path: "nlr_atb_autonomie/2024/2024_atb_transportation_data_v1.zip"
+      # Official archive reproduced from an empty cache and matched to prior build inputs.
+      expected_sha256: "447082c63d7433dad1d3691cb216687096921b73a677db204fb45a0631fb45e3"
+      expected_bytes: 271753589
       expected_trajectories: [Advanced, Conservative, Constant, Mid]
       supported_scenario_trajectories: [Advanced, Conservative, Mid]
       unsupported_scenario_notes:
@@ -1380,18 +1575,20 @@ sources:
     refresh_notes: >
       Cache both the HTML shell and the content-hashed VuePress transportation
       module discovered from it. Review chart metadata, payload variables,
-      technology coverage, units, and checksums together on refresh.
+      technology coverage, units, and checksums together on refresh. The current
+      site packaging was verified on 2026-11-26 against all 76 previously registered
+      intercity-bus chart rows. The source values, coverage, units and exclusions match.
     adapter:
       access:
         method: vuepress_page_and_module
         url: "https://us-regen-docs.epri.com/v2025/assumptions/transportation.html"
         asset_base_url: "https://us-regen-docs.epri.com"
-      cache_path: "assorted_sources/epri_us_regen_v2025_transportation.html"
-      expected_sha256: "fddf94acbf52401acf7dc2e429a0e758c763959dcb6ac60a999c61bd61c438ad"
+      cache_path: "assorted_sources/epri_us_regen_v2025_transportation-013a3bdc3d32.html"
+      expected_sha256: "013a3bdc3d3273132ff8b787de7e873556dacdc7a6969ec16718627c2d0be9a8"
       expected_bytes: 2099
-      payload_cache_path: "assorted_sources/epri_us_regen_v2025_transportation_payload.js"
-      expected_payload_sha256: "c8527351b8777769a15f67f682d63fbc70e866bfd8b0485f8d8388fe723ce9e9"
-      expected_payload_bytes: 85536
+      payload_cache_path: "assorted_sources/epri_us_regen_v2025_transportation_payload-20c894bbed65.js"
+      expected_payload_sha256: "20c894bbed65c991fd2d7152d6c6547a7d720fec320e5f7b8c1cbe7d4834f09c"
+      expected_payload_bytes: 85891
     components:
       intercity_bus_charts:
         database_note: "Intercity-bus purchase-price and fuel-economy trajectories; purchase costs use the reviewed 2023 USD basis."
@@ -1914,7 +2111,7 @@ sources:
     status: active
     source_type: upstream_download
     file_type: zip
-    version: "2026-11-04 vehicle snapshot"
+    version: "2026-11-20 vehicle snapshot"
     units: "Source vehicle classification records by model year, make, and model."
     citation: "U.S. Department of Energy and U.S. Environmental Protection Agency. FuelEconomy.gov Find a Car vehicle data. https://www.fueleconomy.gov/feg/ws/index.shtml"
     database_note: "U.S. model-year make/model and vehicle-class records used to corroborate Canadian vehicle classification; model names and classes require harmonization."
@@ -1933,7 +2130,7 @@ sources:
       or widen classification implicitly.
     components:
       vehicles:
-        label: "FuelEconomy.gov vehicles.csv (2026-11-04)"
+        label: "FuelEconomy.gov vehicles.csv (2026-11-20)"
         short_name: fueleconomy_vehicle_class_evidence
         inputs: [vehicle_model_year, vehicle_make, vehicle_model, vehicle_size_class, propulsion_configuration]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks]
@@ -1943,10 +2140,10 @@ sources:
         validation_rule: "Select only year, make, model, and VClass for the class output and retain unresolved normalizations; efficiency classification separately reads native propulsion fields from efficiencies.ratings.evidence_columns, and update review must compare both consumed scopes."
         adapter:
           url: "https://www.fueleconomy.gov/feg/epadata/vehicles.csv.zip"
-          cache_path: "fueleconomy_vehicles/2026-09-29_vehicles-1d553896a77898f6.csv.zip"
+          cache_path: "fueleconomy_vehicles/2026-09-29_vehicles-5aedc6ba26b38ffb.csv.zip"
           archive_member: vehicles.csv
-          expected_sha256: "1d553896a77898f6cf47128281337af268df053c90dc1365891c7c8abff82c82"
-          expected_bytes: 2228192
+          expected_sha256: "5aedc6ba26b38ffbfa7c5995a3c686b51af7151b7becc63e350a4d94ca4e25b4"
+          expected_bytes: 2233015
           expected_model_year_from: 1984
           expected_model_year_to: 2027
           required_columns: [year, make, model, VClass]
@@ -1955,7 +2152,7 @@ sources:
       range_evidence:
         database_note: "U.S. MY2024 BEV range and PHEV charge-depleting range keyed by model type; the range records carry no production weights."
         data_quality: {dq_time: 2}
-        label: "FuelEconomy.gov MY2024 BEV/PHEV range and EPA model-type keys (2026-11-04)"
+        label: "FuelEconomy.gov MY2024 BEV/PHEV range and EPA model-type keys (2026-11-20)"
         short_name: fueleconomy_cd_range_evidence
         inputs: [vehicle_id, model_year, manufacturer_code, model_type_index, powertrain, range, secondary_fuel_range]
         applies_to: [cars, passenger_light_trucks, freight_light_trucks]
@@ -2018,6 +2215,7 @@ sources:
           cache_subdir: "vpic_vehicle_models"
 
   dunsky_ev_charging_infrastructure:
+    update: {strategy: dunsky_report}
     source_id: T24
     title: "Electric Vehicle Charging Infrastructure for Canada"
     status: active
@@ -2037,14 +2235,17 @@ sources:
     data_quality: {dq_cred: 2, dq_geog: 2, dq_struc: 2, dq_tech: 1, dq_time: 1}
     validation_rule: "Authenticate the registered report and 29 extracted cost/power/existing-mix inputs; retain exactly two manual aggregate utilization overrides. Validate source-native cells and yearly component counts before deriving aggregate or explicit rows."
     refresh_notes: >
-      Review the source report tables and all charger utilization/share/cost rows together
-      before changing the version-controlled values or derivation notes.
+      The Government of Canada Web Archive supplies an immutable capture of the cited
+      February 2024 report. The updater can review a different HTML capture only when
+      its eight parsed tables and report context match the authenticated baseline.
+      Review any changes to charger utilization, shares, costs or report extraction separately.
     adapter:
       diagnostic_report:
         url: "https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada"
-        cache_path: "dunsky/charging_infrastructure_2024-e4592af54437.html"
-        expected_sha256: "e4592af5443703fd1e563fae58ade15fc4cf5591efc142d0c2cb361f776e9730"
-        expected_bytes: 441179
+        download_url: "https://webarchiveweb.wayback.bac-lac.canada.ca/web/20260913144437id_/https://natural-resources.canada.ca/energy-efficiency/transportation-energy-efficiency/resource-library/electric-vehicle-charging-infrastructure-canada"
+        cache_path: "dunsky/charging_infrastructure_2024-e4592af54437-6a161a37a46f2894.html"
+        expected_sha256: "6a161a37a46f28946a5787f7dbdf6c03c0023818e0dde8e21ebc6e4dc42a5c15"
+        expected_bytes: 446857
         publication_date: "2024-02"
       access:
         method: pinned_report_and_reviewed_manual_overrides
@@ -2096,10 +2297,11 @@ sources:
     refresh_notes: "Acquire an explicitly dated AFDC inventory, review native station/port changes and register its exact hash and byte count; offline replay never refreshes the source implicitly."
     adapter:
       access: {method: api, url: "https://developer.nlr.gov/api/alt-fuel-stations/v0/historical-date/2025-12-31.json", api_key: DEMO_KEY}
-      cache_path: "afdc/canada_public_2025-12-31-d22963c84c58.json"
+      cache_path: "afdc/canada_public_2025-12-31-95409c1676f1.json"
       snapshot_date: "2025-12-31"
-      expected_sha256: "d22963c84c5876b8465a7317796d361cea65bbe0ef369a192f8114f8a859949c"
-      expected_bytes: 45291619
+      # The public API added ev_power_sharing. Verified identical prior fields and normalized rows.
+      expected_sha256: "95409c1676f18b58a9fc9c9b4071cff6258a7764086cc887064e78ed1315aa7e"
+      expected_bytes: 45636619
     components:
       mhdv_accessible_2025:
         label: "Canadian stations physically accessible to medium/heavy vehicles, 2025-12-31"

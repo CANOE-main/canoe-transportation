@@ -28,6 +28,8 @@ from zipfile import ZipFile
 import requests
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
+from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
 from yaml.nodes import MappingNode, ScalarNode, SequenceNode
 
 from utils import (
@@ -39,6 +41,7 @@ from utils import (
     load_harmonization_rules,
     resolve_artifact_path,
     resolve_input_path,
+    resolve_parameter_path,
     write_text_atomic,
 )
 from validation.config_models import SourcesConfig
@@ -60,7 +63,7 @@ class CatalogueResource(BaseModel):
     url: str = Field(pattern=r"^https://[^\s]+$")
     name: str = ""
     format: str = ""
-    hash: str = ""
+    hash: str | None = None
     size: int | None = Field(default=None, ge=0)
     last_modified: str | None = None
     metadata_modified: str | None = None
@@ -174,7 +177,7 @@ class _AcquisitionSession:
             "request": {"method": "post" if payload is not None else "get",
                         "url": url, "params": params, "payload": payload},
             "file": relative.as_posix(), "sha256": sha, "bytes": len(content),
-            "url": str(getattr(response, "url", "") or url),
+            "url": _public_url(str(getattr(response, "url", "") or url)),
             "headers": {key: value for key, value in response.headers.items()
                         if key.lower() in {"last-modified", "content-type", "etag"}},
         })
@@ -197,6 +200,11 @@ def _cache_identity(path, expected, *, algorithm="sha256", expected_bytes=None):
     }
 
 
+def _public_url(value: str) -> str:
+    """Omit signed redirect query strings from durable review evidence."""
+    return urlparse(value)._replace(query="", fragment="").geturl()
+
+
 def _url(value: str) -> str:
     parsed = urlparse(value)
     if (
@@ -205,7 +213,7 @@ def _url(value: str) -> str:
         or parsed.username
         or parsed.password
     ):
-        raise UpdateError(f"Expected an official HTTPS source URL: {value}")
+        raise UpdateError(f"Expected an official HTTPS source URL: {parsed.hostname or '(no host)'}")
     return value
 
 
@@ -218,8 +226,9 @@ def _response(
         kwargs["json"] = payload
     if params is not None:
         kwargs["params"] = params
-    response = method(_url(url), stream=True, **kwargs)
+    response = None
     try:
+        response = method(_url(url), stream=True, **kwargs)
         response.raise_for_status()
         final_url = str(getattr(response, "url", "") or url)
         _url(final_url)
@@ -240,18 +249,39 @@ def _response(
         response._content_consumed = True
         if isinstance(client, _AcquisitionSession):
             client.record(url, response, payload=payload, params=params)
+    except requests.RequestException as exc:
+        method_name = "POST" if payload is not None else "GET"
+        status = exc.response.status_code if exc.response is not None else None
+        reason = f"HTTP {status}" if status is not None else type(exc).__name__
+        public_url = _public_url(url)
+        raise UpdateError(
+            f"{method_name} {public_url} failed: {reason}",
+            evidence={"url": public_url, "method": method_name, "params": params,
+                      "exception": type(exc).__name__, "http_status": status},
+        ) from None
     finally:
-        response.close()
+        if response is not None:
+            response.close()
     return response
 
 
 def _json(client, url: str, settings, *, payload=None, params=None):
-    return _response(client, url, settings, payload=payload, params=params).json()
+    response = _response(client, url, settings, payload=payload, params=params)
+    try:
+        return response.json()
+    except requests.exceptions.JSONDecodeError:
+        public_url = _public_url(url)
+        raise UpdateError(
+            f"Expected JSON metadata from {public_url}; the response could not be decoded",
+            evidence={"url": public_url, "params": params,
+                      "content_type": response.headers.get("Content-Type")},
+        ) from None
 
 
 def _resource(client, endpoint: str, resource_id: str, settings) -> CatalogueResource:
     payload = _json(client, endpoint, settings, params={"id": resource_id})
-    if not isinstance(payload, dict) or payload.get("success") is not True:
+    if (not isinstance(payload, dict) or payload.get("success") is not True
+        or not isinstance(payload.get("result"), dict)):
         raise UpdateError(f"Catalogue lookup failed for {resource_id}")
     result = CatalogueResource.model_validate(payload["result"])
     if result.id != resource_id:
@@ -557,61 +587,97 @@ def _tc_izev(bundle, client, settings, folder) -> list[Candidate]:
     source_key = adapter.SOURCE
     source = bundle.sources.sources[source_key]
     endpoint = source.update.metadata_url
+    rules = adapter.module_rules(bundle)
     candidates = []
     for request in adapter.build_requests(bundle):
         resource = _resource(client, endpoint, str(request.resource_id), settings)
-        if urlparse(resource.url).hostname != urlparse(request.url).hostname:
-            raise UpdateError(f"iZEV resource moved to another host: {resource.url}")
+        try:
+            download_request = adapter.IzevRequest.model_validate(
+                request.model_dump() | {"url": resource.url}
+            )
+        except ValueError as exc:
+            raise UpdateError(
+                f"Catalogue URL for iZEV {request.component_key} does not identify "
+                f"its registered official HTTPS CSV: {resource.url}"
+            ) from exc
         content = _verified_bytes(
-            client, resource, settings, require_md5=True,
-            allowed_hosts=source.update.download_hosts,
+            client, resource, settings, allowed_hosts=source.update.download_hosts,
         )
-        staged_request = request.model_copy(update={
+        md5 = hashlib.md5(content, usedforsecurity=False).hexdigest()
+        sha256 = _sha(content)
+        changed = (md5, len(content)) != (request.expected_md5, request.expected_bytes)
+        if changed and not resource.hash:
+            raise UpdateError(
+                f"iZEV {request.component_key} differs from the registered bytes and "
+                "the catalogue publishes no checksum. Verify the publisher's revision before adoption.",
+                evidence={"resource": resource.model_dump(), "sha256": sha256, "bytes": len(content)},
+            )
+        staged_request = download_request.model_copy(update={
             "cache_path": _staged(folder, request.cache_path, content),
-            "url": resource.url, "expected_md5": resource.hash.lower(),
-            "expected_bytes": len(content),
         })
-        frame = adapter.parse_csv(staged_request, rules=adapter.module_rules(bundle), enforce_coverage=False)
-        audit = frame.attrs["audit"]
-        for key, expected in (
-            ("model_years", request.expected_model_years),
-            ("provinces", request.expected_provinces),
-            ("powertrains", request.expected_powertrains),
-        ):
+        audit = adapter.parse_csv(staged_request, rules=rules, enforce_coverage=False).attrs["audit"]
+        coverage = {
+            "model_years": request.expected_model_years,
+            "provinces": request.expected_provinces,
+            "powertrains": request.expected_powertrains,
+        }
+        for key, expected in coverage.items():
             if missing := set(expected) - set(audit[key]):
                 raise UpdateError(f"iZEV {request.component_key} lost registered {key}: {sorted(missing)}")
-        if (
-            date.fromisoformat(audit["request_date_from"]) > request.expected_request_date_from
-            or date.fromisoformat(audit["request_date_to"]) < request.expected_request_date_to
-        ):
+        first_date = date.fromisoformat(audit["request_date_from"])
+        last_date = date.fromisoformat(audit["request_date_to"])
+        if first_date > request.expected_request_date_from or last_date < request.expected_request_date_to:
             raise UpdateError(f"iZEV {request.component_key} request-date coverage shrank")
         if _resource(client, endpoint, str(request.resource_id), settings) != resource:
             raise UpdateError(f"iZEV metadata changed during download: {request.component_key}")
-        changed = (resource.hash.lower(), len(content)) != (request.expected_md5, request.expected_bytes)
-        version = _version(resource.last_modified)
-        base = ("sources", source_key, "components", request.component_key)
-        edits = [(base + ("version",), version), (base + ("adapter", "url"), resource.url)]
-        if isinstance(request.component_meta.label, str) and request.component_meta.version:
-            edits.append((base + ("label",), request.component_meta.label.replace(request.component_meta.version, version)))
+
         local = _cache_identity(request.cache_path, request.expected_md5, algorithm="md5", expected_bytes=request.expected_bytes)
+        base = ("sources", source_key, "components", request.component_key)
+        version = request.component_meta.version
+        if resource.last_modified:
+            version = _version(resource.last_modified)
+        elif changed:
+            version = f"sha256-{sha256[:16]}"
+        edits = [(base + ("adapter", "url"), resource.url)]
+        reviews = []
+        if changed:
+            reviews.append("iZEV registered snapshot bytes changed")
+        if resource.url != request.url or version != request.component_meta.version:
+            reviews.append("iZEV publication identity changed")
+        if version != request.component_meta.version:
+            edits.extend([
+                (base + ("version",), version),
+                (base + ("label",), f"iZEV {request.component_key} incentive records ({version})"),
+            ])
+
+        expanded = {key: audit[key] for key, expected in coverage.items() if set(audit[key]) != set(expected)}
+        if first_date != request.expected_request_date_from or last_date != request.expected_request_date_to:
+            expanded.update(request_date_from=audit["request_date_from"], request_date_to=audit["request_date_to"])
+        if expanded:
+            reviews.append(f"iZEV registered coverage expanded: {', '.join(expanded)}")
+            edits.extend((base + ("adapter", f"expected_{key}"), value) for key, value in expanded.items())
         files = {}
-        if changed or local["status"] != "valid":
+        target = request.cache_path
+        if not reviews and local["status"] == "missing" and not target.exists():
+            files[target] = content
+        elif changed or local["status"] != "valid":
             target = _snapshot_path(bundle, request.cache_path, content)
             edits.extend([
                 (base + ("adapter", "cache_path"), _relative(bundle, target)),
-                (base + ("adapter", "expected_md5"), resource.hash.lower()),
+                (base + ("adapter", "expected_md5"), md5),
                 (base + ("adapter", "expected_bytes"), len(content)),
-                (base + ("adapter", "expected_model_years"), audit["model_years"]),
-                (base + ("adapter", "expected_request_date_from"), audit["request_date_from"]),
-                (base + ("adapter", "expected_request_date_to"), audit["request_date_to"]),
             ])
             files[target] = content
+        adapter.IzevRequest.model_validate(download_request.model_dump() | {
+            "cache_path": target, "expected_md5": md5, "expected_bytes": len(content),
+            **{f"expected_{key}": value for key, value in expanded.items()},
+        })
         candidates.append(Candidate(source_key, request.component_key, edits, files, {
             "metadata_url": endpoint, "resource": resource.model_dump(),
-            "sha256": _sha(content), "bytes_changed": changed,
+            "sha256": sha256, "bytes_changed": changed,
             "registered_cache": local, **audit,
-            "validation": "publisher MD5/size, complete native records, distinct vehicle/request years, nonshrinking registered coverage",
-        }))
+            "validation": "publisher checksum or exact registered bytes, complete native records, distinct vehicle/request years, nonshrinking registered coverage",
+        }, reviews))
     intervals = sorted((item.evidence["request_date_from"], item.evidence["request_date_to"]) for item in candidates)
     if any(a[1] >= b[0] for a, b in zip(intervals, intervals[1:])):
         raise UpdateError("iZEV revised resources have overlapping request-date coverage; review manually")
@@ -797,6 +863,48 @@ def _fueleconomy(bundle, client, settings, folder) -> list[Candidate]:
             list(dict.fromkeys(reasons)),
         )
     ]
+
+
+def _dunsky(bundle, client, settings, _folder) -> list[Candidate]:
+    from fetching import dunsky_charger_inputs as adapter
+
+    source = bundle.sources.sources[adapter.SOURCE]
+    request = adapter.ReportRequest.model_validate(source.adapter["diagnostic_report"])
+    cache = resolve_input_path(bundle, "cache", request.cache_path)
+    response = _response(client, request.acquisition_url, settings, allowed_hosts=source.update.download_hosts)
+    content = response.content
+    if not content:
+        raise UpdateError(f"Dunsky acquisition returned an empty HTTP {response.status_code} response: {request.acquisition_url}")
+    sha = _sha(content)
+    evidence = adapter.validate_report_content(content, bundle, request)
+    local = _cache_identity(cache, request.expected_sha256, expected_bytes=request.expected_bytes)
+    changed = (sha, len(content)) != (request.expected_sha256, request.expected_bytes)
+    review = []
+    if changed:
+        if local["status"] != "valid":
+            raise UpdateError("Restore the authenticated Dunsky baseline before reviewing different HTML bytes")
+        previous = adapter.validate_report_content(cache.read_bytes(), bundle, request)
+        if previous["source_sha256"] != request.expected_sha256:
+            raise UpdateError("The authenticated Dunsky baseline changed during review")
+        for key in ("publication_date", "tables", "context"):
+            if evidence[key] != previous[key]:
+                raise UpdateError(f"Dunsky report {key} changed. Review the source extraction and modeling inputs explicitly.")
+        review.append("Dunsky HTML bytes changed with identical normalized tables and report context")
+
+    edits, files = [], {}
+    if changed or local["status"] != "valid":
+        target = _snapshot_path(bundle, cache, content) if changed or cache.exists() else cache
+        base = ("sources", adapter.SOURCE, "adapter", "diagnostic_report")
+        edits = [(base + ("cache_path",), _relative(bundle, target)),
+                 (base + ("expected_sha256",), sha), (base + ("expected_bytes",), len(content))]
+        files[target] = content
+    return [Candidate(adapter.SOURCE, "published_report", edits, files, {
+        "publication_url": request.url, "acquisition_url": request.acquisition_url,
+        "publication_date": request.publication_date, "bytes": len(content), "sha256": sha,
+        "tables": list(evidence["tables"]), "context": list(evidence["context"]),
+        "registered_cache": local,
+        "same_normalized_evidence": True,
+    }, review)]
 
 
 def _ontario(bundle, client, settings, folder) -> list[Candidate]:
@@ -1218,13 +1326,12 @@ def _publish(
     bundle, original: bytes, updated: str, files: dict[Path, bytes]
 ) -> list[str]:
     """Create immutable caches, then publish the registry; roll back new files on failure."""
-    for path, content in files.items():
-        if path.exists() and (not path.is_file() or file_sha256(path) != _sha(content)):
-            raise UpdateError(f"Refusing to replace a conflicting cache: {path}")
     lock = bundle.sources_path.with_name(f".{bundle.sources_path.name}.update.lock")
     created = []
     committed = False
     warnings = []
+    # Windows rename and POSIX hard links are atomic and fail if the destination exists.
+    publish_snapshot = os.rename if os.name == "nt" else os.link
     # An updater lock and an optimistic byte check also protect against concurrent edits.
     lock_handle = lock.open("xb")
     try:
@@ -1233,7 +1340,10 @@ def _publish(
                 "Source registry changed during review; rerun the updater"
             )
         for path, content in files.items():
+            expected = _sha(content)
             if path.exists():
+                if not path.is_file() or file_sha256(path) != expected:
+                    raise UpdateError(f"Refusing to replace a conflicting cache: {path}")
                 continue
             path.parent.mkdir(parents=True, exist_ok=True)
             temporary = None
@@ -1243,10 +1353,13 @@ def _publish(
                 ) as handle:
                     temporary = Path(handle.name)
                     handle.write(content)
-                # Atomic no-clobber publication. A same-volume hard link works on
-                # Windows and POSIX, and never overwrites a competing snapshot.
-                os.link(temporary, path)
-                created.append(path)
+                try:
+                    publish_snapshot(temporary, path)
+                except FileExistsError as exc:
+                    if not path.is_file() or file_sha256(path) != expected:
+                        raise UpdateError(f"Refusing to replace a conflicting cache: {path}") from exc
+                else:
+                    created.append(path)
             finally:
                 if temporary is not None:
                     temporary.unlink(missing_ok=True)
@@ -1272,6 +1385,27 @@ def _publish(
                     f"Registry was applied, but updater lock cleanup failed: {exc}"
                 )
     return warnings
+
+
+def _update_session() -> requests.Session:
+    # The updater's POST requests are read-only catalogue queries.
+    retries = Retry(total=3, allowed_methods={"GET", "POST"},
+                    status_forcelist=(429, 500, 502, 503, 504),
+                    backoff_factor=0.5, backoff_max=10, retry_after_max=10,
+                    raise_on_status=False)
+    session = requests.Session()
+    session.mount("https://", HTTPAdapter(max_retries=retries))
+    return session
+
+
+def _update_rule_fingerprints(bundle: ConfigBundle, sources: set[str] | None) -> dict[str, str]:
+    fingerprints = harmonization_rule_fingerprints(bundle)
+    key = "dunsky_ev_charging_infrastructure"
+    source = bundle.sources.sources.get(key)
+    if source is not None and source.update is not None and (sources is None or key in sources):
+        path = resolve_parameter_path(bundle, "dunsky_charger_inputs.yaml")
+        fingerprints[path.name] = file_sha256(path)
+    return fingerprints
 
 
 def run_update(
@@ -1300,7 +1434,7 @@ def run_update(
     original = bundle.sources_path.read_bytes()
     text = original.decode("utf-8")
     registry = yaml.load(text, Loader=UniqueKeyLoader)
-    rule_fingerprints = harmonization_rule_fingerprints(bundle)
+    rule_fingerprints = _update_rule_fingerprints(bundle, sources)
     report = {
         "review_schema_version": 3,
         "mode": "apply" if apply else "report",
@@ -1322,7 +1456,7 @@ def run_update(
     errors = report["errors"]
     applied = False
     owned_client = session is None
-    network_client = session or requests.Session()
+    network_client = session or _update_session()
     client = _AcquisitionSession(network_client, audit)
     try:
         if review_report is not None and not apply:
@@ -1375,6 +1509,7 @@ def run_update(
             "statcan_tables": ("statcan_transport_tables", _statcan),
             "cer_energy_future": ("cer_canadas_energy_future", _cer),
             "fueleconomy": ("fueleconomy_gov_vehicle_data", _fueleconomy),
+            "dunsky_report": ("dunsky_ev_charging_infrastructure", _dunsky),
         }
         candidates = []
         with tempfile.TemporaryDirectory(prefix="source_update_") as directory:
@@ -1471,7 +1606,7 @@ def run_update(
             ):
                 if file_sha256(path) != expected:
                     errors.append(f"Configuration changed during source review: {path}; rerun report-only review")
-            if harmonization_rule_fingerprints(bundle) != report["rules_fingerprints"]:
+            if _update_rule_fingerprints(bundle, sources) != report["rules_fingerprints"]:
                 errors.append("Rules configuration changed during source review; rerun report-only review")
             diff = "".join(
                 difflib.unified_diff(
@@ -1520,7 +1655,7 @@ def run_update(
                 ):
                     if file_sha256(path) != expected:
                         raise UpdateError(f"Configuration changed before publication: {path}")
-                if harmonization_rule_fingerprints(bundle) != report["rules_fingerprints"]:
+                if _update_rule_fingerprints(bundle, sources) != report["rules_fingerprints"]:
                     raise UpdateError("Rules configuration changed before publication; rerun report-only review")
                 warnings = _publish(bundle, original, updated, files)
                 applied = True

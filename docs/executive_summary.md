@@ -74,37 +74,81 @@ those inputs. The scenario specifies which methods and evidence to use for a run
 
 ## What changes when a researcher changes the scenario?
 
-**Fleet turnover changes the pace of replacement.** The backend reconstructs
-historical road cohorts from acquisitions and retirement evidence, then calibrates
-the surviving stock to the Natural Resources Canada reference. Fixed lifetimes
-represent existing capacity as physical survivors and retire a vintage at a
-specified age. Survival curves represent capacity on an acquisition-equivalent
-basis and apply age-dependent survival through the vintage's operating life.
-These choices change when existing capacity becomes unavailable and new purchases
-are needed. Period timing also matters because opening and closing conditions can
-select different years of demand and technology evidence.
+Use these choices to design a scenario comparison. The [scenario guide](scenario_configuration.md#parameter-settings)
+lists the configuration keys and supported combinations.
 
-**Technology detail changes what the optimizer can choose.** The backend links
-the fleet composition used in vehicle consumption, costs and embodied emissions.
-For new light-duty plug-in vehicles, researchers can retain individual ranges,
-constrain the within-family range mix, or use a representative technology.
-The range-share option applies US modelled range evidence without imposing a
-share of plug-in vehicles in total sales. When enabled, vehicle-cycle emissions
-account for manufacturing and end-of-life emissions as a separate contribution
-from fuel use. The option makes it possible to examine the consequences of vehicle
-technology choices beyond tailpipe energy and emissions.
+<div class="grid cards scenario-choices" markdown="1">
 
-**Charging detail changes the infrastructure question.** The default aggregates
-chargers by light-duty and medium/heavy-duty vehicle group. Registered Ontario
-charging simulations can constrain when pooled light-duty chargers operate,
-with the full-year hourly mean scaled to the reviewed 20% utilization target.
-The explicit alternative separates public and private light-duty charging and
-overnight and fast truck charging. It constrains the mix in rated GW, so adding
-many small ports has a different effect from adding a few high-power ports.
-Explicit chargers currently use annual utilization without the pooled hourly
-profiles. The distinctions are especially important when interpreting electricity
-peaks or comparing charger investment across scenarios. See the [charging and
-refueling chapter](model/infrastructure.md) for the denominators and sources.
+-   **Period timing and CER scenarios**
+
+    **Period mode.** Prospective uses closing-year conditions. Legacy uses
+    opening-year conditions.
+
+    **CER scenarios.** Choose currency conversion and demand growth separately.
+
+-   **Fleet aggregation and turnover**
+
+    **Regional fleet weights.** MTO for bus and motorcycle ages and light-duty
+    classes. MTO or Wards for medium-truck classes. StatCan for heavy-truck haul.
+
+    **Fixed lifetimes or survival curves.** For cars and trucks, fixed lifetimes
+    put surviving stock in Temoa's `existing_capacity`. Curves use
+    acquisition-equivalent capacity and apply survival by age. The lifetime
+    evidence is EPA MOVES or NHTSA CAFE with EIA NEMS.
+
+-   **Demand and road utilization**
+
+    **Car demand.** Use GDP growth or extend the historical car trend. Under the
+    historical trend, passenger light trucks absorb the difference so combined
+    demand still follows GDP.
+
+    **Road mileage.** SQLite builds use flat annual utilization. Age-dependent
+    mileage schedules (VKT) are **diagnostic only**.
+
+-   **Efficiency and costs**
+
+    **Independent ATB trajectories.** Choose Advanced, Mid, or Conservative
+    separately for vehicle efficiencies and costs.
+
+    **Optional energy calibration.** Fit eligible gasoline and diesel use to
+    NRCan CEUD totals. Requires fixed lifetimes and flat utilization.
+
+-   **EV infrastructure and charging**
+
+    **Existing ports.** Divide surviving battery EVs by the EVs-per-port ratio.
+    For light-duty chargers, subtract observed public ports to estimate private
+    stock.
+
+    **Charger detail.** Pool by vehicle group or distinguish public, private
+    and truck charger types. **Explicit types use annual factors only.**
+
+    **Hourly profiles.** Pooled light-duty chargers can use US NHTS or Ontario
+    TTS travel data and uncontrolled, night, or day charging. Profiles are optional.
+
+-   **Plug-in range and embodied emissions**
+
+    **New light-duty plug-ins.** Keep all variants without range-share rules,
+    set minimum range shares within each class and powertrain, or use a
+    representative range archetype. Existing cohorts use representative ranges.
+
+    **Embodied emissions.** Turn road vehicle-cycle emissions on or off. With
+    emissions on, choose conventional or lightweight GREET inputs for light-duty vehicles.
+
+</div>
+
+Quebec SAAQ and British Columbia ICBC vehicle population data are candidates for
+future regional fleet weights.
+
+<figure class="wide-figure scenario-choices-figure" markdown="1">
+
+[![How scenario choices and source data shape vehicle and charger archetypes and Temoa parameters](assets/figures/scenario-modeling-choices.svg)](assets/figures/scenario-modeling-choices.svg)
+
+<figcaption markdown="1">
+Follow where fleet, battery and charger detail is combined or split and which
+parameters it affects. Select the diagram to open the full-size SVG.
+</figcaption>
+
+</figure>
 
 ## How collaborators can check or extend the work
 

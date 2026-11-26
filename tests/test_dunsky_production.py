@@ -92,7 +92,8 @@ def test_manual_cannot_reintroduce_fetched_authority(legacy_bundle):
         load_charger_inputs(legacy_bundle, fetched.iloc[:1].copy())
 
 
-def test_even_registered_download_is_parsed_before_cache_publication(tmp_path, monkeypatch):
+@pytest.mark.parametrize("empty_response", [False, True])
+def test_download_is_validated_before_cache_publication(tmp_path, monkeypatch, empty_response):
     content = b"registered but malformed HTML"
     payload = {"url": "https://example.org/report", "cache_path": "report.html",
                "expected_bytes": len(content), "expected_sha256": hashlib.sha256(content).hexdigest(),
@@ -103,8 +104,11 @@ def test_even_registered_download_is_parsed_before_cache_publication(tmp_path, m
     path = tmp_path / "report.html"
     monkeypatch.setattr(dunsky, "resolve_input_path", lambda *_: path)
     monkeypatch.setattr(dunsky, "settings_for", lambda *_: {"required_edition_tokens": ["February 2024"]})
-    response = SimpleNamespace(content=content, raise_for_status=lambda: None)
-    with pytest.raises(ValueError, match="edition marker missing"):
+    response = SimpleNamespace(content=b"" if empty_response else content,
+                               status_code=202 if empty_response else 200,
+                               raise_for_status=lambda: None)
+    message = r"HTTP 202, 0 bytes.*Restore the registered HTML" if empty_response else "edition marker missing"
+    with pytest.raises(ValueError, match=message):
         load_evidence(bundle, download=True, session=SimpleNamespace(get=lambda *_args, **_kwargs: response))
     assert not path.exists()
     assert not list(tmp_path.glob("*.tmp"))

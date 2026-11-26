@@ -202,10 +202,13 @@ Lifetime and other parameter families use the existing live preparation contract
 remain audit products rather than serialized contribution handoffs. Registered GREET,
 OMEGA and charging evidence is validated by its owning preparation functions.
 
-Execution is offline by default. `--download-sources` explicitly permits acquisition of
-missing caches; existing caches are reused. Ontario replay uses the resource identities
-and hashes in `sources.yaml`, independently of generated manifests. Source refresh,
+Execution is offline by default. Start a clean checkout with `uv sync --locked`, then
+run `uv run --locked python src/build_transport.py --scenario config/scenarios/default.yaml
+--download-sources`. Raw downloads go under `inputs/0_cache/`. Ordinary builds validate
+existing caches against their registered identity where one is available. Source refresh,
 reviewed mapping changes and external-model generation remain separate operations.
+See the [source inventory](source_inventory.md#download-validation-and-recovery) for
+the difference between registered checksums and observed download evidence. #to-review
 
 Derived prerequisites are rebuilt even when files already exist, so changes to source
 content, YAML or implementation cannot leave the database silently reused. This is a
@@ -220,10 +223,13 @@ the prior report. SQLite replacement is atomic, but the two files are not crash-
 as a pair across power loss or process termination. Intermediate audit files may reflect
 a failed attempt and are regenerated on the next invocation.
 
-Every scenario attempt records a persistent log through `utils.build_logging`. The
+The scenario build records a persistent log through `utils.build_logging`. The
 `outputs.build_log` template in `paths.yaml` includes the scenario name, scenario YAML
 name and UTC timestamp; the log records the YAML path/hash, stage timings and failure
-details. Ordinary logs use INFO, with detailed audits enabled by `--debug`.
+details. Ordinary logs use INFO, with detailed audits enabled by `--debug`. For a
+fetch failure report, retain the command, commit and the run log. The download-mode
+line, failing prerequisite and traceback identify whether to retry acquisition or
+recover a specific registered file. #to-review
 
 ## Explicit source updates
 
@@ -233,10 +239,28 @@ eligible public endpoints and allowed download hosts. A normal invocation report
 available replacements; `--apply` explicitly permits adoption of the selected batch.
 Source-specific fetchers retain physical parsing and normalization ownership.
 
-The updater handles NRCan ratings, existing registered Ontario years, StatCan WDS
-metadata/archive pairs, the scenario-selected CER edition, and FuelEconomy's shared
-vehicle/range ZIP. Review proposed changes and captured responses before adoption;
-reviewed apply replays those exact responses offline and rechecks registry, scenario,
+The updater handles NRCan ratings, the registered Dunsky report, Transport Canada iZEV resources,
+existing registered Ontario years, StatCan WDS metadata/archive pairs, the
+scenario-selected CER edition, and FuelEconomy's shared vehicle/range ZIP. Run
+`uv run python -m fetching.source_updater --scenario config/scenarios/default.yaml
+--source transport_canada_izev` to inspect the registered iZEV resources. Review the
+JSON report, registry diff and captured responses before adoption. Use the same
+scenario and source selection with `--apply --review-report <report.json>` when the
+report proposes changes requiring review. For unchanged iZEV publications, `--apply`
+restores missing verified bytes at their registered paths without editing the registry.
+A corrupt file stays in place when the updater registers a verified replacement under
+a new cache path. #to-review
+
+Use `--source dunsky_ev_charging_infrastructure` to review the report served from the
+registered government archive URL. The updater accepts a different HTML capture of
+the February 2024 report only when it matches every configured table and context
+excerpt from the authenticated baseline. The report binds the extraction rules and
+the raw response to reviewed apply. If the dated capture becomes unavailable, set
+`diagnostic_report.download_url` to a new capture of the same publication and run
+the review with the previously pinned HTML available. Review changes to the report
+data with the corresponding charger extraction and assumptions. #to-review
+
+Reviewed apply replays the exact responses offline and rechecks the registry, scenario,
 the rules index and every declared partition, and source selection. Retain the complete
 report directory until adoption. Source-update review-schema 2 reports require a fresh
 review before adoption; schema 3 explicitly pins the full rule dependency set.

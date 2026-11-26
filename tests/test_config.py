@@ -95,7 +95,7 @@ def test_config_bundle_loads_typed_contracts() -> None:
     assert bundle.scenario.aggregation_sources.source_for("stock_age", "QC") == "ontario_ministry_transport_vehicle_population"
     assert bundle.scenario.existing_capacity.cleanup_tolerance == 0.001
     assert bundle.scenario.existing_capacity.vehicle_population_year == bundle.scenario.periods.base_year
-    assert bundle.scenario.aggregation_sources.source_for("medium_trucks", "QC") == "wards_intelligence_sales_shares"
+    assert bundle.scenario.aggregation_sources.source_for("medium_trucks", "QC") == "ontario_ministry_transport_vehicle_population"
     assert bundle.scenario.ev_chargers.evs_per_port == (1.0, 1.5, 1.5)
     assert bundle.scenario.ev_chargers.charger_type_classes == "aggregated"
     assert bundle.scenario.ev_chargers.ld_home_utilization == 0.08
@@ -175,9 +175,12 @@ def test_population_year_override_requires_a_positive_integer(tmp_path: Path, va
     "validation_charging_nhts_uncontrolled", "validation_energy_calibration",
     "validation_energy_calibration_regions",
 ])
-def test_standard_presets_inherit_population_evidence_year(scenario_name: str) -> None:
+def test_standard_presets_share_population_evidence_defaults(scenario_name: str) -> None:
     bundle = load_config_bundle(f"config/scenarios/{scenario_name}.yaml", repo_root=REPO_ROOT)
     assert bundle.scenario.existing_capacity.vehicle_population_year == bundle.scenario.periods.base_year
+    sources = bundle.scenario.aggregation_sources
+    for region in {"ON", "QC", *bundle.scenario.geography.regions}:
+        assert sources.source_for("medium_trucks", region) == "ontario_ministry_transport_vehicle_population"
 
 
 def test_registry_owns_source_availability_and_template_is_not_a_source() -> None:
@@ -296,7 +299,6 @@ def test_inactive_registry_source_cannot_be_selected(tmp_path: Path) -> None:
     source_payload["sources"]["wards_intelligence_sales_shares"]["status"] = "inactive"
     sources_path.write_text(yaml.safe_dump(source_payload, sort_keys=False), encoding="utf-8")
     payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
-    payload["aggregation_sources"]["medium_trucks"]["other"] = "ontario_ministry_transport_vehicle_population"
     payload["sources"]["selections"]["wards_intelligence_sales_shares"] = {
         "year": 2022
     }
@@ -369,7 +371,7 @@ def test_setup_smoke_status_uses_packaged_schema_without_building() -> None:
     assert "cer_canadas_energy_future" in status["active_sources"]
     assert "wards_intelligence_sales_shares" in status["active_sources"]
     assert status["parameter_options"]["lifetimes"] == selected.lifetimes.model_dump()
-    assert status["aggregation_sources"]["medium_trucks"]["other"] == "wards_intelligence_sales_shares"
+    assert status["aggregation_sources"]["medium_trucks"]["other"] == "ontario_ministry_transport_vehicle_population"
     assert status["parameter_options"]["charging_profiles"]["travel_behavior_source"] == "nhts"
     assert status["parameter_options"]["BEV_PHEV_range_representation"]["mode"] == selected.BEV_PHEV_range_representation.mode
 
@@ -472,6 +474,17 @@ def test_scenario_aggregation_sources_are_checked_against_registry_before_io(
     scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
     with pytest.raises(ValueError, match=message):
         load_config_bundle(scenario, repo_root=tmp_path)
+
+
+def test_scenario_can_select_wards_for_medium_trucks_in_one_region(tmp_path: Path) -> None:
+    _, _, scenario = _write_config_copy(tmp_path)
+    payload = yaml.safe_load(scenario.read_text(encoding="utf-8"))
+    payload["aggregation_sources"]["medium_trucks"]["QC"] = "wards_intelligence_sales_shares"
+    scenario.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+
+    sources = load_config_bundle(scenario, repo_root=tmp_path).scenario.aggregation_sources
+    assert sources.source_for("medium_trucks", "QC") == "wards_intelligence_sales_shares"
+    assert sources.source_for("medium_trucks", "MB") == "ontario_ministry_transport_vehicle_population"
 
 
 def test_cer_scenario_has_one_scenario_authority(tmp_path: Path) -> None:

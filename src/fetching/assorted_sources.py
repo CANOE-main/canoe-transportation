@@ -271,15 +271,16 @@ def ensure_cached(
 def _validate_artifact_path(request: ArtifactRequest, path: Path) -> str:
     actual_bytes = path.stat().st_size
     actual_hash = file_sha256(path)
+    restore = f"Restore the registered file at {request.cache_path} or review the publisher revision."
     if actual_bytes != request.expected_bytes:
         raise AssortedSourcesError(
-            f"{request.source_id}/{request.component_id} byte count changed: "
-            f"expected {request.expected_bytes}, got {actual_bytes}."
+            f"{request.source_id}/{request.component_id} byte count changed for {request.url}: "
+            f"expected {request.expected_bytes}, got {actual_bytes}. {restore}"
         )
     if actual_hash != request.expected_sha256:
         raise AssortedSourcesError(
-            f"{request.source_id}/{request.component_id} SHA-256 changed: "
-            f"expected {request.expected_sha256}, got {actual_hash}."
+            f"{request.source_id}/{request.component_id} SHA-256 changed for {request.url}: "
+            f"expected {request.expected_sha256}, got {actual_hash}. {restore}"
         )
     with path.open("rb") as handle:
         prefix = handle.read(16)

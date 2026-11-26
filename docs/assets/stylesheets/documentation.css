@@ -19,6 +19,34 @@
 .report-cover .subtitle { font-size: 1.35rem; color: #52666a; }
 .report-identity { margin-top: 2rem; font-size: .7rem; overflow-wrap: anywhere; }
 
+.md-typeset .scenario-choices {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .7rem;
+  margin: 1rem 0;
+}
+.md-typeset .scenario-choices.grid.cards > ul > li {
+  background: #f7f9fc;
+  border-color: #c8d7e6;
+  border-top: .16rem solid #23658b;
+  border-radius: .25rem;
+  box-shadow: none;
+  padding: .65rem .8rem;
+}
+.md-typeset .scenario-choices > ul > li > p { margin: .45rem 0; }
+.md-typeset .scenario-choices > ul > li > p:first-child {
+  color: #0f3460;
+  font-size: 1.15em;
+  margin: 0 0 .5rem;
+}
+.md-typeset .scenario-choices-figure > p,
+.md-typeset .scenario-choices-figure img { width: 100%; }
+@media screen {
+  .md-typeset .scenario-choices-figure { width: 100%; }
+}
+@media screen and (max-width: 44rem) {
+  .md-typeset .scenario-choices { grid-template-columns: minmax(0, 1fr); }
+}
+
 @media print {
   @page { size: A4; margin: 16mm 15mm 18mm;
     @bottom-center { content: none; }
@@ -55,6 +83,9 @@
   .portrait-figure { page: portrait-figure; width: 267mm; break-before: page; break-after: page; }
   .md-typeset .wide-figure img { width: 100%; max-height: 230mm; }
   .md-typeset .portrait-figure img { width: 100%; max-height: 350mm; }
+  .md-typeset .scenario-choices-figure { width: 390mm; max-width: none; }
+  .md-typeset .scenario-choices { break-inside: avoid; gap: 2.5mm; }
+  .md-typeset .scenario-choices.grid.cards > ul > li { padding: 2.5mm 3mm; }
   #print-site-page section.md-section { page-break-before: auto; }
   #print-site-page section.md-section > h1 { display: none; }
   .md-typeset .arithmatex { overflow: visible; }

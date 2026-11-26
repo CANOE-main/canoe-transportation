@@ -152,7 +152,12 @@ def test_offline_replay_preserves_source_and_has_no_network_access(bundle, monke
     normalized = pd.read_csv(output / rules["output_file"])
     manifest = json.loads((output / rules["manifest_file"]).read_text(encoding="utf-8"))
     assert stats["rows"] == len(normalized) == manifest["rows"] == 2
-    assert manifest["components"][0]["sha256"] == hashlib.sha256(original).hexdigest()
+    artifacts = manifest["components"][0]
+    assert artifacts["sha256"] == hashlib.sha256(original).hexdigest()
+    assert artifacts["component"] == request.component_key
+    assert artifacts["version"] == request.component_meta.version
+    assert artifacts["bytes"] == len(original)
+    assert artifacts["md5"] == request.expected_md5
     assert request.cache_path.read_bytes() == original
     request.cache_path.unlink()
     with pytest.raises(FileNotFoundError, match="registered iZEV cache"):
@@ -187,9 +192,54 @@ def test_wrong_publisher_download_never_creates_a_registered_cache(bundle, monke
     assert list(request.cache_path.parent.glob("*.tmp")) == []
 
 
+def test_izev_retries_transient_connection_error(bundle, monkeypatch):
+    import fetching
+
+    request = izev.build_requests(bundle)[0]
+    original = request.cache_path.read_bytes()
+    request.cache_path.unlink()
+    calls = []
+
+    def get(*_args, **_kwargs):
+        calls.append(True)
+        if len(calls) == 1:
+            raise izev.requests.ConnectionError("connection reset")
+        return FakeResponse(request.url, content=original)
+
+    monkeypatch.setattr(fetching, "_TRANSFER_RETRY_DELAYS", (0, 0))
+    monkeypatch.setattr(izev.requests, "get", get)
+    assert izev.fetch_to_cache(request) == "downloaded"
+    assert len(calls) == 2
+    assert request.cache_path.read_bytes() == original
+
+
+def test_izev_http_error_uses_registered_url_without_exposing_signed_redirect(bundle, monkeypatch):
+    request = izev.build_requests(bundle)[0]
+    request.cache_path.unlink()
+    denied = izev.requests.Response()
+    denied.status_code = 403
+    denied.url = "https://opencanada.blob.core.windows.net/file.csv?sig=fixture-signed-secret"
+    calls = []
+
+    def get(*_args, **_kwargs):
+        calls.append(True)
+        return denied
+
+    monkeypatch.setattr(izev.requests, "get", get)
+    with pytest.raises(izev.requests.RequestException, match="HTTP 403") as error:
+        izev.fetch_to_cache(request)
+    assert "fixture-signed-secret" not in str(error.value)
+    assert request.url in str(error.value)
+    assert request.component_key in str(error.value)
+    assert error.value.__suppress_context__
+    assert len(calls) == 1
+    assert not request.cache_path.exists()
+
+
 class FakeResponse:
     def __init__(self, url, *, payload=None, content=b""):
-        self.url, self.payload, self.content = url, payload, content
+        self.url, self.payload = url, payload
+        self.content = content if payload is None else json.dumps(payload).encode("utf-8")
         self.headers = {}
 
     def raise_for_status(self):
@@ -209,17 +259,18 @@ class FakeSession:
     def __init__(self, request, content):
         self.request, self.content = request, content
         self.calls = []
+        self.resource = {
+            "id": str(request.resource_id), "url": request.url,
+            "hash": md5(content), "size": len(content),
+            "last_modified": request.component_meta.version + "T12:00:00",
+        }
 
     def get(self, url, *, params=None, **_kwargs):
         self.calls.append((url, params))
         if params:
             assert params["id"] == str(self.request.resource_id)
-            return FakeResponse(url, payload={"success": True, "result": {
-                "id": str(self.request.resource_id), "url": self.request.url,
-                "hash": md5(self.content), "size": len(self.content),
-                "last_modified": self.request.component_meta.version + "T12:00:00",
-            }})
-        assert url == self.request.url
+            return FakeResponse(url, payload={"success": True, "result": self.resource})
+        assert url == self.resource["url"]
         return FakeResponse(url, content=self.content)
 
 
@@ -234,7 +285,13 @@ def test_updater_report_apply_and_replay_preserve_registered_snapshot(bundle):
     assert not report.errors and not report.applied
     assert bundle.sources_path.read_bytes() == registry
     assert request.cache_path.read_bytes() == original
-    result = updater.run_update(bundle, sources={izev.SOURCE}, session=session, apply=True)
+    unreviewed = updater.run_update(bundle, sources={izev.SOURCE}, session=session, apply=True)
+    assert not unreviewed.applied and "--review-report" in unreviewed.errors[0]
+    assert bundle.sources_path.read_bytes() == registry
+    assert list(request.cache_path.parent.glob("*.csv")) == [request.cache_path]
+    network_calls = list(session.calls)
+    result = updater.run_update(bundle, sources={izev.SOURCE}, session=session, apply=True, review_report=report.report_path)
+    assert session.calls == network_calls
     assert not result.errors and result.applied
     updated = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
     current = izev.build_requests(updated)[0]
@@ -262,15 +319,95 @@ def test_updater_rejects_disappeared_coverage_without_any_adoption(bundle, overr
     assert request.cache_path.read_bytes() == original
 
 
-def test_updater_expands_existing_resource_year_coverage_explicitly(bundle):
+def test_updater_expands_registered_coverage_and_adopts_publisher_sha256(bundle):
     request = izev.build_requests(bundle)[0]
-    replacement = csv_bytes(request.required_columns, [native_row(request.required_columns), native_row(request.required_columns, **{"Vehicle Year": "2022"})])
-    result = updater.run_update(bundle, sources={izev.SOURCE}, session=FakeSession(request, replacement), apply=True)
+    columns = request.required_columns
+    replacement = csv_bytes(columns, [native_row(columns), native_row(columns, **{
+        "Vehicle Year": "2022", "Incentive Request Date": "2022-03-20",
+        "Recipient Province/Territory": "Quebec", izev.POWERTRAIN_COLUMN: "PHEV",
+    })])
+    session = FakeSession(request, replacement)
+    sha256 = hashlib.sha256(replacement).hexdigest()
+    session.resource.update(hash=sha256.upper(), last_modified=None)
+    review = updater.run_update(bundle, sources={izev.SOURCE}, session=session)
+    assert not review.errors
+    result = updater.run_update(bundle, sources={izev.SOURCE}, apply=True, review_report=review.report_path)
     assert result.applied and not result.errors
     updated = load_config_bundle(SCENARIO, repo_root=bundle.repo_root)
     current = izev.build_requests(updated)[0]
     assert current.expected_model_years == (2021, 2022)
+    assert current.expected_provinces == ("ON", "QC")
+    assert current.expected_powertrains == ("bev", "phev")
+    assert current.expected_request_date_to == date(2022, 3, 20)
+    assert current.expected_md5 == md5(replacement)
+    assert current.component_meta.version == f"sha256-{sha256[:16]}"
+    izev.validate_cache(current)
     assert len(izev.parse_csv(current, rules=izev.module_rules(updated))) == 2
+
+
+def test_updater_rejects_changed_catalogue_resource_url_before_download(bundle):
+    request = izev.build_requests(bundle)[0]
+    original = request.cache_path.read_bytes()
+    registry = bundle.sources_path.read_bytes()
+    session = FakeSession(request, original)
+    session.resource["url"] = request.url.replace(str(request.resource_id), "another-resource")
+    result = updater.run_update(bundle, sources={izev.SOURCE}, session=session, apply=True)
+    assert "registered official HTTPS CSV" in result.errors[0]
+    assert len(session.calls) == 1
+    assert bundle.sources_path.read_bytes() == registry
+    assert request.cache_path.read_bytes() == original
+
+
+@pytest.mark.parametrize("corrupt", [False, True])
+def test_updater_recovers_identical_bytes_and_preserves_any_existing_cache(bundle, corrupt):
+    request = izev.build_requests(bundle)[0]
+    registry = bundle.sources_path.read_bytes()
+    original = request.cache_path.read_bytes()
+    if corrupt:
+        request.cache_path.write_bytes(b"unexpected bytes")
+    else:
+        request.cache_path.unlink()
+        assert not list(request.cache_path.parent.iterdir())
+
+    session = FakeSession(request, original)
+    review = updater.run_update(bundle, sources={izev.SOURCE}, session=session)
+    assert not review.errors and not review.applied
+    report = json.loads(review.report_path.read_text(encoding="utf-8"))
+    candidate = report["candidates"][0]
+    assert not candidate["review_required"]
+    assert candidate["status"] == ("changed" if corrupt else "cache_recovery")
+    assert bool(candidate["changes"]) == corrupt
+    assert bundle.sources_path.read_bytes() == registry
+    assert request.cache_path.exists() == corrupt
+
+    result = updater.run_update(bundle, sources={izev.SOURCE}, session=session, apply=True)
+    assert not result.errors and result.applied
+    current = izev.build_requests(load_config_bundle(SCENARIO, repo_root=bundle.repo_root))[0]
+    assert current.cache_path.read_bytes() == original
+    if corrupt:
+        assert current.cache_path != request.cache_path
+        assert request.cache_path.read_bytes() == b"unexpected bytes"
+    else:
+        assert current.cache_path == request.cache_path
+        assert bundle.sources_path.read_bytes() == registry
+
+
+@pytest.mark.parametrize("changed", [False, True])
+def test_updater_without_publisher_checksum_accepts_only_registered_bytes(bundle, changed):
+    request = izev.build_requests(bundle)[0]
+    original = request.cache_path.read_bytes()
+    registry = bundle.sources_path.read_bytes()
+    replacement = original.replace(b"Model 3", b"Model Y") if changed else original
+    session = FakeSession(request, replacement)
+    session.resource.update(hash=None, last_modified=None)
+    result = updater.run_update(bundle, sources={izev.SOURCE}, session=session, apply=True)
+    assert not result.applied
+    if changed:
+        assert "catalogue publishes no checksum" in result.errors[0]
+    else:
+        assert not result.errors
+    assert bundle.sources_path.read_bytes() == registry
+    assert request.cache_path.read_bytes() == original
 
 
 def test_updater_rejects_overlapping_revised_resources_before_publication(bundle, monkeypatch, tmp_path):

@@ -1,5 +1,6 @@
 import hashlib
 import io
+from dataclasses import replace
 from pathlib import Path
 from zipfile import BadZipFile
 
@@ -84,11 +85,18 @@ def test_render_ceud_url_uses_year_region_and_table_id() -> None:
     assert url.endswith("/2021/tran_on_e_20.xls")
 
 
+def _unpinned_table_request(tmp_path):
+    bundle = load_config_bundle(SCENARIO, repo_root=REPO_ROOT)
+    source = bundle.sources.sources[nrcan_ceud.SOURCE_PROVINCIAL]
+    source.adapter.pop("registered_snapshots", None)
+    return iter_table_requests(bundle, regions=["ON"], include_national=False)[0].model_copy(
+        update={"cache_path": tmp_path / "table.xls"}
+    )
+
+
 @pytest.mark.parametrize("invalid", [b"", b"<html>Temporary publisher outage</html>", b"PK\x03\x04truncated"])
 def test_ceud_failed_download_does_not_poison_cache(tmp_path, monkeypatch, invalid):
-    request = iter_table_requests(
-        load_config_bundle(SCENARIO, repo_root=REPO_ROOT), regions=["ON"], include_national=False
-    )[0].model_copy(update={"cache_path": tmp_path / "table.xls"})
+    request = _unpinned_table_request(tmp_path)
 
     class Response:
         content = invalid
@@ -119,9 +127,7 @@ def test_ceud_failed_download_does_not_poison_cache(tmp_path, monkeypatch, inval
 
 
 def test_ceud_http_failure_removes_only_private_staging_file(tmp_path, monkeypatch):
-    request = iter_table_requests(
-        load_config_bundle(SCENARIO, repo_root=REPO_ROOT), regions=["ON"], include_national=False
-    )[0].model_copy(update={"cache_path": tmp_path / "table.xls"})
+    request = _unpinned_table_request(tmp_path)
     unrelated = tmp_path / "other.xls"
     unrelated.write_bytes(b"registered evidence")
 
@@ -149,9 +155,7 @@ def test_ceud_retries_transient_get_failures(tmp_path, monkeypatch, caplog, fail
     from urllib3.exceptions import ProtocolError, ReadTimeoutError
     from urllib3.response import HTTPResponse
 
-    request = iter_table_requests(
-        load_config_bundle(SCENARIO, repo_root=REPO_ROOT), regions=["ON"], include_national=False
-    )[0].model_copy(update={"cache_path": tmp_path / "table.xls", "retry_backoff_seconds": 0})
+    request = _unpinned_table_request(tmp_path).model_copy(update={"retry_backoff_seconds": 0})
     workbook = io.BytesIO()
     pd.DataFrame({"Series": ["Energy use"], 2023: [1]}).to_excel(workbook, index=False)
     calls = []
@@ -183,9 +187,7 @@ def test_ceud_body_loss_fails_closed_without_retry_or_cache(tmp_path, monkeypatc
     from urllib3.exceptions import ProtocolError
     from urllib3.response import HTTPResponse
 
-    request = iter_table_requests(
-        load_config_bundle(SCENARIO, repo_root=REPO_ROOT), regions=["ON"], include_national=False
-    )[0].model_copy(update={"cache_path": tmp_path / "table.xls", "retry_backoff_seconds": 0})
+    request = _unpinned_table_request(tmp_path).model_copy(update={"retry_backoff_seconds": 0})
     calls, body_reads = [], []
 
     class InterruptedBody(io.BytesIO):
@@ -214,9 +216,7 @@ def test_ceud_permanent_or_exhausted_failures_leave_no_cache(tmp_path, monkeypat
     from urllib3.connectionpool import HTTPConnectionPool
     from urllib3.response import HTTPResponse
 
-    request = iter_table_requests(
-        load_config_bundle(SCENARIO, repo_root=REPO_ROOT), regions=["ON"], include_national=False
-    )[0].model_copy(update={"cache_path": tmp_path / "table.xls", "retry_backoff_seconds": 0})
+    request = _unpinned_table_request(tmp_path).model_copy(update={"retry_backoff_seconds": 0})
     calls = []
 
     def response(*_args, **_kwargs):
@@ -232,9 +232,7 @@ def test_ceud_permanent_or_exhausted_failures_leave_no_cache(tmp_path, monkeypat
 
 
 def test_cached_ceud_does_not_create_a_network_session(tmp_path, monkeypatch):
-    request = iter_table_requests(
-        load_config_bundle(SCENARIO, repo_root=REPO_ROOT), regions=["ON"], include_national=False
-    )[0].model_copy(update={"cache_path": tmp_path / "table.xls"})
+    request = _unpinned_table_request(tmp_path)
     request.cache_path.write_bytes(b"registered bytes remain subject to downstream physical validation")
 
     def reject_session():
@@ -242,6 +240,96 @@ def test_cached_ceud_does_not_create_a_network_session(tmp_path, monkeypatch):
 
     monkeypatch.setattr(nrcan_ceud.requests, "Session", reject_session)
     assert nrcan_ceud.fetch_to_cache(request) == "cached"
+
+
+def test_registered_ceud_edition_requires_all_selected_required_pins(tmp_path):
+    bundle = replace(load_config_bundle(SCENARIO, repo_root=REPO_ROOT), repo_root=tmp_path)
+    source = bundle.sources.sources[nrcan_ceud.SOURCE_PROVINCIAL]
+    pin = {"expected_sha256": "a" * 64, "expected_bytes": 50}
+    source.adapter["registered_snapshots"] = {2023: {"on": {}}}
+    with pytest.raises(ValueError, match=r"edition 2023, region on, table"):
+        iter_table_requests(bundle, year=2023, regions=["ON"], include_national=False)
+
+    snapshots = source.adapter["registered_snapshots"][2023]["on"]
+    snapshots.update({int(table): pin for table in source.components})
+    first_table = min(snapshots)
+    snapshots[first_table] = pin | {"url": "https://example.test/revised.xls", "cache_path": "ceud/revised.xls"}
+    requests = iter_table_requests(bundle, year=2023, regions=["ON"], include_national=False)
+    assert requests[0].url == "https://example.test/revised.xls"
+    assert requests[0].cache_path == tmp_path / "inputs" / "0_cache" / "ceud" / "revised.xls"
+    assert all(request.expected_bytes == 50 for request in requests)
+    legacy = iter_table_requests(bundle, year=2021, regions=["ON"], include_national=False)
+    assert all(request.expected_sha256 is None for request in legacy)
+
+
+def test_ceud_pins_and_structural_validation_precede_cache_publication(tmp_path, monkeypatch):
+    request = _unpinned_table_request(tmp_path)
+    workbook = io.BytesIO()
+    pd.DataFrame({"Series": ["Energy use"], "Unit": ["PJ"], 2023: [1]}).to_excel(workbook, index=False)
+    content = workbook.getvalue()
+    request = request.model_copy(update={
+        "expected_sha256": hashlib.sha256(content).hexdigest(), "expected_bytes": len(content),
+    })
+
+    class Response:
+        content = b"x" * len(workbook.getvalue())
+
+        def raise_for_status(self):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            pass
+
+    response = Response()
+    monkeypatch.setattr(nrcan_ceud.requests.Session, "get", lambda *_args, **_kwargs: response)
+    with pytest.raises(ValueError, match="SHA-256 mismatch.*edition 2023, region ON"):
+        nrcan_ceud.fetch_to_cache(request, skiprows=0)
+    assert list(tmp_path.iterdir()) == []
+    response.content = content
+    with pytest.raises(ValueError, match="invalid download.*no data rows"):
+        nrcan_ceud.fetch_to_cache(request, skiprows=1)
+    assert list(tmp_path.iterdir()) == []
+    assert nrcan_ceud.fetch_to_cache(request, skiprows=0) == "downloaded"
+    request.cache_path.write_bytes(b"x" * len(content))
+    with pytest.raises(ValueError, match="SHA-256 mismatch"):
+        validate_source(request)
+    with pytest.raises(ValueError, match="SHA-256 mismatch"):
+        nrcan_ceud.fetch_to_cache(request)
+    assert request.cache_path.read_bytes() == b"x" * len(content)
+
+
+def test_ceud_manifest_reports_observed_identity_and_logs_required_failure(tmp_path, monkeypatch, caplog):
+    request = _unpinned_table_request(tmp_path)
+    workbook = io.BytesIO()
+    pd.DataFrame({"Series": ["Energy use"], "Unit": ["PJ"], 2023: [1]}).to_excel(workbook, index=False)
+    content = workbook.getvalue()
+    request.cache_path.write_bytes(content)
+    request = request.model_copy(update={
+        "expected_sha256": hashlib.sha256(content).hexdigest(), "expected_bytes": len(content),
+    })
+    local = replace(load_config_bundle(SCENARIO, repo_root=REPO_ROOT), repo_root=tmp_path)
+    rules = nrcan_rules() | {"raw_excel_skiprows": 0}
+    monkeypatch.setattr(nrcan_ceud, "load_config_bundle", lambda _: local)
+    monkeypatch.setattr(nrcan_ceud, "module_rules", lambda _: rules)
+    monkeypatch.setattr(nrcan_ceud, "iter_table_requests", lambda *_, **__: [request])
+    monkeypatch.setattr(nrcan_ceud, "normalize_ceud_dataframe", lambda *_: pd.DataFrame({"region": ["ON"]}))
+
+    folder = nrcan_ceud.fetch_and_normalize(local, download=False)
+    manifest_path = folder / rules["manifest_file"]
+    row = pd.read_csv(manifest_path).iloc[0]
+    assert row["status"] == "cached"
+    assert row["bytes"] == row["expected_bytes"] == len(content)
+    assert row["sha256"] == row["expected_sha256"] == hashlib.sha256(content).hexdigest()
+    previous_manifest = manifest_path.read_bytes()
+    request.cache_path.unlink()
+    with pytest.raises(FileNotFoundError, match=rf"edition {request.year}, region ON"):
+        nrcan_ceud.fetch_and_normalize(local, download=False)
+    for identity in (str(request.year), str(request.table_id), request.url, str(request.cache_path)):
+        assert identity in caplog.text
+    assert manifest_path.read_bytes() == previous_manifest
 
 
 @pytest.mark.parametrize("backoff", [float("nan"), float("inf"), -1])

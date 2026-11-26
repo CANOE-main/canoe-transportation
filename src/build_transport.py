@@ -1502,10 +1502,10 @@ def prepare_scenario_inputs(bundle: ConfigBundle, *, download: bool = False) -> 
         with log_duration(LOGGER, "Notebook StatCan LDV stock composition"):
             statcan_tables.prepare_ldv_stock_benchmark(bundle)
     if "vehicle_stock" in bundle.scenario.notebook_diagnostics:
-        # Historical replay publishes a latest-edition handoff. Restore the selected
-        # production edition afterwards, before class weights and review products.
+        # Replay every registered edition. Restore the selected production edition
+        # afterwards, before class weights and review products.
         with log_duration(LOGGER, "Notebook complete Ontario history"):
-            vehicle_population.fetch_and_normalize(scenario, download=download)
+            vehicle_population.fetch_and_normalize(scenario, download=download, registered_only=True)
     # Only the scenario's Report A/4/5 edition is a production prerequisite.
     with log_duration(LOGGER, f"Ontario vehicle evidence ({bundle.scenario.existing_capacity.vehicle_population_year})"):
         vehicle_population.fetch_and_normalize(
